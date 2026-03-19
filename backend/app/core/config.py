@@ -1,4 +1,5 @@
 from functools import lru_cache
+from urllib.parse import urlsplit, urlunsplit
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -20,6 +21,19 @@ class Settings(BaseSettings):
     nutrition_data_source: str = Field(default="", alias="NUTRITION_DATA_SOURCE")
 
     model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")
+
+    @property
+    def normalized_database_url(self) -> str:
+        database_url = self.database_url
+
+        if database_url.startswith("postgresql+"):
+            return database_url
+
+        if not database_url.startswith("postgresql://"):
+            return database_url
+
+        url_parts = urlsplit(database_url)
+        return urlunsplit(("postgresql+psycopg", url_parts.netloc, url_parts.path, url_parts.query, url_parts.fragment))
 
 
 @lru_cache
