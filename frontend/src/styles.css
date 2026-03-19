@@ -1,0 +1,90 @@
+:root {
+  color: #123044;
+  background:
+    radial-gradient(circle at top, rgba(255, 213, 128, 0.8), transparent 32%),
+    linear-gradient(180deg, #fff6e8 0%, #f4fbff 100%);
+  font-family: "Noto Sans TC", "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+}
+
+.hero-card {
+  width: min(100%, 640px);
+  padding: 32px;
+  border: 1px solid rgba(18, 48, 68, 0.08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 24px 60px rgba(18, 48, 68, 0.12);
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #d96c15;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 3.4rem);
+  line-height: 1.05;
+}
+
+.lead {
+  margin: 16px 0 0;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #456173;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 28px 0 0;
+}
+
+.status-grid div {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(243, 250, 255, 0.95);
+}
+
+.status-grid dt {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #5c7687;
+}
+
+.status-grid dd {
+  margin: 8px 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .hero-card {
+    padding: 24px;
+  }
+}
