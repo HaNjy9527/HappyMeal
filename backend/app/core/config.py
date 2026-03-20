@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     app_env: str = Field(default="development", alias="APP_ENV")
     app_host: str = Field(default="0.0.0.0", alias="APP_HOST")
     app_port: int = Field(default=8000, alias="APP_PORT")
+    mock_line_user_id: str = Field(default="demo-line-user", alias="MOCK_LINE_USER_ID")
+    mock_display_name: str = Field(default="HappyMeal Demo User", alias="MOCK_DISPLAY_NAME")
     database_url: str = Field(
         default="postgresql+psycopg://happymeal:happymeal@db:5432/happymeal",
         alias="DATABASE_URL",

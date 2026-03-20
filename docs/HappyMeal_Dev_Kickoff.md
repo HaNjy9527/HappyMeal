@@ -87,6 +87,31 @@ Step 1 實作細節 → `Step1-Docker-本地開發實作指南-v1.md`
 
 在 Docker 環境內把核心功能開發到可以跑 API 測試的程度，不是等全部功能完成才進下一步。
 
+### 範圍邊界
+
+本節的 Step 2 是「核心產品開發階段」，不是 [PRD-v1.md](PRD-v1.md) 第 16 節的 Phase 2 候選功能。
+
+為避免 scope 漂移，Step 2 只聚焦：
+
+1. 資料模型、migration、seed
+2. profile、consent、analysis、history 主流程
+3. 前端最小主流程串接
+4. backend 基本測試與本地驗收
+
+Step 2 不包含：
+
+1. GitHub Actions
+2. AWS 與正式部署
+3. 正式雲端圖片儲存
+4. 手動搜尋完整食物資料庫
+5. 每日飲食累積紀錄
+6. 更多主題模式、無障礙優化
+7. 付費方案、進階報表、後台 CMS
+
+### Step 2 細化文件
+
+Step 2 的工作包、sprint、backend backlog、frontend backlog 與 QA 驗收清單，統一以 [Step2-核心開發任務清單-v1.md](Step2-核心開發任務清單-v1.md) 為準。
+
 ### 建議起點順序（後端）
 
 - [ ] FastAPI 主程式骨架（`main.py`，含基本 health check route）
