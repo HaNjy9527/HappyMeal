@@ -28,3 +28,55 @@ class AnalysisCandidateResponse(BaseModel):
     analysis_id: str
     status: AnalysisStatus
     candidates: list[AnalysisCandidateItem]
+
+
+class AnalysisConfirmItemRequest(BaseModel):
+    food_name: str
+    normalized_food_name: str
+    portion_value: Decimal = Field(gt=0)
+    portion_unit: str
+    confidence_score: Decimal | None = Field(default=None, ge=0, le=1)
+
+
+class AnalysisConfirmRequest(BaseModel):
+    items: list[AnalysisConfirmItemRequest] = Field(min_length=1)
+
+
+class AnalysisResultItem(BaseModel):
+    food_name: str
+    normalized_food_name: str
+    portion_value: Decimal
+    portion_unit: str
+    confidence_score: Decimal | None
+    kcal: Decimal
+    protein_g: Decimal
+    fat_g: Decimal
+    carb_g: Decimal
+
+
+class RecommendedExerciseItem(BaseModel):
+    exercise_id: str
+    name: str
+    category: str
+    duration_minutes: int
+    burn_estimate_kcal: Decimal
+
+
+class RecommendationSnapshotResponse(BaseModel):
+    target_calories_kcal: Decimal
+    target_protein_g: Decimal
+    target_fat_g: Decimal
+    target_carb_g: Decimal
+    recommended_exercises: list[RecommendedExerciseItem]
+
+
+class AnalysisConfirmResponse(BaseModel):
+    analysis_id: str
+    analyzed_at: datetime
+    status: AnalysisStatus
+    total_kcal: Decimal
+    total_protein_g: Decimal
+    total_fat_g: Decimal
+    total_carb_g: Decimal
+    items: list[AnalysisResultItem]
+    recommendation: RecommendationSnapshotResponse

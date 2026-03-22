@@ -7,8 +7,9 @@ from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.db.models import AnalysisStatus, FoodAnalysis, User
+from app.db.models import AnalysisStatus, User
 from app.schemas.analysis import AnalysisCandidateItem, AnalysisCandidateResponse
+from app.services.analysis import get_analysis_for_user
 
 
 MOCK_CANDIDATE_PRESETS = {
@@ -69,21 +70,6 @@ DEFAULT_MOCK_CANDIDATES = [
         portion_unit="bowl",
     ),
 ]
-
-
-def get_analysis_for_user(db: Session, user: User, analysis_id: str) -> FoodAnalysis:
-    analysis = (
-        db.query(FoodAnalysis)
-        .filter(FoodAnalysis.id == analysis_id, FoodAnalysis.user_id == user.id)
-        .one_or_none()
-    )
-
-    if analysis is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis not found")
-
-    return analysis
-
-
 def validate_image_upload(file: UploadFile) -> None:
     allowed_content_types = {"image/jpeg", "image/png"}
 
@@ -131,6 +117,13 @@ def build_mock_candidates(filename: str | None) -> list[AnalysisCandidateItem]:
             return MOCK_CANDIDATE_PRESETS["rice"]
 
     return DEFAULT_MOCK_CANDIDATES
+
+
+def delete_analysis_uploads(analysis_id: str) -> None:
+    settings = get_settings()
+
+    for file_path in settings.analysis_upload_path.glob(f"{analysis_id}.*"):
+        file_path.unlink(missing_ok=True)
 
 
 def upload_analysis_image(

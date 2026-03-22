@@ -4,8 +4,14 @@ from sqlalchemy.orm import Session
 from app.api.dependencies import get_current_user
 from app.db.models import User
 from app.db.session import get_db
-from app.schemas.analysis import AnalysisCandidateResponse, AnalysisDraftResponse
+from app.schemas.analysis import (
+    AnalysisCandidateResponse,
+    AnalysisConfirmRequest,
+    AnalysisConfirmResponse,
+    AnalysisDraftResponse,
+)
 from app.services.analysis import create_analysis_draft
+from app.services.analysis_confirm import confirm_analysis
 from app.services.analysis_upload import upload_analysis_image
 
 
@@ -29,3 +35,13 @@ def post_analysis_image(
     user: User = Depends(get_current_user),
 ) -> AnalysisCandidateResponse:
     return upload_analysis_image(db, user, analysis_id, file)
+
+
+@router.post("/{analysis_id}/confirm", response_model=AnalysisConfirmResponse)
+def post_analysis_confirm(
+    analysis_id: str,
+    payload: AnalysisConfirmRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> AnalysisConfirmResponse:
+    return confirm_analysis(db, user, analysis_id, payload)
