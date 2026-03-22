@@ -402,7 +402,68 @@ Step 2 的完成標準只有以下幾項：
 
 ---
 
-## 9. 排票原則
+## 9. 驗證矩陣
+
+本章的用途不是重複 backlog，而是把「完成後要怎麼證明有做到」與「怎麼證明沒有超出範圍」固定下來。
+
+建議每次 sprint 結束都更新一次狀態欄，狀態只使用以下三種：
+
+1. `Not Started`
+2. `In Progress`
+3. `Done`
+
+### 9.1 核心完成驗證矩陣
+
+| 驗證面向                | 對應工作包 / Ticket          | 驗證重點                                                                                   | 建議證據                                                     | 狀態        |
+| ----------------------- | ---------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------ | ----------- |
+| 資料模型基線            | WP-01, BE-01, BE-02          | 七張核心表、五個 enum、FK、index、unique constraint 已定稿，且不含每日累積、支付、報表欄位 | model 檔案、migration diff、schema review 紀錄               | Done        |
+| 初始 migration          | WP-02, BE-03                 | 新資料庫可成功 upgrade 到最新版本並建立所有核心表                                          | Docker 內 `alembic upgrade head` 成功輸出                    | Done        |
+| ExerciseCatalog seed    | WP-02, BE-04, QA-01          | 最少 20 筆常見運動成功寫入，seed 可重跑                                                    | seed script、資料列數查詢結果                                | Done        |
+| 共用 DB 存取            | WP-03, BE-05                 | route 與測試共用同一套 session factory 與 FastAPI dependency                               | session module、pytest fixture、API smoke test               | Done        |
+| Profile 讀取            | WP-04, BE-06, BE-07          | 可回傳目前使用者 profile 與 theme 狀態                                                     | `GET /profile` response、API test                            | Done        |
+| Profile 更新            | WP-04, BE-08                 | 可更新 age、height、weight、activity、goal 等欄位，且驗證規則生效                          | `PUT /profile` response、validator test                      | Done        |
+| Theme preference        | WP-04, BE-09                 | theme_preference 可保存並重新讀回                                                          | `PUT /profile/theme` response、重新查詢結果                  | Done        |
+| Consent 保存與查詢      | WP-04, BE-10, QA-05          | consent_type、policy_version、accepted_at 可保存且查詢得到                                 | `POST /consents`、`GET /consents/current` response、API test | Done        |
+| Analysis draft          | WP-05, BE-11                 | 可建立 draft analysis 並回傳 id 與初始狀態                                                 | `POST /analyses` response、API test                          | Done        |
+| 圖片上傳與 candidate    | WP-05, BE-12, BE-13          | 可接收圖片並回傳固定 candidate 格式；本階段允許 mock candidate                             | 上傳 API response、candidate schema、手動流程截圖            | Done        |
+| Analysis confirm        | WP-06, BE-14                 | 可將使用者確認結果寫入 FoodAnalysisItem                                                    | `POST /analyses/{id}/confirm` response、DB query、API test   | Not Started |
+| 營養 totals 計算        | WP-06, BE-15                 | total_kcal、protein、fat、carb 已正確回寫 analysis                                         | confirm test、analysis DB row、result API response           | Not Started |
+| Recommendation 生成     | WP-06, BE-16                 | 可依 profile 與運動資料生成簡短建議與推薦運動，且語氣不越界到醫療建議                      | recommendation service test、result response                 | Not Started |
+| Recommendation snapshot | WP-06, BE-17                 | RecommendationSnapshot 已與 analysis 綁定保存，供後續 history 重用                         | DB query、history/detail response                            | Not Started |
+| History list            | WP-07, BE-18                 | 可回傳日期、食物摘要、總熱量、建議摘要                                                     | `GET /analyses` response、API test                           | Not Started |
+| History detail          | WP-07, BE-19, BE-22          | 可回傳單次分析摘要、食物明細、營養結果、建議快照，且不回原始圖片                           | `GET /analyses/{id}` response、API test                      | Not Started |
+| 前端最小主流程          | WP-08, FE-01 至 FE-07, QA-03 | 可從 Profile Edit 一路走到 History Detail，且六頁都有 loading、error、empty state          | 手動驗收紀錄、畫面錄影或截圖                                 | Not Started |
+| Backend 測試覆蓋        | WP-09, BE-20, BE-21, BE-22   | profile、analysis confirm、history detail 關鍵案例皆有自動化測試                           | pytest 結果、測試檔案列表                                    | In Progress |
+| API docs 驗證           | WP-09, QA-02                 | `/docs` 可看到 Step 2 核心 API                                                             | Swagger 畫面截圖、路由清單                                   | In Progress |
+| 圖片刪除驗證            | WP-09, QA-04                 | analysis 完成後不依賴永久保存原圖                                                          | 暫存目錄檢查結果、history/detail response 不含圖片欄位       | Not Started |
+
+### 9.2 範圍守門驗證矩陣
+
+這一張表只檢查「有沒有超做」。只要任一列出現 `Yes`，就必須在 sprint review 時註記為超出 Step 2，不能直接算進完成定義。
+
+| 範圍守門問題                                             | 允許答案 | 檢查方式                                       | 結果 |
+| -------------------------------------------------------- | -------- | ---------------------------------------------- | ---- |
+| 是否新增 Step 2 文件未列出的主要使用流程                 | No       | 對照 IA、PRD 與本文件第 5 節                   | No   |
+| 是否新增新的平台能力，例如 CI/CD、正式部署、雲端基礎設施 | No       | 檢查 repo、infra 變更、部署腳本                | No   |
+| 是否新增每日飲食累積、報表、商業化、社群、CMS 等延伸模組 | No       | 檢查資料表、API、前端頁面清單                  | No   |
+| 是否把 LINE Login 一起納入 Step 2 核心完成定義           | No       | 檢查 auth router、OAuth callback、前端登入流程 | No   |
+| 是否導入正式雲端圖片儲存                                 | No       | 檢查 storage service、雲端憑證、圖片 URL 欄位  | No   |
+| 是否做了手動搜尋完整食物資料庫                           | No       | 檢查 food search API、前端搜尋畫面             | No   |
+| 是否新增超出 MVP 的主題模式或完整無障礙重構              | No       | 檢查 theme 數量、前端設計 scope                | No   |
+| 是否新增支付、方案、後台管理能力                         | No       | 檢查 schema、API、頁面、第三方整合             | No   |
+
+### 9.3 結案時的最終核對方式
+
+Step 2 結案前，請依以下順序核對：
+
+1. 先更新 9.1 的狀態欄，確認所有 Step 2 必要項目已達 `Done`。
+2. 再更新 9.2 的結果欄，確認所有超範圍檢查仍為 `No`。
+3. 若 9.1 有未完成項目，或 9.2 有任一列不是 `No`，不得宣告 Step 2 完成。
+4. 若有額外做的工作，但不影響 Step 2 邊界，需在 release note 或 sprint note 中單列為「額外工作」，不要混入完成定義。
+
+---
+
+## 10. 排票原則
 
 後續若要把 ticket 正式建到 sprint board，建議每張票固定包含以下欄位：
 
@@ -416,7 +477,7 @@ Step 2 的完成標準只有以下幾項：
 
 ---
 
-## 10. 變更控制
+## 11. 變更控制
 
 若要新增需求，請先回答以下問題：
 
@@ -428,7 +489,7 @@ Step 2 的完成標準只有以下幾項：
 
 ---
 
-## 11. 對應文件
+## 12. 對應文件
 
 1. 產品需求與 MVP 邊界： [PRD-v1.md](PRD-v1.md)
 2. 系統模組、資料模型、API 基線： [System-Architecture-v1.md](System-Architecture-v1.md)

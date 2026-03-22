@@ -1,3 +1,4 @@
+from pathlib import Path
 from functools import lru_cache
 from urllib.parse import urlsplit, urlunsplit
 
@@ -12,6 +13,8 @@ class Settings(BaseSettings):
     app_port: int = Field(default=8000, alias="APP_PORT")
     mock_line_user_id: str = Field(default="demo-line-user", alias="MOCK_LINE_USER_ID")
     mock_display_name: str = Field(default="HappyMeal Demo User", alias="MOCK_DISPLAY_NAME")
+    analysis_upload_dir: str = Field(default="tmp/analysis-uploads", alias="ANALYSIS_UPLOAD_DIR")
+    analysis_max_upload_bytes: int = Field(default=5_000_000, alias="ANALYSIS_MAX_UPLOAD_BYTES")
     database_url: str = Field(
         default="postgresql+psycopg://happymeal:happymeal@db:5432/happymeal",
         alias="DATABASE_URL",
@@ -36,6 +39,10 @@ class Settings(BaseSettings):
 
         url_parts = urlsplit(database_url)
         return urlunsplit(("postgresql+psycopg", url_parts.netloc, url_parts.path, url_parts.query, url_parts.fragment))
+
+    @property
+    def analysis_upload_path(self) -> Path:
+        return Path(self.analysis_upload_dir)
 
 
 @lru_cache
