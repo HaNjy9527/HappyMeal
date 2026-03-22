@@ -430,12 +430,12 @@ Step 2 的完成標準只有以下幾項：
 | 營養 totals 計算        | WP-06, BE-15                 | total_kcal、protein、fat、carb 已正確回寫 analysis                                         | confirm test、analysis DB row、result API response           | Done        |
 | Recommendation 生成     | WP-06, BE-16                 | 可依 profile 與運動資料生成簡短建議與推薦運動，且語氣不越界到醫療建議                      | recommendation service test、result response                 | Done        |
 | Recommendation snapshot | WP-06, BE-17                 | RecommendationSnapshot 已與 analysis 綁定保存，供後續 history 重用                         | DB query、history/detail response                            | Done        |
-| History list            | WP-07, BE-18                 | 可回傳日期、食物摘要、總熱量、建議摘要                                                     | `GET /analyses` response、API test                           | Not Started |
-| History detail          | WP-07, BE-19, BE-22          | 可回傳單次分析摘要、食物明細、營養結果、建議快照，且不回原始圖片                           | `GET /analyses/{id}` response、API test                      | Not Started |
+| History list            | WP-07, BE-18                 | 可回傳日期、食物摘要、總熱量、建議摘要                                                     | `GET /analyses` response、API test                           | Done        |
+| History detail          | WP-07, BE-19, BE-22          | 可回傳單次分析摘要、食物明細、營養結果、建議快照，且不回原始圖片                           | `GET /analyses/{id}` response、API test                      | Done        |
 | 前端最小主流程          | WP-08, FE-01 至 FE-07, QA-03 | 可從 Profile Edit 一路走到 History Detail，且六頁都有 loading、error、empty state          | 手動驗收紀錄、畫面錄影或截圖                                 | Not Started |
-| Backend 測試覆蓋        | WP-09, BE-20, BE-21, BE-22   | profile、analysis confirm、history detail 關鍵案例皆有自動化測試                           | pytest 結果、測試檔案列表                                    | In Progress |
+| Backend 測試覆蓋        | WP-09, BE-20, BE-21, BE-22   | profile、analysis confirm、history detail 關鍵案例皆有自動化測試                           | pytest 結果、測試檔案列表                                    | Done        |
 | API docs 驗證           | WP-09, QA-02                 | `/docs` 可看到 Step 2 核心 API                                                             | Swagger 畫面截圖、路由清單                                   | In Progress |
-| 圖片刪除驗證            | WP-09, QA-04                 | analysis 完成後不依賴永久保存原圖                                                          | 暫存目錄檢查結果、history/detail response 不含圖片欄位       | In Progress |
+| 圖片刪除驗證            | WP-09, QA-04                 | analysis 完成後不依賴永久保存原圖                                                          | 暫存目錄檢查結果、history/detail response 不含圖片欄位       | Done        |
 
 ### 9.2 範圍守門驗證矩陣
 

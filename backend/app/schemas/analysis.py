@@ -80,3 +80,28 @@ class AnalysisConfirmResponse(BaseModel):
     total_carb_g: Decimal
     items: list[AnalysisResultItem]
     recommendation: RecommendationSnapshotResponse
+
+
+class AnalysisHistoryListItem(BaseModel):
+    analysis_id: str
+    analyzed_at: datetime
+    total_kcal: Decimal
+    food_summary: str
+    recommendation_summary: str
+
+
+class AnalysisHistoryListResponse(BaseModel):
+    items: list[AnalysisHistoryListItem]
+
+
+class AnalysisHistoryDetailResponse(BaseModel):
+    analysis_id: str
+    analyzed_at: datetime
+    status: AnalysisStatus
+    food_summary: str
+    total_kcal: Decimal
+    total_protein_g: Decimal
+    total_fat_g: Decimal
+    total_carb_g: Decimal
+    items: list[AnalysisResultItem]
+    recommendation: RecommendationSnapshotResponse

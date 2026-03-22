@@ -13,13 +13,12 @@ from app.schemas.analysis import (
     AnalysisConfirmItemRequest,
     AnalysisConfirmRequest,
     AnalysisConfirmResponse,
-    AnalysisResultItem,
     RecommendedExerciseItem,
-    RecommendationSnapshotResponse,
 )
 from app.services.analysis import get_analysis_for_user
 from app.services.analysis_upload import delete_analysis_uploads
 from app.services.profile import get_or_create_profile
+from app.services.analysis_views import build_analysis_result_items, build_recommendation_response
 
 
 TWOPLACES = Decimal("0.01")
@@ -157,24 +156,8 @@ def build_recommended_exercises(db: Session, weight_kg: Decimal, goal_type: Goal
 
 
 def build_confirm_response(analysis, recommended_exercises: list[RecommendedExerciseItem]) -> AnalysisConfirmResponse:
-    items = [
-        AnalysisResultItem(
-            food_name=item.food_name,
-            normalized_food_name=item.normalized_food_name,
-            portion_value=item.portion_value,
-            portion_unit=item.portion_unit,
-            confidence_score=item.confidence_score,
-            kcal=item.kcal,
-            protein_g=item.protein_g,
-            fat_g=item.fat_g,
-            carb_g=item.carb_g,
-        )
-        for item in analysis.items
-    ]
-
-    snapshot = analysis.recommendation_snapshot
-    if snapshot is None:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Recommendation snapshot was not created")
+    recommendation = build_recommendation_response(analysis.recommendation_snapshot)
+    recommendation.recommended_exercises = recommended_exercises
 
     return AnalysisConfirmResponse(
         analysis_id=analysis.id,
@@ -184,14 +167,8 @@ def build_confirm_response(analysis, recommended_exercises: list[RecommendedExer
         total_protein_g=analysis.total_protein_g or ZERO_DECIMAL,
         total_fat_g=analysis.total_fat_g or ZERO_DECIMAL,
         total_carb_g=analysis.total_carb_g or ZERO_DECIMAL,
-        items=items,
-        recommendation=RecommendationSnapshotResponse(
-            target_calories_kcal=snapshot.target_calories_kcal,
-            target_protein_g=snapshot.target_protein_g,
-            target_fat_g=snapshot.target_fat_g,
-            target_carb_g=snapshot.target_carb_g,
-            recommended_exercises=recommended_exercises,
-        ),
+        items=build_analysis_result_items(analysis.items),
+        recommendation=recommendation,
     )
 
 

@@ -63,8 +63,9 @@ function Test-StructuredSafePath {
         return $false
     }
 
-    # 這些資料夾常見於補測試與暫存清理，預設不直接 deny。
+    # 這些資料夾常見於後端日常開發、補測試與暫存清理，預設不直接 deny。
     return (
+        $normalizedPath -match '(^|\\)backend\\app(\\|$)' -or
         $normalizedPath -match '(^|\\)backend\\tests(\\|$)' -or
         $normalizedPath -match '(^|\\)backend\\tmp\\analysis-uploads(\\|$)' -or
         $normalizedPath -match '(^|\\)docs(\\|$)'
@@ -144,7 +145,7 @@ if ($structuredToolName -match '(?i)(^|\.)run_in_terminal$') {
 
     foreach ($structuredPattern in $structuredPatterns) {
         if ($structuredCommand -match $structuredPattern) {
-            if ($structuredCommand -match '(?i)backend[\\/]tests|backend[\\/]tmp[\\/]analysis-uploads|(^|\s)docs[\\/]') {
+            if ($structuredCommand -match '(?i)backend[\\/]app|backend[\\/]tests|backend[\\/]tmp[\\/]analysis-uploads|(^|\s)docs[\\/]') {
                 Write-StructuredHookDecision -Decision 'ask' -Reason 'Workspace hook detected a destructive command in a low-risk workspace path. Confirm before proceeding.'
             }
 
