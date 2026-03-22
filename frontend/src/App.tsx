@@ -293,13 +293,49 @@ export default function App() {
 
   const themeMode = profile?.theme_preference ?? "female_default";
   const validationMessage = buildValidationMessage(profileForm);
-  const recommendationHeadline = useMemo(() => {
-    if (!analysisResult) {
-      return "先完成一次分析，這裡會顯示你的總熱量與運動建議。";
+  const spotlightContent = useMemo(() => {
+    if (screen === "history") {
+      return {
+        title: selectedHistory ? "History Detail" : "History",
+        copy: selectedHistory
+          ? `回看 ${selectedHistory.food_summary} 的營養結果與建議快照。`
+          : "回看最近完成的分析摘要，確認總熱量與建議是否延續。",
+      };
     }
 
-    return `本次總熱量 ${analysisResult.total_kcal} kcal，建議搭配 ${analysisResult.recommendation.recommended_exercises[0]?.name ?? "輕量活動"}。`;
-  }, [analysisResult]);
+    if (screen === "profile") {
+      return {
+        title: "Profile",
+        copy:
+          validationMessage ||
+          "資料完整後，後續分析會直接套用這份目標與活動量設定。",
+      };
+    }
+
+    if (!analysisResult) {
+      return {
+        title:
+          analysisStage === "confirm"
+            ? "Candidate Confirmation"
+            : "Start Analysis",
+        copy: "先完成一次分析，這裡會顯示你的總熱量與運動建議。",
+      };
+    }
+
+    return {
+      title:
+        analysisStage === "confirm"
+          ? "Candidate Confirmation"
+          : "Analysis Result",
+      copy: `本次總熱量 ${analysisResult.total_kcal} kcal，建議搭配 ${analysisResult.recommendation.recommended_exercises[0]?.name ?? "輕量活動"}。`,
+    };
+  }, [
+    analysisResult,
+    analysisStage,
+    screen,
+    selectedHistory,
+    validationMessage,
+  ]);
 
   return (
     <main className={`app-shell theme-${themeMode}`}>
@@ -318,17 +354,9 @@ export default function App() {
         <section className="spotlight-card">
           <div>
             <p className="spotlight-label">目前流程</p>
-            <h2>
-              {analysisStage === "result"
-                ? "Analysis Result"
-                : screen === "history"
-                  ? "History"
-                  : screen === "profile"
-                    ? "Profile"
-                    : "Start Analysis"}
-            </h2>
+            <h2>{spotlightContent.title}</h2>
           </div>
-          <p className="spotlight-copy">{recommendationHeadline}</p>
+          <p className="spotlight-copy">{spotlightContent.copy}</p>
         </section>
 
         <nav className="tab-strip" aria-label="主要導覽">
@@ -430,6 +458,7 @@ export default function App() {
                     <span>支援 JPG / PNG，分析完成後原始圖片不長期保存。</span>
                     <input
                       type="file"
+                      name="analysis-image"
                       accept="image/png,image/jpeg"
                       onChange={(event) => {
                         void handleFileInput(event.currentTarget.files);
@@ -496,6 +525,7 @@ export default function App() {
                         <label>
                           食物名稱
                           <input
+                            name={`candidate-food-name-${index}`}
                             value={item.food_name}
                             onChange={(event) => {
                               const nextValue = event.currentTarget.value;
@@ -512,6 +542,7 @@ export default function App() {
                         <label>
                           份量
                           <input
+                            name={`candidate-portion-${index}`}
                             inputMode="decimal"
                             value={item.portion_value}
                             onChange={(event) => {
@@ -855,6 +886,7 @@ export default function App() {
                     <label>
                       年齡
                       <input
+                        name="age"
                         value={profileForm.age}
                         inputMode="numeric"
                         onChange={(event) =>
@@ -868,6 +900,7 @@ export default function App() {
                     <label>
                       身高 cm
                       <input
+                        name="height_cm"
                         value={profileForm.height_cm}
                         inputMode="numeric"
                         onChange={(event) =>
@@ -881,6 +914,7 @@ export default function App() {
                     <label>
                       體重 kg
                       <input
+                        name="weight_kg"
                         value={profileForm.weight_kg}
                         inputMode="decimal"
                         onChange={(event) =>
@@ -894,6 +928,7 @@ export default function App() {
                     <label>
                       目標體重 kg
                       <input
+                        name="goal_weight_kg"
                         value={profileForm.goal_weight_kg}
                         inputMode="decimal"
                         onChange={(event) =>
