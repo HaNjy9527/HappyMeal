@@ -24,7 +24,7 @@
 1. LINE Login 完整串接
 2. AI 食物辨識流程
 3. 正式資料模型 migration
-4. GitHub Actions、AWS、Zeabur 部署
+4. GitHub Actions、AWS 部署
 
 ---
 

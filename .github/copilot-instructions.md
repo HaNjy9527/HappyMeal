@@ -39,7 +39,7 @@
 ## 交付範圍
 
 - 預設以 MVP 範圍交付，不主動擴張到社群、穿戴裝置、教練級規劃或後台 CMS。
-- MVP 部署平台以 Zeabur 為優先，詳細規劃與容量估算見 `docs/System-Architecture-v1.md`。
+- MVP 部署平台：後端 AWS（ECS Fargate + RDS），前端 Vercel。詳細規劃見 `docs/部署與用量預估-v1.md`。
 
 ## 開發協作規範
 

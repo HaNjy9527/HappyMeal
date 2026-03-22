@@ -271,9 +271,11 @@
 
 ### 12.1 第一版建議
 
-- Frontend: Vercel or equivalent static hosting
-- Backend: Render, Railway, or equivalent managed Python hosting
-- Database: Managed PostgreSQL
+- Frontend: Vercel（靜態站點 CDN）
+- Backend: AWS ECS Fargate（容器化 FastAPI）
+- Database: AWS RDS PostgreSQL
+- Image Registry: AWS ECR
+- Temp Storage: AWS S3（圖片暫存，Lifecycle Policy 自動刪除）
 
 ### 12.2 不建議第一版先做
 
