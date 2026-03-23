@@ -155,11 +155,16 @@ Step 2 的工作包、sprint、backend backlog、frontend backlog 與 QA 驗收�
 
 每次 push 或開 PR 時，自動跑測試並 build Docker image，確保主線不壞掉。
 
+### Step 3 細化文件
+
+Step 3 的工作包、ticket、驗收矩陣與範圍守門，統一以 [Step3-GitHub-Actions-CI-實作指南-v1.md](Step3-GitHub-Actions-CI-實作指南-v1.md) 為準。
+
 ### 要做的事
 
-- [ ] 建立 `.github/workflows/deploy.yml`
-- [ ] 設定 `test` job（啟動 postgres service container、執行 pytest）
-- [ ] 設定 `build` job（docker build，確認 image 能成功 build）
+- [ ] 建立 `.github/workflows/ci.yml`
+- [ ] 設定 `backend-test` job（執行 pytest，沿用現有 SQLite 測試 fixture）
+- [ ] 設定 `frontend-build` job（執行 `npm run build`）
+- [ ] 設定 `docker-build` job（驗證 backend 與 frontend Docker image 可成功 build）
 - [ ] 設定 Branch Protection Rule，要求 CI 通過才能 merge 到 main
 
 ### 驗收條件
@@ -170,13 +175,13 @@ Step 2 的工作包、sprint、backend backlog、frontend backlog 與 QA 驗收�
 
 ### 對應文件
 
-完整 workflow 範例 → `HappyMeal_AWS_Docker_CICD.md` Part 3
+完整 workflow 範例與背景說明 → `HappyMeal_AWS_Docker_CICD.md` Part 3
 
 ### 常見卡關
 
-- CI 裡的 `DATABASE_URL` 要指向 Actions 內的 postgres service，不是真實的 RDS
-- GitHub Actions 的 postgres service container 需要加 `health-check` 選項，否則 backend 可能在 db 還沒 ready 時就開始連線
-- `working-directory` 要設定正確，否則 `pip install` 和 `pytest` 找不到路徑
+- 以為 CI 一定要接 PostgreSQL，但目前 backend 測試實作其實使用 SQLite in-memory fixture
+- `working-directory` 要設定正確，否則 `pip install`、`pytest` 與 `npm run build` 會找不到路徑
+- 本機能過不代表 Docker image 一定能 build，docker-build job 不能省略
 
 ---
 
