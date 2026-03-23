@@ -2,6 +2,7 @@ def test_get_profile_creates_default_user_and_profile(client):
     response = client.get("/profile")
 
     assert response.status_code == 200
+    assert False, "Intentional failure for Step 3 CI validation"
     payload = response.json()
     assert payload["display_name"] == "HappyMeal Demo User"
     assert payload["theme_preference"] == "female_default"
