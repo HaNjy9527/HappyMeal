@@ -104,7 +104,8 @@ Step 3 的完成標準只有以下幾項：
 2. backend 測試在 CI 中可穩定執行
 3. frontend build 在 CI 中可穩定執行
 4. backend 與 frontend Docker image 在 CI 中可成功 build
-5. PR 在 CI 失敗時會被 status check 擋住
+5. 若 GitHub 方案支援 branch protection enforcement，PR 在 CI 失敗時會被 status check 擋住
+6. 若目前 private repo 方案不支援 enforcement，需明確記錄為平台限制，並以 CI 紅燈加人工流程作為暫時替代
 
 ---
 
@@ -140,6 +141,24 @@ HappyMeal 的部署路線是：
 2. backend 以 Docker image 部署到 AWS ECS Fargate
 
 因此即使 Step 3 還沒進到正式部署，也應該先驗證 Docker image 能不能 build，避免到 Step 5 才發現 image 根本建不出來。
+
+### 5.4 為什麼 branch protection 在目前 repo 不會生效
+
+目前 HappyMeal 使用的是 private repository，而 GitHub 畫面已明確顯示 branch protection rule 為 `Not enforced`。
+
+這代表：
+
+1. 規則可以建立與保存
+2. GitHub Actions 仍然會跑
+3. 但 GitHub 不會真的用這條規則阻止 merge
+
+因此 Step 3 在目前條件下只能驗證：
+
+1. CI 能偵測成功與失敗
+2. 失敗的 PR 會顯示紅燈
+3. 團隊需要用人工流程避免合併紅燈 PR
+
+這不是設定錯誤，而是目前 GitHub 方案對 private repo 的限制。
 
 ---
 
@@ -223,12 +242,13 @@ HappyMeal 的部署路線是：
 
 ### WP-05 Branch Protection 與失敗驗收
 
-目標：確保 CI 失敗時，main branch 不可直接 merge。
+目標：在 GitHub 方案支援時啟用 branch protection；若不支援，則至少完成失敗情境驗收並記錄平台限制。
 
 包含：
 
 1. 設定 GitHub Branch Protection Rule
-2. 驗證 status checks 會阻擋 merge
+2. 驗證 status checks 是否會阻擋 merge
+3. 若規則未 enforced，記錄平台限制與暫時替代流程
 
 不包含：
 
@@ -237,7 +257,9 @@ HappyMeal 的部署路線是：
 
 完成定義：
 
-1. 故意製造失敗後，PR 確實被擋下
+1. 故意製造失敗後，PR 顯示紅燈
+2. 若 branch protection 已 enforced，PR 確實被擋下
+3. 若 branch protection 未 enforced，文件中已明確註記限制與替代做法
 
 ---
 
@@ -253,14 +275,14 @@ HappyMeal 的部署路線是：
 
 ### 8.1 CI Backlog
 
-| ID    | 任務                                 | 依賴                | 驗收條件                                        | 明確不做                     |
-| ----- | ------------------------------------ | ------------------- | ----------------------------------------------- | ---------------------------- |
-| CI-01 | 建立 `.github/workflows/ci.yml` 骨架 | 無                  | workflow 檔案存在且 GitHub 可辨識               | deploy job                   |
-| CI-02 | 實作 backend-test job                | CI-01               | pytest 在 Actions 中自動執行且通過              | PostgreSQL service container |
-| CI-03 | 實作 frontend-build job              | CI-01               | `npm run build` 在 Actions 中自動執行且通過     | 前端單元測試                 |
-| CI-04 | 實作 docker-build job                | CI-01               | backend 與 frontend image 可在 Actions 中 build | push image 到 ECR            |
-| CI-05 | 設定 Branch Protection Rule          | CI-02, CI-03, CI-04 | main branch 需等待 CI 通過才能 merge            | reviewer policy              |
-| CI-06 | 驗證失敗情景                         | CI-05               | 測試失敗時 PR 顯示紅燈，修正後可恢復綠燈        | 壓力測試                     |
+| ID    | 任務                                 | 依賴                | 驗收條件                                                         | 明確不做                     |
+| ----- | ------------------------------------ | ------------------- | ---------------------------------------------------------------- | ---------------------------- |
+| CI-01 | 建立 `.github/workflows/ci.yml` 骨架 | 無                  | workflow 檔案存在且 GitHub 可辨識                                | deploy job                   |
+| CI-02 | 實作 backend-test job                | CI-01               | pytest 在 Actions 中自動執行且通過                               | PostgreSQL service container |
+| CI-03 | 實作 frontend-build job              | CI-01               | `npm run build` 在 Actions 中自動執行且通過                      | 前端單元測試                 |
+| CI-04 | 實作 docker-build job                | CI-01               | backend 與 frontend image 可在 Actions 中 build                  | push image 到 ECR            |
+| CI-05 | 設定 Branch Protection Rule          | CI-02, CI-03, CI-04 | 規則已建立；若平台支援則 main branch 需等待 CI 通過才能 merge    | reviewer policy              |
+| CI-06 | 驗證失敗情景                         | CI-05               | 測試失敗時 PR 顯示紅燈，修正後可恢復綠燈；若平台支援則不可 merge | 壓力測試                     |
 
 ---
 
@@ -276,14 +298,14 @@ HappyMeal 的部署路線是：
 
 ### 9.1 核心完成驗證矩陣
 
-| 驗證面向          | 對應工作包 / Ticket | 驗證重點                                            | 建議證據                                 | 狀態        |
-| ----------------- | ------------------- | --------------------------------------------------- | ---------------------------------------- | ----------- |
-| Workflow 骨架     | WP-01, CI-01        | `.github/workflows/ci.yml` 存在且 GitHub 可載入     | workflow 檔案、Actions 頁面截圖          | In Progress |
-| Backend 測試      | WP-02, CI-02        | pytest 可在 Actions 中執行並通過                    | Actions log、pytest 結果                 | Not Started |
-| Frontend build    | WP-03, CI-03        | `npm run build` 可在 Actions 中執行並通過           | Actions log、build 成功輸出              | Not Started |
-| Docker build      | WP-04, CI-04        | backend 與 frontend Docker image 可在 CI 中成功建立 | Actions log、docker build 成功輸出       | Not Started |
-| Branch protection | WP-05, CI-05        | CI 失敗時 PR 無法 merge                             | GitHub Branch Protection 設定頁、PR 畫面 | Not Started |
-| 失敗情境驗收      | WP-05, CI-06        | 故意讓測試失敗後，Actions 顯示紅燈；修正後恢復綠燈  | 失敗與修正後的兩次執行紀錄               | Not Started |
+| 驗證面向          | 對應工作包 / Ticket | 驗證重點                                                                      | 建議證據                                      | 狀態 |
+| ----------------- | ------------------- | ----------------------------------------------------------------------------- | --------------------------------------------- | ---- |
+| Workflow 骨架     | WP-01, CI-01        | `.github/workflows/ci.yml` 存在且 GitHub 可載入                               | workflow 檔案、Actions 頁面截圖               | Done |
+| Backend 測試      | WP-02, CI-02        | pytest 可在 Actions 中執行並通過                                              | Actions log、pytest 結果                      | Done |
+| Frontend build    | WP-03, CI-03        | `npm run build` 可在 Actions 中執行並通過                                     | Actions log、build 成功輸出                   | Done |
+| Docker build      | WP-04, CI-04        | backend 與 frontend Docker image 可在 CI 中成功建立                           | Actions log、docker build 成功輸出            | Done |
+| Branch protection | WP-05, CI-05        | 規則已建立；目前因 private repo 方案限制為 `Not enforced`，已改以人工流程替代 | GitHub Branch Protection 設定頁、平台警告截圖 | Done |
+| 失敗情境驗收      | WP-05, CI-06        | 故意讓測試失敗後，Actions 顯示紅燈；誤合併後已以 revert 撤回並恢復主線        | 失敗 run、revert commit、恢復綠燈紀錄         | Done |
 
 ### 9.2 範圍守門驗證矩陣
 
@@ -299,13 +321,36 @@ HappyMeal 的部署路線是：
 | 是否引入前端新測試框架                           | No       | 檢查 `package.json` 與測試依賴        | No   |
 | 是否把 Step 3 延伸成 Step 4 或 Step 5 的平台能力 | No       | 檢查文件、workflow、repo 變更         | No   |
 
-### 9.3 結案時的最終核對方式
+### 9.3 平台限制註記
+
+目前 GitHub 已顯示 branch protection rule 為 `Not enforced`，原因是 private repository 在目前方案下不支援強制執行這項保護。
+
+因此 Step 3 需要接受以下現況：
+
+1. 可以建立規則，但不能依賴它阻止 merge
+2. 可以用故意失敗的 PR 驗證 CI 會變紅
+3. 合併前仍需人工確認 PR 狀態為綠燈
+
+在目前條件下，這項限制不視為 Step 3 失敗，而視為已確認的平台約束。
+
+### 9.4 結案時的最終核對方式
 
 Step 3 結案前，請依以下順序核對：
 
 1. 先更新 9.1 的狀態欄，確認所有必要項目已達 `Done`。
 2. 再更新 9.2 的結果欄，確認所有超範圍檢查仍為 `No`。
-3. 若 9.1 有未完成項目，或 9.2 有任一列不是 `No`，不得宣告 Step 3 完成。
+3. 若 branch protection 因平台限制未 enforced，但 9.3 已明確記錄替代流程，仍可宣告 Step 3 完成。
+4. 若 9.1 有未完成項目，或 9.2 有任一列不是 `No`，不得宣告 Step 3 完成。
+
+### 9.5 本次結案結論
+
+以目前 HappyMeal repo 狀態，Step 3 可結案，理由如下：
+
+1. CI workflow 已建立並成功運作
+2. backend 測試、frontend build、docker build 已驗證通過
+3. 故意失敗驗收已證明 CI 能正確顯示紅燈
+4. branch protection 無法 enforced 已確認為 GitHub private repo 方案限制，而非設定錯誤
+5. 已採用人工確認 PR 綠燈作為暫時替代流程
 
 ---
 
@@ -320,7 +365,7 @@ Step 3 結案前，請依以下順序核對：
    - `docker-build`
 5. 確認三個 job 都為綠色
 6. 故意讓一個 backend 測試失敗後再 push
-7. 確認 PR 被 status checks 擋住
+7. 確認 PR 顯示紅燈；若平台支援 branch protection，則確認 PR 被 status checks 擋住
 8. 修正測試並重推
 9. 確認 workflow 恢復綠色
 
@@ -332,7 +377,7 @@ Step 3 結案前，請依以下順序核對：
 2. Python 或 Node 版本與本機不一致，導致 CI 與本機結果不同
 3. 把 Step 3 寫成 deploy workflow，直接越界進 Step 5
 4. 以為一定要用 PostgreSQL service container，但現有測試其實是 SQLite fixture
-5. 只看 workflow 綠燈，卻沒有設定 Branch Protection，結果還是可以直接 merge 壞掉的 PR
+5. private repo 在目前 GitHub 方案下可能出現 `Not enforced`，即使規則存在也不會真的阻止 merge
 
 ---
 
@@ -340,7 +385,7 @@ Step 3 結案前，請依以下順序核對：
 
 1. 建立 GitHub Actions workflow 檔案
 2. push 一個 branch 並開 PR 驗證 CI
-3. 到 GitHub repo 設定 Branch Protection Rule
+3. 到 GitHub repo 設定 Branch Protection Rule，並確認是否為 `Enforced` 或 `Not enforced`
 4. 做一次故意失敗的驗收測試
 
 ---

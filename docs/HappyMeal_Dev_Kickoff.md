@@ -165,13 +165,14 @@ Step 3 的工作包、ticket、驗收矩陣與範圍守門，統一以 [Step3-Gi
 - [ ] 設定 `backend-test` job（執行 pytest，沿用現有 SQLite 測試 fixture）
 - [ ] 設定 `frontend-build` job（執行 `npm run build`）
 - [ ] 設定 `docker-build` job（驗證 backend 與 frontend Docker image 可成功 build）
-- [ ] 設定 Branch Protection Rule，要求 CI 通過才能 merge 到 main
+- [ ] 設定 Branch Protection Rule；若目前 GitHub private repo 方案不支援 enforcement，需記錄平台限制並以人工流程替代
 
 ### 驗收條件
 
 - 開一個 PR，GitHub Actions 自動跑起來
 - pytest 全過，Actions 顯示綠色
-- 故意讓一個測試失敗，確認 Actions 會擋住
+- 故意讓一個測試失敗，確認 Actions 顯示紅燈
+- 若 GitHub 方案支援 branch protection enforcement，確認紅燈 PR 無法 merge
 
 ### 對應文件
 
@@ -182,6 +183,7 @@ Step 3 的工作包、ticket、驗收矩陣與範圍守門，統一以 [Step3-Gi
 - 以為 CI 一定要接 PostgreSQL，但目前 backend 測試實作其實使用 SQLite in-memory fixture
 - `working-directory` 要設定正確，否則 `pip install`、`pytest` 與 `npm run build` 會找不到路徑
 - 本機能過不代表 Docker image 一定能 build，docker-build job 不能省略
+- private repo 在目前 GitHub 方案下可能顯示 branch protection `Not enforced`，此時規則不會真的阻止 merge
 
 ---
 
