@@ -196,28 +196,27 @@ Step 3 的工作包、ticket、驗收矩陣與範圍守門，統一以 [Step3-Gi
 ### 要做的事
 
 - [ ] 建立 AWS 帳號，開啟 Free Tier
-- [ ] 建立專用 IAM user（給 GitHub Actions 用），只給最小必要權限
-- [ ] 建立 ECR repository（`happymeal-backend`）
-- [ ] 建立 RDS PostgreSQL（`db.t3.micro`，放在 private subnet）
-- [ ] 建立 ECS Cluster + Task Definition + Service（Fargate）
+- [ ] 建立專用 IAM user（給 GitHub Actions 用），只給最小必要權限（`AmazonLightsailFullAccess` + `AmazonS3FullAccess`）
+- [ ] 建立 Lightsail Container Service（`happymeal-backend`，Micro 方案，`ap-northeast-1`）
+- [ ] 建立 Lightsail Database（PostgreSQL 16，Standard 方案，`ap-northeast-1`）
 - [ ] 設定 S3 bucket（`happymeal-temp`，加 Lifecycle Policy 1 小時自動刪除）
-- [ ] 設定 Security Group（ECS 可以連 RDS，RDS 不對外開放）
+- [ ] 將所有憑證加入 GitHub Secrets
 
 ### 驗收條件
 
-- 手動執行 `docker push` 到 ECR 成功
-- ECS Service 跑起來，可以打到 FastAPI `/docs`（透過 ALB 或直接 public IP）
-- RDS 可以從 ECS Task 連線，不可以從外部直接連
+- Lightsail Container Service 狀態顯示 Ready
+- Lightsail Database 狀態顯示 Available
+- S3 bucket 建立成功且不對外公開
 
 ### 對應文件
 
-各 AWS 服務說明與指令 → `HappyMeal_AWS_Docker_CICD.md` Part 2
+各 AWS 服務說明與操作步驟 → `HappyMeal_AWS_Step4_Lightsail_部署指引-v1.md`
 
 ### 常見卡關
 
-- IAM 權限設定錯誤是最常見的問題，ECS Task 需要兩個不同的 role（`ecsTaskExecutionRole` 和 app 專用的 task role）
-- RDS 和 ECS 必須在同一個 VPC，Security Group 設定要明確允許來自 ECS 的連線
-- ECR image URI 格式：`<account_id>.dkr.ecr.<region>.amazonaws.com/<repo_name>:<tag>`
+- Lightsail Container Service 和 Database 必須在同一個 Region（`ap-northeast-1`）
+- Lightsail Database 預設對外開放，需要手動關閉 Public mode
+- 永遠不要用 root 帳號或個人帳號的 key 跑 CI/CD
 - 選 `ap-northeast-1`（Tokyo）對應 HappyMeal 目標市場（台灣、香港、日本）延遲最低
 
 ---
@@ -231,42 +230,44 @@ Step 3 的工作包、ticket、驗收矩陣與範圍守門，統一以 [Step3-Gi
 
 ### 目標
 
-push 到 main branch 後，自動把新的 Docker image 部署到 ECS。
+push 到 main branch 後，自動把新的 Docker image 部署到 Lightsail。
 
 ### 要做的事
 
-- [ ] 在 GitHub repo → Settings → Secrets 加入 `AWS_ACCESS_KEY_ID` 和 `AWS_SECRET_ACCESS_KEY`
-- [ ] 在 `deploy.yml` 加入 `deploy` job（depends on `test`）
-- [ ] deploy job 包含：登入 ECR → build & push image → 更新 ECS task definition → deploy service
+- [ ] 在 GitHub repo → Settings → Secrets 加入所有必要的 Secrets（`AWS_ACCESS_KEY_ID`、`AWS_SECRET_ACCESS_KEY`、`DATABASE_URL`、`LINE_CHANNEL_ID`、`LINE_CHANNEL_SECRET`、`AI_API_KEY`）
+- [ ] 建立 `deploy.yml`，加入 `deploy` job（depends on `test`）
+- [ ] deploy job 包含：build Docker image → push 到 Lightsail 內建倉庫 → 建立新的 container deployment
 
 ### 驗收條件
 
 - push 一個 commit 到 main
 - GitHub Actions 的 `test` job 通過後，`deploy` job 自動接著跑
-- ECS Service 更新到新版本，可以打到新 API
-- `wait-for-service-stability: true` 確保 deploy 完成才結束 workflow
+- Lightsail Container Service 更新到新版本，可以打到新 API
+- Health check 通過，服務狀態正常
 
 ### 對應文件
 
-完整 CD workflow 範例 → `HappyMeal_AWS_Docker_CICD.md` Part 3
+完整 CD workflow 範例與部署步驟 → `HappyMeal_AWS_Step4_Lightsail_部署指引-v1.md`
 
 ### 常見卡關
 
 - GitHub Secrets 的 IAM key 要用專用帳號，不要用個人帳號的 root key
-- ECS task definition 更新需要先用 `describe-task-definition` 拉下現有設定，再用新 image 覆蓋，不能直接憑空產生
+- `push-container-image` 每次全量上傳，確保 Dockerfile 善用 layer cache
+- 部署後 container 一直 restart 通常是程式啟動失敗或 health check 沒過，先在本地 `docker run` 測試
 - deploy job 要加 `if: github.ref == 'refs/heads/main'`，避免 PR 也觸發部署
 
 ---
 
 ## 文件對照表
 
-| 問題                         | 查這份文件                     |
-| ---------------------------- | ------------------------------ |
-| 要做什麼功能、驗收條件       | `PRD_v1`                       |
-| 頁面結構、使用流程           | `IA_and_User_Flows_v1`         |
-| 技術選型、資料模型、API 設計 | `Architecture_v1`              |
-| Docker、AWS、CI/CD 實作細節  | `HappyMeal_AWS_Docker_CICD.md` |
-| 從哪裡開始、順序怎麼排       | 本文件                         |
+| 問題                             | 查這份文件                                     |
+| -------------------------------- | ---------------------------------------------- |
+| 要做什麼功能、驗收條件           | `PRD_v1`                                       |
+| 頁面結構、使用流程               | `IA_and_User_Flows_v1`                         |
+| 技術選型、資料模型、API 設計     | `Architecture_v1`                              |
+| Docker、AWS、CI/CD 實作概念      | `HappyMeal_AWS_Docker_CICD.md`                 |
+| Lightsail 部署詳細步驟、遷移判斷 | `HappyMeal_AWS_Step4_Lightsail_部署指引-v1.md` |
+| 從哪裡開始、順序怎麼排           | 本文件                                         |
 
 ---
 

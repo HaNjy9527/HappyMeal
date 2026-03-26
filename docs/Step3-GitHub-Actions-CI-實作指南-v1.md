@@ -75,8 +75,8 @@ Step 3 只聚焦在最小可行的 CI 能力，包含：
 
 1. GitHub Actions CD
 2. AWS credentials 設定
-3. 推送 image 到 ECR
-4. ECS deploy
+3. 推送 image 到 Lightsail
+4. Lightsail deploy
 5. RDS 建立與連線設定
 6. E2E 自動化測試
 7. 壓力測試與效能測試
@@ -88,7 +88,7 @@ Step 3 只聚焦在最小可行的 CI 能力，包含：
 若新需求符合以下任一條件，視為超出 Step 3：
 
 1. 需要把 CI 延伸成 CD 或正式部署能力
-2. 需要引入新的外部平台能力，例如 AWS secrets、ECR push、ECS deploy
+2. 需要引入新的外部平台能力，例如 AWS secrets、Lightsail push、Lightsail deploy
 3. 需要改造目前的 backend 測試架構，例如改成 PostgreSQL integration test 為主
 4. 需要新增與目前 repo 不相符的測試框架
 
@@ -138,7 +138,7 @@ Step 3 採用這個既有設計，不另外加入 PostgreSQL service container�
 HappyMeal 的部署路線是：
 
 1. frontend 部署到 Vercel
-2. backend 以 Docker image 部署到 AWS ECS Fargate
+2. backend 以 Docker image 部署到 AWS Lightsail Container Service
 
 因此即使 Step 3 還沒進到正式部署，也應該先驗證 Docker image 能不能 build，避免到 Step 5 才發現 image 根本建不出來。
 
@@ -178,7 +178,7 @@ HappyMeal 的部署路線是：
 
 1. deploy job
 2. AWS secrets
-3. ECR 或 ECS 動作
+3. Lightsail 或 AWS 動作
 
 完成定義：
 
@@ -233,7 +233,7 @@ HappyMeal 的部署路線是：
 
 不包含：
 
-1. push image 到 ECR
+1. push image 到 Lightsail
 2. 掃描 image 安全性
 
 完成定義：
@@ -280,7 +280,7 @@ HappyMeal 的部署路線是：
 | CI-01 | 建立 `.github/workflows/ci.yml` 骨架 | 無                  | workflow 檔案存在且 GitHub 可辨識                                | deploy job                   |
 | CI-02 | 實作 backend-test job                | CI-01               | pytest 在 Actions 中自動執行且通過                               | PostgreSQL service container |
 | CI-03 | 實作 frontend-build job              | CI-01               | `npm run build` 在 Actions 中自動執行且通過                      | 前端單元測試                 |
-| CI-04 | 實作 docker-build job                | CI-01               | backend 與 frontend image 可在 Actions 中 build                  | push image 到 ECR            |
+| CI-04 | 實作 docker-build job                | CI-01               | backend 與 frontend image 可在 Actions 中 build                  | push image 到 Lightsail      |
 | CI-05 | 設定 Branch Protection Rule          | CI-02, CI-03, CI-04 | 規則已建立；若平台支援則 main branch 需等待 CI 通過才能 merge    | reviewer policy              |
 | CI-06 | 驗證失敗情景                         | CI-05               | 測試失敗時 PR 顯示紅燈，修正後可恢復綠燈；若平台支援則不可 merge | 壓力測試                     |
 
@@ -315,8 +315,8 @@ HappyMeal 的部署路線是：
 | ------------------------------------------------ | -------- | ------------------------------------- | ---- |
 | 是否加入 GitHub Actions CD deploy job            | No       | 檢查 workflow 檔案                    | No   |
 | 是否設定 AWS credentials 或 GitHub Secrets       | No       | 檢查 workflow、GitHub 設定            | No   |
-| 是否 push image 到 ECR                           | No       | 檢查 workflow 與 AWS 動作             | No   |
-| 是否 deploy 到 ECS                               | No       | 檢查 workflow 與 AWS 動作             | No   |
+| 是否 push image 到 Lightsail 或 ECR              | No       | 檢查 workflow 與 AWS 動作             | No   |
+| 是否 deploy 到 Lightsail 或 ECS                  | No       | 檢查 workflow 與 AWS 動作             | No   |
 | 是否導入 PostgreSQL integration test             | No       | 檢查 backend test fixture 與 workflow | No   |
 | 是否引入前端新測試框架                           | No       | 檢查 `package.json` 與測試依賴        | No   |
 | 是否把 Step 3 延伸成 Step 4 或 Step 5 的平台能力 | No       | 檢查文件、workflow、repo 變更         | No   |

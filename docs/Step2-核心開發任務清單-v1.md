@@ -41,7 +41,7 @@ Step 2 的目標是在本地 Docker 環境內，把 MVP 主流程開發到可驗
 
 1. GitHub Actions CI
 2. GitHub Actions CD
-3. AWS、ECR、RDS、ECS、正式部署
+3. AWS、Lightsail、正式部署
 4. 正式雲端圖片儲存
 5. 手動搜尋完整食物資料庫
 6. 每日飲食累積紀錄

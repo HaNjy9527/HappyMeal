@@ -272,10 +272,12 @@
 ### 12.1 第一版建議
 
 - Frontend: Vercel（靜態站點 CDN）
-- Backend: AWS ECS Fargate（容器化 FastAPI）
-- Database: AWS RDS PostgreSQL
-- Image Registry: AWS ECR
+- Backend: AWS Lightsail Container Service（容器化 FastAPI）
+- Database: AWS Lightsail Database（Managed PostgreSQL）
+- Image Registry: Lightsail 內建容器倉庫
 - Temp Storage: AWS S3（圖片暫存，Lifecycle Policy 自動刪除）
+
+> MVP 階段使用 Lightsail 降低設定門檻與固定月費。Dockerfile 與 ECS Fargate 完全通用，產品成長後可無痛遷移。遷移判斷與路徑見 `HappyMeal_AWS_Step4_Lightsail_部署指引-v1.md`。
 
 ### 12.2 不建議第一版先做
 

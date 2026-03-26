@@ -18,16 +18,17 @@ GitHub Repo
 │       │
 │       ├── 1. Run tests
 │       ├── 2. Docker build
-│       ├── 3. Push image → Amazon ECR
-│       └── 4. Deploy → Amazon ECS (or EC2)
+│       ├── 3. Push image → Lightsail 內建倉庫
+│       └── 4. Deploy → Lightsail Container Service
 │
 └── AWS Infrastructure
-        ├── ECR          ← Docker image registry
-        ├── ECS Fargate  ← 跑 backend container（FastAPI）
-        ├── RDS          ← PostgreSQL
-        ├── S3           ← 暫存圖片（分析完自動刪）
-        └── IAM          ← 權限管理
+        ├── Lightsail Container Service ← 跑 backend container（FastAPI）
+        ├── Lightsail Database          ← PostgreSQL
+        ├── S3                          ← 暫存圖片（分析完自動刪）
+        └── IAM                         ← 權限管理
 ```
+
+> MVP 階段使用 Lightsail，降低設定門檻與固定月費。Dockerfile 與 ECS Fargate 完全通用，產品成長後可無痛遷移。
 
 ---
 
@@ -137,60 +138,34 @@ LINE_CHANNEL_ID=your_real_value
 
 ## Part 2｜AWS 服務（部署目標）
 
-### 2.1 ECR — Docker Image Registry
+### 2.1 Lightsail Container Service — 跑 Container 最簡單的方式
 
-ECR 是 AWS 的 Docker Hub，用來存放你 build 好的 image。
+Lightsail Container Service 是 AWS 對 ECS Fargate 的簡化包裝。不需要自己設定 VPC、ALB、IAM Task Role，Console 幾步就能完成。
 
-```bash
-# 建立 ECR repository
-aws ecr create-repository --repository-name happymeal-backend --region ap-northeast-1
+關鍵特性：
 
-# 登入 ECR
-aws ecr get-login-password --region ap-northeast-1 \
-  | docker login --username AWS --password-stdin \
-  <your_account_id>.dkr.ecr.ap-northeast-1.amazonaws.com
+| 特性            | 說明                                               |
+| --------------- | -------------------------------------------------- |
+| 固定月費        | Nano $7 / Micro $10（新用戶前三個月免費）          |
+| 內建 HTTPS      | 自動 TLS 憑證，不需要另外設定 ALB + ACM            |
+| 內建 Image 倉庫 | 不需要另外建 ECR，直接 `push-container-image` 即可 |
+| 與 ECS 通用     | Dockerfile 完全相同，日後遷移不需改程式碼          |
 
-# Tag & Push
-docker tag happymeal-backend:latest \
-  <your_account_id>.dkr.ecr.ap-northeast-1.amazonaws.com/happymeal-backend:latest
+**為什麼 MVP 選 Lightsail 而不是 ECS Fargate？**
+第一版不需要複雜的 VPC / ALB / IAM Role 設定，Lightsail 讓你專注在應用本身，符合 Architecture v1 降低複雜度的原則。產品成長後可無痛遷移至 ECS Fargate，詳見 `HappyMeal_AWS_Step4_Lightsail_部署指引-v1.md`。
 
-docker push \
-  <your_account_id>.dkr.ecr.ap-northeast-1.amazonaws.com/happymeal-backend:latest
-```
+### 2.2 Lightsail Database — Managed PostgreSQL
 
-> 選 `ap-northeast-1`（Tokyo）是因為 HappyMeal 目標市場是台灣、香港、日本，延遲最低。
-
-### 2.2 ECS Fargate — 跑 Container 不用管伺服器
-
-ECS Fargate 讓你只定義「要跑什麼 container、要多少資源」，不用自己開 EC2、裝 Docker。
-
-關鍵概念：
-
-| 概念            | 對應理解                                    |
-| --------------- | ------------------------------------------- |
-| Task Definition | 相當於 docker-compose 裡的一個 service 設定 |
-| Service         | 確保 Task 一直在跑，掛掉會自動重啟          |
-| Cluster         | 所有 Task / Service 的容器                  |
-| Fargate         | Serverless 運算，不用管底層 EC2             |
-
-**為什麼選 Fargate 而不是 EC2？**
-第一版不需要管伺服器，Fargate 讓你專注在應用本身，符合 Architecture v1 降低複雜度的原則。
-
-### 2.3 RDS — Managed PostgreSQL
-
-```
-不用自己在 EC2 裝 PostgreSQL。
-RDS 幫你處理：備份、failover、版本升級。
-```
+不用自己在 EC2 裝 PostgreSQL。Lightsail Database 幫你處理備份與基本維運。
 
 設定重點：
 
 - Engine：PostgreSQL 16
-- Instance：`db.t3.micro`（Free Tier 可用）
-- 放在與 ECS 同一個 VPC 的 private subnet
-- Security Group 只允許來自 ECS Task 的連線，不對外開放
+- Plan：Standard（$15/月，最小方案）
+- Region：`ap-northeast-1`（與 Container Service 同 Region）
+- 關閉 Public mode，僅允許同 Region 的 Lightsail Container 連線
 
-### 2.4 S3 — 圖片暫存與自動刪除
+### 2.3 S3 — 圖片暫存與自動刪除
 
 對應 PRD FR-03 + NFR-05：圖片只暫存分析，完成後刪除。
 
@@ -209,20 +184,16 @@ s3.delete_object(Bucket='happymeal-temp', Key=f'temp/{analysis_id}.jpg')
 
 S3 也可以設定 Lifecycle Policy，超過 1 小時的物件自動刪除，作為雙重保險。
 
-### 2.5 IAM — 權限管理
+### 2.4 IAM — 權限管理
 
 這是 AWS 最重要的基礎概念，也是最多人跳過然後踩坑的地方。
 
-**HappyMeal 需要的角色：**
+**HappyMeal Lightsail 路線需要的權限：**
 
 ```
-ecsTaskExecutionRole
-├── 允許 ECS 從 ECR 拉 image
-└── 允許 ECS 寫 CloudWatch logs
-
-happymeal-backend-task-role
-├── 允許讀寫 S3 happymeal-temp bucket
-└── 僅此而已（最小權限原則）
+happymeal-cicd (IAM User)
+├── AmazonLightsailFullAccess
+└── AmazonS3FullAccess
 ```
 
 > 永遠不要用 root account 或 AdministratorAccess 跑應用程式。
@@ -242,8 +213,8 @@ push to main
     │
     └── [CD] deploy job（depends on CI）
             ├── docker build
-            ├── push to ECR
-            └── deploy to ECS（更新 service）
+            ├── push to Lightsail 內建倉庫
+            └── deploy to Lightsail Container Service
 ```
 
 ### 3.2 完整 workflow 檔案
@@ -261,30 +232,12 @@ on:
 
 env:
   AWS_REGION: ap-northeast-1
-  ECR_REPOSITORY: happymeal-backend
-  ECS_SERVICE: happymeal-backend-service
-  ECS_CLUSTER: happymeal-cluster
-  CONTAINER_NAME: happymeal-backend
+  LIGHTSAIL_SERVICE: happymeal-backend
 
 jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
 
     steps:
       - uses: actions/checkout@v4
@@ -300,12 +253,10 @@ jobs:
 
       - name: Run pytest
         working-directory: ./backend
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
         run: pytest
 
   deploy:
-    name: Deploy to AWS
+    name: Deploy to Lightsail
     runs-on: ubuntu-latest
     needs: test # 測試通過才部署
     if: github.ref == 'refs/heads/main' # 只有 main branch 才部署
@@ -320,53 +271,64 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build Docker image
+        run: docker build -t happymeal-backend ./backend
 
-      - name: Build, tag, and push image to ECR
-        id: build-image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }} # 用 commit hash 作為 tag
+      - name: Push image to Lightsail
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./backend
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          aws lightsail push-container-image \
+            --service-name ${{ env.LIGHTSAIL_SERVICE }} \
+            --label app \
+            --image happymeal-backend
 
-      - name: Download ECS task definition
+      - name: Deploy to Lightsail Container Service
         run: |
-          aws ecs describe-task-definition \
-            --task-definition happymeal-backend \
-            --query taskDefinition > task-definition.json
+          IMAGE=$(aws lightsail get-container-images \
+            --service-name ${{ env.LIGHTSAIL_SERVICE }} \
+            --query 'containerImages[0].image' \
+            --output text)
 
-      - name: Update ECS task definition with new image
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: task-definition.json
-          container-name: ${{ env.CONTAINER_NAME }}
-          image: ${{ steps.build-image.outputs.image }}
-
-      - name: Deploy to ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ env.ECS_SERVICE }}
-          cluster: ${{ env.ECS_CLUSTER }}
-          wait-for-service-stability: true # 等 deploy 完成才結束 workflow
+          aws lightsail create-container-service-deployment \
+            --service-name ${{ env.LIGHTSAIL_SERVICE }} \
+            --containers "{
+              \"app\": {
+                \"image\": \"$IMAGE\",
+                \"environment\": {
+                  \"DATABASE_URL\": \"${{ secrets.DATABASE_URL }}\",
+                  \"LINE_CHANNEL_ID\": \"${{ secrets.LINE_CHANNEL_ID }}\",
+                  \"LINE_CHANNEL_SECRET\": \"${{ secrets.LINE_CHANNEL_SECRET }}\",
+                  \"AI_API_KEY\": \"${{ secrets.AI_API_KEY }}\"
+                },
+                \"ports\": { \"8000\": \"HTTP\" }
+              }
+            }" \
+            --public-endpoint '{
+              "containerName": "app",
+              "containerPort": 8000,
+              "healthCheck": {
+                "path": "/health",
+                "intervalSeconds": 10,
+                "timeoutSeconds": 5,
+                "successCodes": "200-499"
+              }
+            }'
 ```
 
 ### 3.3 GitHub Secrets 設定
 
 在 GitHub repo → Settings → Secrets and variables → Actions 加入：
 
-| Secret 名稱             | 內容                   |
-| ----------------------- | ---------------------- |
-| `AWS_ACCESS_KEY_ID`     | IAM user 的 access key |
-| `AWS_SECRET_ACCESS_KEY` | IAM user 的 secret key |
+| Secret 名稱             | 內容                                    |
+| ----------------------- | --------------------------------------- |
+| `AWS_ACCESS_KEY_ID`     | IAM user `happymeal-cicd` 的 Access Key |
+| `AWS_SECRET_ACCESS_KEY` | IAM user 的 Secret Key                  |
+| `DATABASE_URL`          | Lightsail DB 連線字串                   |
+| `LINE_CHANNEL_ID`       | LINE Login Channel ID                   |
+| `LINE_CHANNEL_SECRET`   | LINE Login Channel Secret               |
+| `AI_API_KEY`            | AI 食物辨識 API 金鑰                    |
 
-> 建立一個專用的 IAM user 給 GitHub Actions 用，只給它需要的權限（ECR push + ECS deploy），不要用個人帳號的 key。
+> 建立一個專用的 IAM user 給 GitHub Actions 用，只給它需要的權限（Lightsail + S3），不要用個人帳號的 key。
+> 所有敏感資訊只存在 GitHub Secrets，不出現在程式碼或 workflow yml 的明文中。
 
 ### 3.4 PR 與 main branch 策略
 
@@ -392,25 +354,24 @@ feature/xxx  →  PR  →  main
 - [ ] `docker compose up` 後 FastAPI `/docs` 能開
 - [ ] 確認環境變數注入正確
 
-**Week 2 — 推上 ECR**
+**Week 2 — 建立 AWS Lightsail 基礎設施**
 
 - [ ] 建 AWS 帳號，開 Free Tier
-- [ ] 設定 IAM user（給自己用）
-- [ ] 建立 ECR repository
-- [ ] 手動 `docker build` + `docker push` 成功
+- [ ] 設定 IAM user（`happymeal-cicd`）
+- [ ] 建立 Lightsail Container Service
+- [ ] 建立 Lightsail Database
 
 **Week 3 — 接上 GitHub Actions**
 
 - [ ] 寫 `.github/workflows/deploy.yml`
 - [ ] 設定 GitHub Secrets
 - [ ] push commit，看 Actions 跑起來
-- [ ] CI（test）通過後自動 push image 到 ECR
+- [ ] CI（test）通過後自動 push image 到 Lightsail
 
-**Week 4 — ECS 部署**
+**Week 4 — Lightsail 部署完整跑通**
 
-- [ ] 建 ECS Cluster + Task Definition
-- [ ] 建 RDS PostgreSQL
-- [ ] ECS Service 跑起來，能打到 API
+- [ ] 部署後可以打到 FastAPI `/docs`
+- [ ] Health check 通過
 - [ ] GitHub Actions deploy job 完整跑通
 
 ---
@@ -427,11 +388,11 @@ feature/xxx  →  PR  →  main
 
 **AWS**
 
-- ECR：private image registry
-- ECS Fargate：serverless container 運行
-- RDS：managed PostgreSQL
+- Lightsail Container Service：簡化的 container 運行環境
+- Lightsail Database：managed PostgreSQL
 - S3：object storage + lifecycle policy
 - IAM：最小權限原則、role vs user
+- （後續遷移）ECR + ECS Fargate：產品成長期的容器部署方案
 
 **GitHub Actions**
 

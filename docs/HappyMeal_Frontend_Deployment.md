@@ -31,7 +31,7 @@ Docker 的核心價值是打包一個執行環境，但靜態檔案不需要執�
 部署到生產  → npm run build → 靜態檔 → Vercel 服務
 ```
 
-**本地 frontend Dockerfile 只活在 docker-compose 裡，不會被推到 ECR，也不會跑在 ECS 上。**
+**本地 frontend Dockerfile 只活在 docker-compose 裡，不會被推到 Lightsail，也不會跑在雲端容器上。**
 
 ### 本地兩種模式對照
 
@@ -118,7 +118,7 @@ Vercel 有自己的環境變數設定介面，在 dashboard → Settings → Env
       │
       ├── 靜態資源請求 → Vercel CDN（React build）
       │
-      └── API 請求 → AWS ECS（FastAPI）→ AWS RDS（PostgreSQL）
+      └── API 請求 → AWS Lightsail（FastAPI）→ Lightsail Database（PostgreSQL）
 ```
 
 ### 兩條部署流水線
@@ -131,7 +131,7 @@ Vercel 有自己的環境變數設定介面，在 dashboard → Settings → Env
         │
         └── backend/ 有變動
                 └── GitHub Actions → Docker build
-                      → push ECR → deploy ECS
+                      → push Lightsail → deploy Lightsail Container Service
 ```
 
 兩條流水線共用同一個 repo，互不干擾。
@@ -140,13 +140,12 @@ Vercel 有自己的環境變數設定介面，在 dashboard → Settings → Env
 
 ## 各服務分工總結
 
-| 服務    | 負責什麼              | 在哪裡跑           |
-| ------- | --------------------- | ------------------ |
-| Vercel  | 前端靜態檔 CDN        | Vercel 平台        |
-| AWS ECS | FastAPI 後端          | AWS ap-northeast-1 |
-| AWS RDS | PostgreSQL            | AWS ap-northeast-1 |
-| AWS S3  | 圖片暫存              | AWS ap-northeast-1 |
-| AWS ECR | Docker image registry | AWS ap-northeast-1 |
+| 服務                | 負責什麼       | 在哪裡跑           |
+| ------------------- | -------------- | ------------------ |
+| Vercel              | 前端靜態檔 CDN | Vercel 平台        |
+| Lightsail Container | FastAPI 後端   | AWS ap-northeast-1 |
+| Lightsail Database  | PostgreSQL     | AWS ap-northeast-1 |
+| AWS S3              | 圖片暫存       | AWS ap-northeast-1 |
 
 ---
 
