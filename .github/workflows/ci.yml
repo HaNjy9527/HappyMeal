@@ -1,4 +1,4 @@
-name: HappyMeal CI
+name: HappyMeal CI/CD
 
 on:
   push:
@@ -68,3 +68,67 @@ jobs:
 
       - name: Build frontend image
         run: docker build -t happymeal-frontend-ci ./frontend
+
+  deploy:
+    name: Deploy to Lightsail
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-build, docker-build]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-1
+
+      - name: Install AWS Lightsail plugin
+        run: |
+          curl "https://s3.us-west-2.amazonaws.com/lightsailctl/latest/linux-amd64/lightsailctl" -o "/usr/local/bin/lightsailctl"
+          chmod +x /usr/local/bin/lightsailctl
+
+      - name: Build Docker image
+        run: docker build -t happymeal-backend ./backend
+
+      - name: Push image to Lightsail
+        run: |
+          aws lightsail push-container-image \
+            --service-name happymeal-backend \
+            --label app \
+            --image happymeal-backend
+
+      - name: Deploy to Lightsail Container Service
+        run: |
+          IMAGE=$(aws lightsail get-container-images \
+            --service-name happymeal-backend \
+            --query 'containerImages[0].image' \
+            --output text)
+
+          aws lightsail create-container-service-deployment \
+            --service-name happymeal-backend \
+            --containers "{
+              \"app\": {
+                \"image\": \"$IMAGE\",
+                \"environment\": {
+                  \"DATABASE_URL\": \"${{ secrets.DATABASE_URL }}\",
+                  \"LINE_CHANNEL_ID\": \"${{ secrets.LINE_CHANNEL_ID }}\",
+                  \"LINE_CHANNEL_SECRET\": \"${{ secrets.LINE_CHANNEL_SECRET }}\",
+                  \"AI_API_KEY\": \"${{ secrets.AI_API_KEY }}\"
+                },
+                \"ports\": { \"8000\": \"HTTP\" }
+              }
+            }" \
+            --public-endpoint '{
+              "containerName": "app",
+              "containerPort": 8000,
+              "healthCheck": {
+                "path": "/health",
+                "intervalSeconds": 10,
+                "timeoutSeconds": 5,
+                "successCodes": "200"
+              }
+            }'

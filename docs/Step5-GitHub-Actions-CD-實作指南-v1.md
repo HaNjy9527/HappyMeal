@@ -385,7 +385,7 @@ deploy:
 
 | 驗證面向             | 對應工作包 / Ticket | 驗證重點                                     | 建議證據                                  | 狀態        |
 | -------------------- | ------------------- | -------------------------------------------- | ----------------------------------------- | ----------- |
-| GitHub Secrets       | WP-01, CD-01        | 所有必要 Secrets 已正確設定                  | GitHub Secrets 設定頁截圖（不含值）       | Not Started |
+| GitHub Secrets       | WP-01, CD-01        | 所有必要 Secrets 已正確設定                  | GitHub Secrets 設定頁截圖（不含值）       | Done        |
 | Deploy job 定義      | WP-02, CD-02        | deploy job 存在，`needs` 與 `if` 設定正確    | ci.yml 檔案內容、workflow graph 截圖      | Not Started |
 | lightsailctl 安裝    | WP-02, CD-03        | deploy job 中 lightsailctl 可正常安裝與使用  | Actions log                               | Not Started |
 | Image push           | WP-02, CD-04        | Docker image 成功 push 到 Lightsail 內建倉庫 | Actions log、Lightsail Console image 清單 | Not Started |
