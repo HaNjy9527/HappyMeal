@@ -40,7 +40,7 @@
 
 - 預設以 MVP 範圍交付，不主動擴張到社群、穿戴裝置、教練級規劃或後台 CMS。
 - MVP 部署平台：後端 AWS Lightsail（Container Service + Database），前端 Vercel。詳細規劃見 `docs/部署與用量預估-v1.md`。
-- 產品成長後可遷移至 ECS Fargate，遷移判斷與路徑見 `docs/HappyMeal_AWS_Step4_Lightsail_部署指引-v1.md`。
+- 產品成長後可遷移至 ECS Fargate，遷移判斷與路徑見 `docs/setup/HappyMeal_AWS_Step4_Lightsail_部署指引-v1.md`。
 
 ## 開發協作規範
 

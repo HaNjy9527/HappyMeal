@@ -113,7 +113,7 @@ Step 3 的完成標準只有以下幾項：
 
 ### 5.1 為什麼 CI 先維持 SQLite
 
-目前 backend 測試透過 [backend/tests/conftest.py](../backend/tests/conftest.py) 使用 SQLite in-memory fixture，而不是 PostgreSQL。
+目前 backend 測試透過 [backend/tests/conftest.py](../../backend/tests/conftest.py) 使用 SQLite in-memory fixture，而不是 PostgreSQL。
 
 Step 3 採用這個既有設計，不另外加入 PostgreSQL service container。原因如下：
 
@@ -125,7 +125,7 @@ Step 3 採用這個既有設計，不另外加入 PostgreSQL service container�
 
 ### 5.2 為什麼 frontend 先只做 build 驗證
 
-目前 [frontend/package.json](../frontend/package.json) 只有以下 scripts：
+目前 [frontend/package.json](../../frontend/package.json) 只有以下 scripts：
 
 1. `dev`
 2. `build`

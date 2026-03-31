@@ -89,7 +89,7 @@ Step 1 實作細節 → `Step1-Docker-本地開發實作指南-v1.md`
 
 ### 範圍邊界
 
-本節的 Step 2 是「核心產品開發階段」，不是 [PRD-v1.md](PRD-v1.md) 第 16 節的 Phase 2 候選功能。
+本節的 Step 2 是「核心產品開發階段」，不是 [PRD-v1.md](../PRD-v1.md) 第 16 節的 Phase 2 候選功能。
 
 為避免 scope 漂移，Step 2 只聚焦：
 

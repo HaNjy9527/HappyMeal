@@ -147,7 +147,7 @@ Step 5 的完成標準只有以下幾項：
 
 ### 5.2 test job 維持 SQLite，不改成 PostgreSQL
 
-[HappyMeal*AWS_Step4_Lightsail*部署指引-v1.md](HappyMeal_AWS_Step4_Lightsail_部署指引-v1.md) 的 deploy workflow 範例中，test job 加入了 PostgreSQL service container。但目前 HappyMeal 的實際測試基礎設施（[backend/tests/conftest.py](../backend/tests/conftest.py)）使用的是 SQLite in-memory fixture。
+[HappyMeal*AWS_Step4_Lightsail*部署指引-v1.md](HappyMeal_AWS_Step4_Lightsail_部署指引-v1.md) 的 deploy workflow 範例中，test job 加入了 PostgreSQL service container。但目前 HappyMeal 的實際測試基礎設施（[backend/tests/conftest.py](../../backend/tests/conftest.py)）使用的是 SQLite in-memory fixture。
 
 Step 5 沿用現有 SQLite 測試策略，不切換到 PostgreSQL。原因如下：
 
@@ -160,7 +160,7 @@ Step 5 沿用現有 SQLite 測試策略，不切換到 PostgreSQL。原因如下
 
 ### 5.3 /health endpoint 已存在，不需要額外新增
 
-FastAPI 在 [backend/app/api/routes/health.py](../backend/app/api/routes/health.py) 已經有 `/health` 路由，回傳 `{"status": "ok"}`，HTTP 200。
+FastAPI 在 [backend/app/api/routes/health.py](../../backend/app/api/routes/health.py) 已經有 `/health` 路由，回傳 `{"status": "ok"}`，HTTP 200。
 
 Lightsail Container Service 的 health check 會定期打這個路由，只要回 200 就視為健康。
 
@@ -386,11 +386,11 @@ deploy:
 | 驗證面向             | 對應工作包 / Ticket | 驗證重點                                     | 建議證據                                  | 狀態        |
 | -------------------- | ------------------- | -------------------------------------------- | ----------------------------------------- | ----------- |
 | GitHub Secrets       | WP-01, CD-01        | 所有必要 Secrets 已正確設定                  | GitHub Secrets 設定頁截圖（不含值）       | Done        |
-| Deploy job 定義      | WP-02, CD-02        | deploy job 存在，`needs` 與 `if` 設定正確    | ci.yml 檔案內容、workflow graph 截圖      | Not Started |
-| lightsailctl 安裝    | WP-02, CD-03        | deploy job 中 lightsailctl 可正常安裝與使用  | Actions log                               | Not Started |
-| Image push           | WP-02, CD-04        | Docker image 成功 push 到 Lightsail 內建倉庫 | Actions log、Lightsail Console image 清單 | Not Started |
-| Container deployment | WP-02, CD-05        | Lightsail 成功建立新部署，container 狀態正常 | Lightsail Console deployment 紀錄         | Not Started |
-| Health check         | WP-04, CD-06        | `/health` 回 200                             | `curl` 回應截圖                           | Not Started |
+| Deploy job 定義      | WP-02, CD-02        | deploy job 存在，`needs` 與 `if` 設定正確    | ci.yml 檔案內容、workflow graph 截圖      | Done        |
+| lightsailctl 安裝    | WP-02, CD-03        | deploy job 中 lightsailctl 可正常安裝與使用  | Actions log                               | Done        |
+| Image push           | WP-02, CD-04        | Docker image 成功 push 到 Lightsail 內建倉庫 | Actions log、Lightsail Console image 清單 | Done        |
+| Container deployment | WP-02, CD-05        | Lightsail 成功建立新部署，container 狀態正常 | Lightsail Console deployment 紀錄         | Done        |
+| Health check         | WP-04, CD-06        | `/health` 回 200                             | `curl` 回應截圖                           | Done        |
 | PR 不觸發 deploy     | WP-02, CD-02        | 開 PR 時只跑 CI job，deploy job 顯示 skipped | PR 的 Actions 頁面截圖                    | Not Started |
 
 ### 9.2 範圍守門驗證矩陣
@@ -440,6 +440,6 @@ Step 5 結案前，請依以下順序核對：
 | CD workflow 範例與 Lightsail 操作步驟   | [HappyMeal*AWS_Step4_Lightsail*部署指引-v1.md](HappyMeal_AWS_Step4_Lightsail_部署指引-v1.md) |
 | Docker、AWS、CI/CD 全局概念             | [HappyMeal_AWS_Docker_CICD.md](HappyMeal_AWS_Docker_CICD.md)                                 |
 | 現有 CI workflow 骨架與 Step 3 決策紀錄 | [Step3-GitHub-Actions-CI-實作指南-v1.md](Step3-GitHub-Actions-CI-實作指南-v1.md)             |
-| 部署平台選型與成本預估                  | [部署與用量預估-v1.md](部署與用量預估-v1.md)                                                 |
+| 部署平台選型與成本預估                  | [部署與用量預估-v1.md](../部署與用量預估-v1.md)                                              |
 | Lightsail 到 ECS 遷移門檻               | [HappyMeal*AWS_Step4_Lightsail*部署指引-v1.md](HappyMeal_AWS_Step4_Lightsail_部署指引-v1.md) |
 | 從哪裡開始、順序怎麼排                  | [HappyMeal_Dev_Kickoff.md](HappyMeal_Dev_Kickoff.md)                                         |

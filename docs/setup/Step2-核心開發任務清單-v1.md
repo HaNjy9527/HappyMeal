@@ -12,7 +12,7 @@
 
 本文件只處理 [HappyMeal 開發起點指引](HappyMeal_Dev_Kickoff.md) 中的 Step 2｜開發程式。
 
-本文件不是 [PRD-v1.md](PRD-v1.md) 第 16 節的 Phase 2 候選功能清單。
+本文件不是 [PRD-v1.md](../PRD-v1.md) 第 16 節的 Phase 2 候選功能清單。
 
 為避免名稱混淆，後續實作、排票與討論請統一使用「Step 2 核心開發」，不要把本文件內容稱為 Phase 2。
 
@@ -491,7 +491,7 @@ Step 2 結案前，請依以下順序核對：
 
 ## 12. 對應文件
 
-1. 產品需求與 MVP 邊界： [PRD-v1.md](PRD-v1.md)
-2. 系統模組、資料模型、API 基線： [System-Architecture-v1.md](System-Architecture-v1.md)
-3. 頁面與流程： [IA-User-Flows-v1.md](IA-User-Flows-v1.md)
+1. 產品需求與 MVP 邊界： [PRD-v1.md](../PRD-v1.md)
+2. 系統模組、資料模型、API 基線： [System-Architecture-v1.md](../System-Architecture-v1.md)
+3. 頁面與流程： [IA-User-Flows-v1.md](../IA-User-Flows-v1.md)
 4. 開發順序總覽： [HappyMeal_Dev_Kickoff.md](HappyMeal_Dev_Kickoff.md)
