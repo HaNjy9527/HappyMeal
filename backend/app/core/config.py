@@ -2,7 +2,7 @@ from pathlib import Path
 from functools import lru_cache
 from urllib.parse import urlsplit, urlunsplit
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +20,17 @@ class Settings(BaseSettings):
         ],
         alias="CORS_ALLOW_ORIGINS",
     )
+
+    @field_validator("cors_allow_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v: object) -> object:
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return []
+            if not v.startswith("["):
+                return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
     mock_line_user_id: str = Field(default="demo-line-user", alias="MOCK_LINE_USER_ID")
     mock_display_name: str = Field(default="HappyMeal Demo User", alias="MOCK_DISPLAY_NAME")
     analysis_upload_dir: str = Field(default="tmp/analysis-uploads", alias="ANALYSIS_UPLOAD_DIR")
