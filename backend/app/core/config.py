@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     app_env: str = Field(default="development", alias="APP_ENV")
     app_host: str = Field(default="0.0.0.0", alias="APP_HOST")
     app_port: int = Field(default=8000, alias="APP_PORT")
-    cors_allow_origins: list[str] = Field(
+    cors_allow_origins: list[str] | str = Field(
         default_factory=lambda: [
             "http://localhost:5173",
             "http://127.0.0.1:5173",
@@ -25,11 +25,11 @@ class Settings(BaseSettings):
     @classmethod
     def parse_cors_origins(cls, v: object) -> object:
         if isinstance(v, str):
-            v = v.strip()
-            if not v:
+            value = v.strip()
+            if not value:
                 return []
-            if not v.startswith("["):
-                return [origin.strip() for origin in v.split(",") if origin.strip()]
+            if not value.startswith("["):
+                return [origin.strip() for origin in value.split(",") if origin.strip()]
         return v
     mock_line_user_id: str = Field(default="demo-line-user", alias="MOCK_LINE_USER_ID")
     mock_display_name: str = Field(default="HappyMeal Demo User", alias="MOCK_DISPLAY_NAME")
