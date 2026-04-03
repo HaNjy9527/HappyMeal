@@ -31,8 +31,6 @@ class Settings(BaseSettings):
             if not value.startswith("["):
                 return [origin.strip() for origin in value.split(",") if origin.strip()]
         return v
-    mock_line_user_id: str = Field(default="demo-line-user", alias="MOCK_LINE_USER_ID")
-    mock_display_name: str = Field(default="HappyMeal Demo User", alias="MOCK_DISPLAY_NAME")
     analysis_upload_dir: str = Field(default="tmp/analysis-uploads", alias="ANALYSIS_UPLOAD_DIR")
     analysis_max_upload_bytes: int = Field(default=5_000_000, alias="ANALYSIS_MAX_UPLOAD_BYTES")
     database_url: str = Field(
@@ -41,7 +39,9 @@ class Settings(BaseSettings):
     )
     line_channel_id: str = Field(default="", alias="LINE_CHANNEL_ID")
     line_channel_secret: str = Field(default="", alias="LINE_CHANNEL_SECRET")
-    line_redirect_uri: str = Field(default="", alias="LINE_REDIRECT_URI")
+    line_callback_url: str = Field(default="", alias="LINE_CALLBACK_URL")
+    session_secret_key: str = Field(default="", alias="SESSION_SECRET_KEY")
+    frontend_url: str = Field(default="", alias="FRONTEND_URL")
     ai_food_api_key: str = Field(default="", alias="AI_FOOD_API_KEY")
     nutrition_data_source: str = Field(default="", alias="NUTRITION_DATA_SOURCE")
 

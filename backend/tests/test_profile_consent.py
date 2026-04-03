@@ -3,7 +3,7 @@ def test_get_profile_creates_default_user_and_profile(client):
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["display_name"] == "HappyMeal Demo User"
+    assert payload["display_name"] == "HappyMeal Test User"
     assert payload["theme_preference"] == "female_default"
     assert payload["profile"] == {
         "age": None,
