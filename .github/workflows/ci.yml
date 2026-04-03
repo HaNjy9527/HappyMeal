@@ -114,6 +114,7 @@ jobs:
               \"app\": {
                 \"image\": \"$IMAGE\",
                 \"environment\": {
+                  \"CORS_ALLOW_ORIGINS\": \"${{ secrets.CORS_ALLOW_ORIGINS }}\",
                   \"DATABASE_URL\": \"${{ secrets.DATABASE_URL }}\",
                   \"LINE_CHANNEL_ID\": \"${{ secrets.LINE_CHANNEL_ID }}\",
                   \"LINE_CHANNEL_SECRET\": \"${{ secrets.LINE_CHANNEL_SECRET }}\",
