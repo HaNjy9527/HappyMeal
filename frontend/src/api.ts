@@ -1,4 +1,4 @@
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+const apiBaseUrl = import.meta.env.VITE_BACKEND_URL ?? "http://localhost:8000";
 
 export type ThemePreference = "female_default" | "male_default";
 export type ActivityLevel =
@@ -24,6 +24,13 @@ export type ProfileResponse = {
     goal_weight_kg: string | null;
     updated_at: string | null;
   };
+};
+
+export type AuthMeResponse = {
+  id: string;
+  display_name: string;
+  avatar_url: string | null;
+  theme_preference: ThemePreference;
 };
 
 export type ProfileUpdateRequest = {
@@ -124,6 +131,7 @@ export type CandidateDraftItem = {
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
+    credentials: "include",
     headers: {
       ...(init?.body instanceof FormData
         ? {}
@@ -152,6 +160,38 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function getProfile() {
   return requestJson<ProfileResponse>("/profile");
+}
+
+export async function getMe() {
+  const response = await fetch(`${apiBaseUrl}/auth/me`, {
+    credentials: "include",
+  });
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  if (!response.ok) {
+    const fallbackMessage = `Request failed with status ${response.status}`;
+    let errorMessage = fallbackMessage;
+
+    try {
+      const errorPayload = (await response.json()) as { detail?: string };
+      errorMessage = errorPayload.detail ?? fallbackMessage;
+    } catch {
+      errorMessage = fallbackMessage;
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  return (await response.json()) as AuthMeResponse;
+}
+
+export function logout() {
+  return requestJson<{ message: string }>("/auth/logout", {
+    method: "POST",
+  });
 }
 
 export function updateProfile(payload: ProfileUpdateRequest) {

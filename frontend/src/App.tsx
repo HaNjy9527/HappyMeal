@@ -5,12 +5,14 @@ import {
   useMemo,
   useState,
 } from "react";
+import { Navigate, Route, Routes, useSearchParams } from "react-router-dom";
 
 import {
   ActivityLevel,
   AnalysisHistoryDetailResponse,
   AnalysisHistoryListItem,
   AnalysisResultResponse,
+  AuthMeResponse,
   CandidateDraftItem,
   GoalType,
   ProfileResponse,
@@ -27,6 +29,10 @@ import {
   updateThemePreference,
   uploadAnalysisImage,
 } from "./api";
+import { LineLoginButton } from "./components/LineLoginButton";
+import { RequireAuth } from "./components/RequireAuth";
+import { useAuth } from "./hooks/useAuth";
+import { useLogout } from "./hooks/useLogout";
 import "./styles.css";
 
 type MainScreen = "analysis" | "history" | "profile";
@@ -98,7 +104,8 @@ function buildValidationMessage(formState: ProfileFormState) {
   return "";
 }
 
-export default function App() {
+function HomeDashboard({ user }: { user: AuthMeResponse }) {
+  const logoutMutation = useLogout();
   const [screen, setScreen] = useState<MainScreen>("analysis");
   const [analysisStage, setAnalysisStage] = useState<AnalysisStage>("start");
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
@@ -348,7 +355,20 @@ export default function App() {
             <p className="eyebrow">HappyMeal Step 2 MVP</p>
             <h1>從建檔到歷史回看的一條主鏈</h1>
           </div>
-          <div className="backend-badge">API {apiBaseUrl}</div>
+          <div className="topbar-actions">
+            <div className="user-badge">
+              <strong>{user.display_name}</strong>
+              <span>{user.avatar_url ? "LINE 已連線" : "LINE 使用者"}</span>
+            </div>
+            <div className="backend-badge">API {apiBaseUrl}</div>
+            <button
+              className="ghost-button"
+              disabled={logoutMutation.isPending}
+              onClick={() => logoutMutation.mutate()}
+            >
+              {logoutMutation.isPending ? "登出中..." : "登出"}
+            </button>
+          </div>
         </header>
 
         <section className="spotlight-card">
@@ -1034,9 +1054,9 @@ export default function App() {
                   <div className="summary-card">
                     <span>目前使用者</span>
                     <strong>
-                      {profile?.display_name ?? "HappyMeal Demo User"}
+                      {profile?.display_name ?? user.display_name}
                     </strong>
-                    <p>本 MVP 使用 mock user，不串 LINE Login。</p>
+                    <p>目前已改成以 LINE Login session 驗證登入狀態。</p>
                   </div>
                 </aside>
               </div>
@@ -1045,5 +1065,100 @@ export default function App() {
         ) : null}
       </section>
     </main>
+  );
+}
+
+function LandingPage() {
+  const { user, isLoading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const error = searchParams.get("error");
+
+  if (isLoading) {
+    return (
+      <main className="auth-state-screen">
+        <section className="auth-state-card">
+          <p className="eyebrow">HappyMeal</p>
+          <h1>登入狀態確認中</h1>
+          <p>正在確認你的 LINE session，請稍候。</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (user) {
+    return <Navigate to="/home" replace />;
+  }
+
+  return (
+    <main className="app-shell">
+      <div className="ambient-orb ambient-orb-left" aria-hidden="true" />
+      <div className="ambient-orb ambient-orb-right" aria-hidden="true" />
+
+      <section className="app-frame landing-frame">
+        <header className="topbar landing-topbar">
+          <div>
+            <p className="eyebrow">HappyMeal</p>
+            <h1>先登入，再開始你的飲食分析流程</h1>
+          </div>
+          <div className="backend-badge">API {apiBaseUrl}</div>
+        </header>
+
+        <section className="landing-hero">
+          <article className="landing-card landing-card-primary">
+            <p className="spotlight-label">LINE Login</p>
+            <h2>用單一登入入口接上 session 驗證</h2>
+            <p className="landing-copy">
+              登入後會直接回到 /home，前端用 /auth/me 讀取你的登入狀態，
+              不在瀏覽器保存 LINE access token。
+            </p>
+            {error === "line_auth_denied" ? (
+              <p className="status-banner is-error">
+                你剛剛取消了 LINE 授權，需要時可以重新登入。
+              </p>
+            ) : null}
+            <div className="landing-actions">
+              <LineLoginButton />
+            </div>
+          </article>
+
+          <article className="landing-card">
+            <p className="panel-kicker">驗收重點</p>
+            <h3>這一輪前端會確認三件事</h3>
+            <ul className="compact-list">
+              <li>未登入直接進 /home 會被導回登入頁。</li>
+              <li>登入後 /auth/me 能讀到 display name 與主題設定。</li>
+              <li>登出後 session 會清掉，畫面回到 /。</li>
+            </ul>
+          </article>
+        </section>
+      </section>
+    </main>
+  );
+}
+
+function HomeRoute() {
+  const { user } = useAuth();
+
+  if (!user) {
+    return null;
+  }
+
+  return <HomeDashboard user={user} />;
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route
+        path="/home"
+        element={
+          <RequireAuth>
+            <HomeRoute />
+          </RequireAuth>
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
