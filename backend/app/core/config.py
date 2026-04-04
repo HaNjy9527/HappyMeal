@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     line_callback_url: str = Field(default="", alias="LINE_CALLBACK_URL")
     session_secret_key: str = Field(default="", alias="SESSION_SECRET_KEY")
     frontend_url: str = Field(default="", alias="FRONTEND_URL")
-    ai_food_api_key: str = Field(default="", alias="AI_FOOD_API_KEY")
+    ai_food_api_key: str = Field(default="", alias="AI_API_KEY")
     nutrition_data_source: str = Field(default="", alias="NUTRITION_DATA_SOURCE")
 
     model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")

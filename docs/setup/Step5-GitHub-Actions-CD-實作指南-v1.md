@@ -226,7 +226,7 @@ exec uvicorn app.main:app --host 0.0.0.0 --port 8000
 | `LINE_CALLBACK_URL`     | LINE Login callback URL                 |
 | `SESSION_SECRET_KEY`    | Session 簽名密鑰                        |
 | `FRONTEND_URL`          | 登入後回跳的前端網址                    |
-| `AI_FOOD_API_KEY`       | AI 食物辨識 API 金鑰                    |
+| `AI_API_KEY`            | AI 食物辨識 API 金鑰                    |
 | `NUTRITION_DATA_SOURCE` | 營養資料來源識別字串                    |
 
 不包含：
@@ -324,7 +324,7 @@ deploy:
                 \"LINE_CALLBACK_URL\": \"${{ secrets.LINE_CALLBACK_URL }}\",
                 \"SESSION_SECRET_KEY\": \"${{ secrets.SESSION_SECRET_KEY }}\",
                 \"FRONTEND_URL\": \"${{ secrets.FRONTEND_URL }}\",
-                \"AI_FOOD_API_KEY\": \"${{ secrets.AI_FOOD_API_KEY }}\",
+                \"AI_API_KEY\": \"${{ secrets.AI_API_KEY }}\",
                 \"NUTRITION_DATA_SOURCE\": \"${{ secrets.NUTRITION_DATA_SOURCE }}\"
               },
               \"ports\": { \"8000\": \"HTTP\" }
