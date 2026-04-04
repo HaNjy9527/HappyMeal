@@ -1,4 +1,4 @@
-const apiBaseUrl = import.meta.env.VITE_BACKEND_URL ?? "http://localhost:8000";
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 export type ThemePreference = "female_default" | "male_default";
 export type ActivityLevel =

@@ -109,6 +109,10 @@ VITE_API_BASE_URL=https://api.happymeal.com
 
 Vercel 有自己的環境變數設定介面，在 dashboard → Settings → Environment Variables 填入即可。
 
+> 注意：前端部署在 Vercel 時，`VITE_API_BASE_URL` 必須設在 Vercel，不是只設在 GitHub Secrets。Vite 會在 build 時把這個值寫進前端 bundle。
+
+更完整的變數總表與放置位置，請看 [docs/setup/環境變數設定總表-v1.md](docs/setup/環境變數設定總表-v1.md)。
+
 ---
 
 ## 整體部署架構

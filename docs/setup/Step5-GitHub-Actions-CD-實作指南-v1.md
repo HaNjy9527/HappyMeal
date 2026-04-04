@@ -201,6 +201,8 @@ exec uvicorn app.main:app --host 0.0.0.0 --port 8000
 2. **LINE Login Callback URL**：在 LINE Developers Console 加入 Lightsail URL 的 callback 路徑
 3. **前端 API Base URL**：前端部署到 Vercel 後，API 呼叫的 base URL 需要指向 Lightsail
 
+完整環境變數列表與各平台放置位置，請另看 [docs/setup/環境變數設定總表-v1.md](docs/setup/環境變數設定總表-v1.md)。
+
 ---
 
 ## 6. 工作包拆解
@@ -217,10 +219,15 @@ exec uvicorn app.main:app --host 0.0.0.0 --port 8000
 | ----------------------- | --------------------------------------- |
 | `AWS_ACCESS_KEY_ID`     | IAM user `happymeal-cicd` 的 Access Key |
 | `AWS_SECRET_ACCESS_KEY` | IAM user 的 Secret Key                  |
+| `CORS_ALLOW_ORIGINS`    | FastAPI CORS 白名單                     |
 | `DATABASE_URL`          | Lightsail Database 連線字串             |
 | `LINE_CHANNEL_ID`       | LINE Login Channel ID                   |
 | `LINE_CHANNEL_SECRET`   | LINE Login Channel Secret               |
-| `AI_API_KEY`            | AI 食物辨識 API 金鑰                    |
+| `LINE_CALLBACK_URL`     | LINE Login callback URL                 |
+| `SESSION_SECRET_KEY`    | Session 簽名密鑰                        |
+| `FRONTEND_URL`          | 登入後回跳的前端網址                    |
+| `AI_FOOD_API_KEY`       | AI 食物辨識 API 金鑰                    |
+| `NUTRITION_DATA_SOURCE` | 營養資料來源識別字串                    |
 
 不包含：
 
@@ -309,10 +316,16 @@ deploy:
             \"app\": {
               \"image\": \"$IMAGE\",
               \"environment\": {
+                \"APP_ENV\": \"production\",
+                \"CORS_ALLOW_ORIGINS\": \"${{ secrets.CORS_ALLOW_ORIGINS }}\",
                 \"DATABASE_URL\": \"${{ secrets.DATABASE_URL }}\",
                 \"LINE_CHANNEL_ID\": \"${{ secrets.LINE_CHANNEL_ID }}\",
                 \"LINE_CHANNEL_SECRET\": \"${{ secrets.LINE_CHANNEL_SECRET }}\",
-                \"AI_API_KEY\": \"${{ secrets.AI_API_KEY }}\"
+                \"LINE_CALLBACK_URL\": \"${{ secrets.LINE_CALLBACK_URL }}\",
+                \"SESSION_SECRET_KEY\": \"${{ secrets.SESSION_SECRET_KEY }}\",
+                \"FRONTEND_URL\": \"${{ secrets.FRONTEND_URL }}\",
+                \"AI_FOOD_API_KEY\": \"${{ secrets.AI_FOOD_API_KEY }}\",
+                \"NUTRITION_DATA_SOURCE\": \"${{ secrets.NUTRITION_DATA_SOURCE }}\"
               },
               \"ports\": { \"8000\": \"HTTP\" }
             }

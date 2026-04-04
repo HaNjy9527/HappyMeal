@@ -418,7 +418,8 @@ FRONTEND_URL=https://happymeal.vercel.app
 ```tsx
 // src/components/LineLoginButton.tsx
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+const BACKEND_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 export function LineLoginButton() {
   const handleLogin = () => {
@@ -436,7 +437,8 @@ export function LineLoginButton() {
 
 import { useQuery } from "@tanstack/react-query";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+const BACKEND_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 async function fetchMe() {
   const res = await fetch(`${BACKEND_URL}/auth/me`, {
@@ -501,7 +503,8 @@ import { RequireAuth } from "./components/RequireAuth";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+const BACKEND_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 export function useLogout() {
   const queryClient = useQueryClient();
@@ -526,13 +529,13 @@ export function useLogout() {
 Vercel 部署設定（Project Settings → Environment Variables）：
 
 ```env
-VITE_BACKEND_URL=https://happymeal-backend.xxxxxxxx.ap-northeast-1.cs.amazonlightsail.com
+VITE_API_BASE_URL=https://happymeal-backend.xxxxxxxx.ap-northeast-1.cs.amazonlightsail.com
 ```
 
 本地開發若要跑前端（非 LINE Login 相關功能），`.env.local`：
 
 ```env
-VITE_BACKEND_URL=http://localhost:8000
+VITE_API_BASE_URL=http://localhost:8000
 ```
 
 ---
