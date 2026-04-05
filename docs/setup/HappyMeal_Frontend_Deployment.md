@@ -130,15 +130,23 @@ Vercel 有自己的環境變數設定介面，在 dashboard → Settings → Env
 ```
 同一個 GitHub repo
         │
-        ├── frontend/ 有變動
-        │       └── Vercel 自動偵測 → npm run build → 部署 CDN
+      ├── frontend/ 有變動
+      │       └── Vercel 自動偵測 → npm run build → 部署 CDN
+      │          GitHub Actions 不會因此觸發 Lightsail deploy
         │
         └── backend/ 有變動
-                └── GitHub Actions → Docker build
-                      → push Lightsail → deploy Lightsail Container Service
+            └── GitHub Actions → backend test → backend Docker build
+                  → push Lightsail → deploy Lightsail Container Service
 ```
 
 兩條流水線共用同一個 repo，互不干擾。
+
+目前 repo 內的 GitHub Actions workflow 只會在 `backend/**` 或 `.github/workflows/ci.yml` 有變動時觸發。
+也就是說：
+
+- 只改前端：由 Vercel 自動部署前端，不會觸發 backend deploy
+- 只改文件：不會觸發 GitHub Actions deploy
+- 改 backend：才會跑 GitHub Actions 並部署 Lightsail backend
 
 ---
 
