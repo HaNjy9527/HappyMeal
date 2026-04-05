@@ -114,16 +114,16 @@ jobs:
               \"app\": {
                 \"image\": \"$IMAGE\",
                 \"environment\": {
-                  "APP_ENV": "production",
+                  \"APP_ENV\": \"production\",
                   \"CORS_ALLOW_ORIGINS\": \"${{ secrets.CORS_ALLOW_ORIGINS }}\",
                   \"DATABASE_URL\": \"${{ secrets.DATABASE_URL }}\",
                   \"LINE_CHANNEL_ID\": \"${{ secrets.LINE_CHANNEL_ID }}\",
                   \"LINE_CHANNEL_SECRET\": \"${{ secrets.LINE_CHANNEL_SECRET }}\",
-                  "LINE_CALLBACK_URL": "${{ secrets.LINE_CALLBACK_URL }}",
-                  "SESSION_SECRET_KEY": "${{ secrets.SESSION_SECRET_KEY }}",
-                  "FRONTEND_URL": "${{ secrets.FRONTEND_URL }}",
-                  "AI_API_KEY": "${{ secrets.AI_API_KEY }}",
-                  "NUTRITION_DATA_SOURCE": "${{ secrets.NUTRITION_DATA_SOURCE }}"
+                  \"LINE_CALLBACK_URL\": \"${{ secrets.LINE_CALLBACK_URL }}\",
+                  \"SESSION_SECRET_KEY\": \"${{ secrets.SESSION_SECRET_KEY }}\",
+                  \"FRONTEND_URL\": \"${{ secrets.FRONTEND_URL }}\",
+                  \"AI_API_KEY\": \"${{ secrets.AI_API_KEY }}\",
+                  \"NUTRITION_DATA_SOURCE\": \"${{ secrets.NUTRITION_DATA_SOURCE }}\"
                 },
                 \"ports\": { \"8000\": \"HTTP\" }
               }
