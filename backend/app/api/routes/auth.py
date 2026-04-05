@@ -24,7 +24,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.get("/line/login")
 def get_line_login(request: Request) -> RedirectResponse:
     settings = get_settings()
-    state = create_oauth_state()
+    state = create_oauth_state(settings)
     request.session["oauth_state"] = state
     return RedirectResponse(url=build_line_login_url(settings, state), status_code=302)
 
@@ -45,7 +45,7 @@ def get_line_callback(
             status_code=302,
         )
 
-    validate_oauth_state(request.session.pop("oauth_state", None), state)
+    validate_oauth_state(settings, request.session.pop("oauth_state", None), state)
     access_token = exchange_code_for_access_token(settings, code)
     profile = fetch_line_profile(access_token)
     user = upsert_line_user(db, profile)
