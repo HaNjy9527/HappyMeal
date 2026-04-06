@@ -17,6 +17,28 @@ LINE_TOKEN_URL = "https://api.line.me/oauth2/v2.1/token"
 LINE_PROFILE_URL = "https://api.line.me/v2/profile"
 LINE_SCOPE = "profile openid"
 LINE_STATE_MAX_AGE_SECONDS = 60 * 10
+AUTH_TOKEN_MAX_AGE_SECONDS = 60 * 2  # 2-minute window for mobile browser handoff
+
+
+def build_auth_token_signer(settings: Settings) -> TimestampSigner:
+    secret_key = settings.session_secret_key or "dev-session-secret"
+    return TimestampSigner(secret_key, salt="line-auth-token")
+
+
+def create_auth_token(user_id: str, settings: Settings) -> str:
+    signer = build_auth_token_signer(settings)
+    return signer.sign(user_id).decode("utf-8")
+
+
+def verify_auth_token(token: str, settings: Settings) -> str:
+    signer = build_auth_token_signer(settings)
+    try:
+        user_id = signer.unsign(token, max_age=AUTH_TOKEN_MAX_AGE_SECONDS)
+        return user_id.decode("utf-8")
+    except SignatureExpired as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Auth token expired") from exc
+    except BadSignature as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid auth token") from exc
 
 
 def build_state_signer(settings: Settings) -> TimestampSigner:
@@ -134,11 +156,24 @@ def upsert_line_user(db: Session, profile: dict[str, str | None]) -> User:
     return user
 
 
-def build_frontend_redirect_url(frontend_url: str, path: str, error: str | None = None) -> str:
+def build_frontend_redirect_url(
+    frontend_url: str,
+    path: str,
+    error: str | None = None,
+    token: str | None = None,
+) -> str:
+    from urllib.parse import urlencode
+
     base_url = frontend_url.rstrip("/")
     normalized_path = path if path.startswith("/") else f"/{path}"
 
+    params: dict[str, str] = {}
     if error:
-        return f"{base_url}{normalized_path}?error={error}"
+        params["error"] = error
+    if token:
+        params["token"] = token
+
+    if params:
+        return f"{base_url}{normalized_path}?{urlencode(params)}"
 
     return f"{base_url}{normalized_path}"

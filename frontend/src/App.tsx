@@ -5,6 +5,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Navigate, Route, Routes, useSearchParams } from "react-router-dom";
 
 import {
@@ -21,6 +22,7 @@ import {
   apiBaseUrl,
   confirmAnalysis,
   createAnalysisDraft,
+  exchangeAuthToken,
   createMockImageFile,
   getAnalysisDetail,
   getAnalysisHistory,
@@ -1070,10 +1072,31 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
 function LandingPage() {
   const { user, isLoading } = useAuth();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryClient = useQueryClient();
   const error = searchParams.get("error");
+  const token = searchParams.get("token");
+  const [isExchanging, setIsExchanging] = useState(false);
+  const [exchangeError, setExchangeError] = useState(false);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!token) return;
+    setIsExchanging(true);
+    exchangeAuthToken(token)
+      .then(() => {
+        setSearchParams({}, { replace: true });
+        return queryClient.invalidateQueries({ queryKey: ["me"] });
+      })
+      .catch(() => {
+        setExchangeError(true);
+        setSearchParams({}, { replace: true });
+      })
+      .finally(() => {
+        setIsExchanging(false);
+      });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (isLoading || isExchanging) {
     return (
       <main className="auth-state-screen">
         <section className="auth-state-card">
@@ -1114,6 +1137,11 @@ function LandingPage() {
             {error === "line_auth_denied" ? (
               <p className="status-banner is-error">
                 你剛剛取消了 LINE 授權，需要時可以重新登入。
+              </p>
+            ) : null}
+            {exchangeError ? (
+              <p className="status-banner is-error">
+                登入連結已失效，請重新登入。
               </p>
             ) : null}
             <div className="landing-actions">
