@@ -194,6 +194,13 @@ export function logout() {
   });
 }
 
+export function exchangeAuthToken(token: string) {
+  return requestJson<AuthMeResponse>("/auth/exchange-token", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  });
+}
+
 export function updateProfile(payload: ProfileUpdateRequest) {
   return requestJson<ProfileResponse>("/profile", {
     method: "PUT",

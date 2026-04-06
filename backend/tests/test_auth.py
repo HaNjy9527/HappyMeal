@@ -4,6 +4,7 @@ import httpx
 
 from app.core.config import get_settings
 from app.db.models import User
+from app.services import auth as auth_service
 
 
 class MockResponse:
@@ -82,17 +83,35 @@ def test_auth_flow_creates_session_and_logout_clears_it(raw_client, monkeypatch,
         follow_redirects=False,
     )
 
+    # Callback now redirects to /?token=... instead of /home
     assert callback_response.status_code == 302
-    assert callback_response.headers["location"] == "https://app.example.com/home"
+    redirect_location = callback_response.headers["location"]
+    parsed_redirect = urlparse(redirect_location)
+    redirect_params = parse_qs(parsed_redirect.query)
+    assert parsed_redirect.path == "/"
+    assert "token" in redirect_params
+    auth_token = redirect_params["token"][0]
 
+    # User is created in DB
     user = db_session.query(User).filter(User.line_user_id == "line-user-001").one_or_none()
     assert user is not None
     assert user.display_name == "LINE Tester"
 
+    # Session is NOT set yet — /auth/me should return 401 before token exchange
+    me_before_exchange = raw_client.get("/auth/me")
+    assert me_before_exchange.status_code == 401
+
+    # Exchange the token to establish session in the browser's context
+    exchange_response = raw_client.post("/auth/exchange-token", json={"token": auth_token})
+    assert exchange_response.status_code == 200
+    assert exchange_response.json()["display_name"] == "LINE Tester"
+
+    # Now /auth/me should return 200
     me_response = raw_client.get("/auth/me")
     assert me_response.status_code == 200
     assert me_response.json()["display_name"] == "LINE Tester"
 
+    # Logout clears the session
     logout_response = raw_client.post("/auth/logout")
     assert logout_response.status_code == 200
     assert logout_response.json()["message"] == "Logged out"
@@ -144,9 +163,75 @@ def test_get_line_callback_updates_existing_user(raw_client, monkeypatch, db_ses
     )
 
     assert callback_response.status_code == 302
+    redirect_params = parse_qs(urlparse(callback_response.headers["location"]).query)
+    assert "token" in redirect_params
 
     db_session.refresh(existing_user)
     assert existing_user.display_name == "Updated Name"
     assert existing_user.avatar_url == "https://cdn.example.com/new-avatar.jpg"
+
+    get_settings.cache_clear()
+
+
+def test_exchange_token_success(raw_client, monkeypatch, db_session):
+    user = User(
+        line_user_id="line-user-exchange",
+        display_name="Exchange User",
+        avatar_url=None,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    monkeypatch.setenv("SESSION_SECRET_KEY", "test-secret")
+    get_settings.cache_clear()
+
+    settings = get_settings()
+    token = auth_service.create_auth_token(user.id, settings)
+
+    response = raw_client.post("/auth/exchange-token", json={"token": token})
+    assert response.status_code == 200
+    assert response.json()["display_name"] == "Exchange User"
+
+    # Session should now be active
+    me_response = raw_client.get("/auth/me")
+    assert me_response.status_code == 200
+
+    get_settings.cache_clear()
+
+
+def test_exchange_token_expired(raw_client, monkeypatch, db_session):
+    user = User(
+        line_user_id="line-user-expired",
+        display_name="Expired User",
+        avatar_url=None,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    monkeypatch.setenv("SESSION_SECRET_KEY", "test-secret")
+    get_settings.cache_clear()
+
+    settings = get_settings()
+    token = auth_service.create_auth_token(user.id, settings)
+
+    # Force expiry by setting max age to -1 (any token age > -1 is always true)
+    monkeypatch.setattr(auth_service, "AUTH_TOKEN_MAX_AGE_SECONDS", -1)
+
+    response = raw_client.post("/auth/exchange-token", json={"token": token})
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Auth token expired"
+
+    get_settings.cache_clear()
+
+
+def test_exchange_token_invalid(raw_client, monkeypatch):
+    monkeypatch.setenv("SESSION_SECRET_KEY", "test-secret")
+    get_settings.cache_clear()
+
+    response = raw_client.post("/auth/exchange-token", json={"token": "not.a.valid.token"})
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid auth token"
 
     get_settings.cache_clear()
