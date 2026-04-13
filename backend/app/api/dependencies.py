@@ -10,17 +10,32 @@ from app.db.session import get_db
 logger = logging.getLogger("app.auth")
 
 
+SESSION_COOKIE_NAME = "happymeal_session"
+
+
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
+    cookie_header_present = request.headers.get("cookie") is not None
+    session_cookie_present = SESSION_COOKIE_NAME in request.cookies
     user_id = request.session.get("user_id")
     if not user_id:
+        event_name = (
+            "auth_me_cookie_present_but_session_missing"
+            if session_cookie_present
+            else "auth_me_cookie_missing"
+        )
         logger.warning(
             "Authentication required but no session user_id found",
             extra={
-                "event": "auth_me_unauthenticated",
+                "event": event_name,
                 "endpoint": "auth.me",
                 "outcome": "unauthenticated",
                 "reason": "missing_session_user_id",
                 "status_code": status.HTTP_401_UNAUTHORIZED,
+                "cookie_header_present": cookie_header_present,
+                "session_cookie_present": session_cookie_present,
+                "session_contains_user_id": False,
+                "session_cookie_name": SESSION_COOKIE_NAME,
+                "session_key_count": len(request.session),
             },
         )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
@@ -37,6 +52,11 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
                 "reason": "session_user_not_found",
                 "status_code": status.HTTP_401_UNAUTHORIZED,
                 "user_id": user_id,
+                "cookie_header_present": cookie_header_present,
+                "session_cookie_present": session_cookie_present,
+                "session_contains_user_id": True,
+                "session_cookie_name": SESSION_COOKIE_NAME,
+                "session_key_count": len(request.session),
             },
         )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")

@@ -127,9 +127,10 @@ def test_auth_flow_creates_session_and_logout_clears_it(raw_client, monkeypatch,
     assert "line_callback_received" in events
     assert "line_token_exchange_succeeded" in events
     assert "session_established" in events
+    assert "session_cookie_write_attempted" in events
     assert "auth_me_succeeded" in events
     assert "logout_completed" in events
-    assert "auth_me_unauthenticated" in events
+    assert "auth_me_cookie_missing" in events
 
     get_settings.cache_clear()
 
@@ -255,6 +256,68 @@ def test_auth_me_logs_missing_session(raw_client, caplog):
     assert response.status_code == 401
     assert response.json()["detail"] == "Not authenticated"
 
-    matching_records = [record for record in caplog.records if record.__dict__.get("event") == "auth_me_unauthenticated"]
+    matching_records = [record for record in caplog.records if record.__dict__.get("event") == "auth_me_cookie_missing"]
     assert matching_records
     assert matching_records[0].__dict__.get("reason") == "missing_session_user_id"
+    assert matching_records[0].__dict__.get("cookie_header_present") is False
+    assert matching_records[0].__dict__.get("session_cookie_present") is False
+    assert matching_records[0].__dict__.get("session_contains_user_id") is False
+
+
+def test_auth_me_logs_cookie_present_but_session_missing(raw_client, caplog):
+    with caplog.at_level(logging.WARNING, logger="app.auth"):
+        response = raw_client.get(
+            "/auth/me",
+            headers={"Cookie": "happymeal_session=invalid-cookie-value"},
+        )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
+
+    matching_records = [
+        record
+        for record in caplog.records
+        if record.__dict__.get("event") == "auth_me_cookie_present_but_session_missing"
+    ]
+    assert matching_records
+    assert matching_records[0].__dict__.get("cookie_header_present") is True
+    assert matching_records[0].__dict__.get("session_cookie_present") is True
+    assert matching_records[0].__dict__.get("session_contains_user_id") is False
+
+
+def test_exchange_token_logs_cookie_policy_context(raw_client, monkeypatch, db_session, caplog):
+    user = User(
+        line_user_id="line-user-cookie-debug",
+        display_name="Cookie Debug User",
+        avatar_url=None,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    monkeypatch.setenv("SESSION_SECRET_KEY", "test-secret")
+    monkeypatch.setenv("APP_ENV", "production")
+    get_settings.cache_clear()
+
+    token = auth_service.create_auth_token(user.id, get_settings())
+
+    with caplog.at_level(logging.INFO, logger="app.auth"):
+        response = raw_client.post("/auth/exchange-token", json={"token": token})
+
+    assert response.status_code == 200
+
+    matching_records = [
+        record
+        for record in caplog.records
+        if record.__dict__.get("event") == "session_cookie_write_attempted"
+    ]
+    assert matching_records
+    record = matching_records[0]
+    assert record.__dict__.get("session_cookie_name") == "happymeal_session"
+    assert record.__dict__.get("same_site_policy") == "none"
+    assert record.__dict__.get("https_only") is True
+    assert record.__dict__.get("is_production") is True
+    assert record.__dict__.get("response_will_set_cookie") is True
+    assert record.__dict__.get("session_contains_user_id") is True
+
+    get_settings.cache_clear()

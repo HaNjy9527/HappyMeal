@@ -25,6 +25,22 @@ from app.services.auth import (
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger("app.auth")
+SESSION_COOKIE_NAME = "happymeal_session"
+
+
+def build_cookie_debug_context(settings, request: Request) -> dict[str, object]:
+    is_production = settings.app_env == "production"
+    return {
+        "session_cookie_name": SESSION_COOKIE_NAME,
+        "same_site_policy": "none" if is_production else "lax",
+        "https_only": is_production,
+        "is_production": is_production,
+        "allow_credentials": True,
+        "cookie_header_present": request.headers.get("cookie") is not None,
+        "session_cookie_present": SESSION_COOKIE_NAME in request.cookies,
+        "session_contains_user_id": "user_id" in request.session,
+        "session_key_count": len(request.session),
+    }
 
 
 class ExchangeTokenRequest(BaseModel):
@@ -129,6 +145,7 @@ def post_exchange_token(
             "event": "exchange_token_requested",
             "endpoint": "auth.exchange_token",
             "outcome": "started",
+            **build_cookie_debug_context(settings, request),
         },
     )
     user_id = verify_auth_token(body.token, settings)
@@ -154,13 +171,26 @@ def post_exchange_token(
             "endpoint": "auth.exchange_token",
             "outcome": "success",
             "user_id": user.id,
+            **build_cookie_debug_context(settings, request),
+        },
+    )
+    logger.info(
+        "Prepared response to write session cookie",
+        extra={
+            "event": "session_cookie_write_attempted",
+            "endpoint": "auth.exchange_token",
+            "outcome": "success",
+            "user_id": user.id,
+            "response_will_set_cookie": True,
+            **build_cookie_debug_context(settings, request),
         },
     )
     return AuthMeResponse.model_validate(user)
 
 
 @router.get("/me", response_model=AuthMeResponse)
-def get_me(user: User = Depends(get_current_user)) -> AuthMeResponse:
+def get_me(request: Request, user: User = Depends(get_current_user)) -> AuthMeResponse:
+    settings = get_settings()
     logger.info(
         "Resolved authenticated user profile",
         extra={
@@ -168,6 +198,7 @@ def get_me(user: User = Depends(get_current_user)) -> AuthMeResponse:
             "endpoint": "auth.me",
             "outcome": "success",
             "user_id": user.id,
+            **build_cookie_debug_context(settings, request),
         },
     )
     return AuthMeResponse.model_validate(user)

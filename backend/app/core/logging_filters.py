@@ -80,6 +80,16 @@ class JsonFormatter(logging.Formatter):
         "fallback_used",
         "expected_state_present",
         "redirect_target",
+        "cookie_header_present",
+        "session_cookie_present",
+        "session_contains_user_id",
+        "session_cookie_name",
+        "same_site_policy",
+        "https_only",
+        "is_production",
+        "response_will_set_cookie",
+        "session_key_count",
+        "allow_credentials",
     )
 
     def format(self, record: logging.LogRecord) -> str:

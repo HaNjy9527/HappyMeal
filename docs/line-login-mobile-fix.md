@@ -210,6 +210,19 @@ LINE callback（在 LINE 的 WebView 中）
 11. `status_code`
 12. `user_id`
 
+第二層 cookie / session debug 另外補了以下欄位：
+
+1. `cookie_header_present`
+2. `session_cookie_present`
+3. `session_contains_user_id`
+4. `session_cookie_name`
+5. `same_site_policy`
+6. `https_only`
+7. `is_production`
+8. `response_will_set_cookie`
+9. `session_key_count`
+10. `allow_credentials`
+
 ### 目前已實作的關鍵事件
 
 第一輪至少可觀察以下事件：
@@ -228,10 +241,12 @@ LINE callback（在 LINE 的 WebView 中）
 12. `auth_token_invalid`
 13. `auth_token_expired`
 14. `session_established`
-15. `auth_me_succeeded`
-16. `auth_me_unauthenticated`
-17. `auth_me_user_missing`
-18. `logout_completed`
+15. `session_cookie_write_attempted`
+16. `auth_me_succeeded`
+17. `auth_me_cookie_missing`
+18. `auth_me_cookie_present_but_session_missing`
+19. `auth_me_user_missing`
+20. `logout_completed`
 
 ### 如何用這批 log 判讀
 
@@ -239,11 +254,13 @@ LINE callback（在 LINE 的 WebView 中）
 
 1. 有 `line_callback_received`，但沒有 `session_established`。
    代表問題多半還在 callback 內部，例如 state、LINE token exchange 或 profile fetch。
-2. 有 `session_established`，但接著又出現 `auth_me_unauthenticated`。
-   代表最可疑的是 session cookie 沒被後續請求帶回來，優先懷疑跨站 cookie 問題。
-3. 有 `auth_token_invalid` 或 `auth_token_expired`。
+2. 有 `session_cookie_write_attempted`，但接著又出現 `auth_me_cookie_missing`。
+   代表後端已準備寫 session cookie，但後續 `/auth/me` 請求沒有帶回 cookie，優先懷疑跨站 cookie 問題。
+3. 有 `auth_me_cookie_present_but_session_missing`。
+   代表 request 已帶 Cookie header，且看起來帶了 session cookie，但 server 端 session 仍沒有 `user_id`，這時要回頭查 cookie 名稱、session 解析或簽名問題。
+4. 有 `auth_token_invalid` 或 `auth_token_expired`。
    代表問題落在 token handoff 本身，而不是 `/auth/me`。
-4. 有 `auth_me_user_missing`。
+5. 有 `auth_me_user_missing`。
    代表 session 裡有 user id，但 DB 查不到使用者，這是另一類問題。
 
 ### 建議記錄哪些事件
