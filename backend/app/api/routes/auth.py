@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
@@ -22,6 +24,7 @@ from app.services.auth import (
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+logger = logging.getLogger("app.auth")
 
 
 class ExchangeTokenRequest(BaseModel):
@@ -31,8 +34,25 @@ class ExchangeTokenRequest(BaseModel):
 @router.get("/line/login")
 def get_line_login(request: Request) -> RedirectResponse:
     settings = get_settings()
+    logger.info(
+        "LINE login flow started",
+        extra={
+            "event": "line_login_started",
+            "endpoint": "auth.line_login",
+            "outcome": "started",
+        },
+    )
     state = create_oauth_state(settings)
     request.session["oauth_state"] = state
+    logger.info(
+        "Redirecting to LINE authorize URL",
+        extra={
+            "event": "line_login_redirected",
+            "endpoint": "auth.line_login",
+            "outcome": "redirect",
+            "redirect_target": "line_authorize_url",
+        },
+    )
     return RedirectResponse(url=build_line_login_url(settings, state), status_code=302)
 
 
@@ -45,8 +65,30 @@ def get_line_callback(
     db: Session = Depends(get_db),
 ) -> RedirectResponse:
     settings = get_settings()
+    logger.info(
+        "Received LINE callback request",
+        extra={
+            "event": "line_callback_received",
+            "endpoint": "auth.line_callback",
+            "outcome": "received",
+            "has_code": code is not None,
+            "has_state": state is not None,
+            "has_error": error is not None,
+        },
+    )
 
     if error:
+        logger.warning(
+            "LINE callback returned an authorization error",
+            extra={
+                "event": "line_callback_denied",
+                "endpoint": "auth.line_callback",
+                "outcome": "failure",
+                "reason": error,
+                "status_code": status.HTTP_302_FOUND,
+                "redirect_target": "frontend_root_with_error",
+            },
+        )
         return RedirectResponse(
             url=build_frontend_redirect_url(settings.frontend_url, "/", error="line_auth_denied"),
             status_code=302,
@@ -58,6 +100,16 @@ def get_line_callback(
     user = upsert_line_user(db, profile)
 
     auth_token = create_auth_token(user.id, settings)
+    logger.info(
+        "Redirecting frontend to exchange signed auth token",
+        extra={
+            "event": "line_callback_redirected",
+            "endpoint": "auth.line_callback",
+            "outcome": "redirect",
+            "user_id": user.id,
+            "redirect_target": "frontend_root_with_auth_token",
+        },
+    )
     return RedirectResponse(
         url=build_frontend_redirect_url(settings.frontend_url, "/", token=auth_token),
         status_code=302,
@@ -71,20 +123,67 @@ def post_exchange_token(
     db: Session = Depends(get_db),
 ) -> AuthMeResponse:
     settings = get_settings()
+    logger.info(
+        "Received auth token exchange request",
+        extra={
+            "event": "exchange_token_requested",
+            "endpoint": "auth.exchange_token",
+            "outcome": "started",
+        },
+    )
     user_id = verify_auth_token(body.token, settings)
     user = db.query(User).filter(User.id == user_id).one_or_none()
     if user is None:
+        logger.warning(
+            "Auth token exchange referenced a missing user",
+            extra={
+                "event": "exchange_token_user_missing",
+                "endpoint": "auth.exchange_token",
+                "outcome": "failure",
+                "reason": "user_not_found",
+                "status_code": status.HTTP_401_UNAUTHORIZED,
+                "user_id": user_id,
+            },
+        )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     request.session["user_id"] = user.id
+    logger.info(
+        "Established session from exchanged auth token",
+        extra={
+            "event": "session_established",
+            "endpoint": "auth.exchange_token",
+            "outcome": "success",
+            "user_id": user.id,
+        },
+    )
     return AuthMeResponse.model_validate(user)
 
 
 @router.get("/me", response_model=AuthMeResponse)
 def get_me(user: User = Depends(get_current_user)) -> AuthMeResponse:
+    logger.info(
+        "Resolved authenticated user profile",
+        extra={
+            "event": "auth_me_succeeded",
+            "endpoint": "auth.me",
+            "outcome": "success",
+            "user_id": user.id,
+        },
+    )
     return AuthMeResponse.model_validate(user)
 
 
 @router.post("/logout")
 def post_logout(request: Request) -> dict[str, str]:
+    user_id = request.session.get("user_id")
     request.session.clear()
+    logger.info(
+        "Cleared authenticated session",
+        extra={
+            "event": "logout_completed",
+            "endpoint": "auth.logout",
+            "outcome": "success",
+            "user_id": user_id,
+        },
+    )
     return {"message": "Logged out"}

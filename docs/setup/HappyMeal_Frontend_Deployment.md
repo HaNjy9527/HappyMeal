@@ -104,10 +104,15 @@ Vercel 只會進到 `frontend/` 資料夾，執行 build，把 `dist/` 裡的東
 VITE_API_BASE_URL=http://localhost:8000
 
 # Vercel 環境變數（在 Vercel dashboard 設定，不需要推上 repo）
-VITE_API_BASE_URL=https://api.happymeal.com
+VITE_API_BASE_URL=https://happymeal-backend.zyaqqxanc0frj.ap-northeast-1.cs.amazonlightsail.com
 ```
 
 Vercel 有自己的環境變數設定介面，在 dashboard → Settings → Environment Variables 填入即可。
+
+目前正式環境對照：
+
+- 前端 Frontend URL：`https://happy-meal-three.vercel.app/`
+- 後端 Backend URL：`https://happymeal-backend.zyaqqxanc0frj.ap-northeast-1.cs.amazonlightsail.com/`
 
 > 注意：前端部署在 Vercel 時，`VITE_API_BASE_URL` 必須設在 Vercel，不是只設在 GitHub Secrets。Vite 會在 build 時把這個值寫進前端 bundle。
 

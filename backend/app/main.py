@@ -3,6 +3,7 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -12,6 +13,7 @@ from app.api.routes.consents import router as consent_router
 from app.api.routes.health import router as health_router
 from app.api.routes.profile import router as profile_router
 from app.core.config import get_settings
+from app.core.logging_context import get_request_log_context, reset_request_log_context, set_request_log_context
 
 
 settings = get_settings()
@@ -40,6 +42,28 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def attach_request_log_context(request: Request, call_next):
+    tokens = set_request_log_context(
+        path=request.url.path,
+        method=request.method,
+        client_ip=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+        origin=request.headers.get("origin"),
+        referer=request.headers.get("referer"),
+    )
+
+    try:
+        response = await call_next(request)
+        request_id = get_request_log_context().get("request_id")
+        if request_id:
+            response.headers["X-Request-ID"] = request_id
+        return response
+    finally:
+        reset_request_log_context(tokens)
+
 app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(profile_router)

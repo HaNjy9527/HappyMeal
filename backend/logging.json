@@ -7,6 +7,9 @@
       "fmt": "%(levelprefix)s %(message)s",
       "use_colors": null
     },
+    "json": {
+      "()": "app.core.logging_filters.JsonFormatter"
+    },
     "access": {
       "()": "uvicorn.logging.AccessFormatter",
       "fmt": "%(levelprefix)s %(client_addr)s - \"%(request_line)s\" %(status_code)s",
@@ -16,6 +19,9 @@
   "filters": {
     "health_access_filter": {
       "()": "app.core.logging_filters.HealthAccessLogFilter"
+    },
+    "request_context_filter": {
+      "()": "app.core.logging_filters.RequestContextFilter"
     }
   },
   "handlers": {
@@ -29,9 +35,20 @@
       "formatter": "access",
       "stream": "ext://sys.stdout",
       "filters": ["health_access_filter"]
+    },
+    "auth": {
+      "class": "logging.StreamHandler",
+      "formatter": "json",
+      "stream": "ext://sys.stdout",
+      "filters": ["request_context_filter"]
     }
   },
   "loggers": {
+    "app.auth": {
+      "handlers": ["auth"],
+      "level": "INFO",
+      "propagate": false
+    },
     "uvicorn": {
       "handlers": ["default"],
       "level": "INFO",
