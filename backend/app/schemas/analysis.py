@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.db.models import AnalysisStatus
+from app.db.models import AnalysisStatus, ConsentType
 
 
 class AnalysisDraftResponse(BaseModel):
@@ -70,6 +70,13 @@ class RecommendationSnapshotResponse(BaseModel):
     recommended_exercises: list[RecommendedExerciseItem]
 
 
+class DisclaimerResponse(BaseModel):
+    title: str
+    body: str
+    policy_version: str
+    consent_type: ConsentType
+
+
 class AnalysisConfirmResponse(BaseModel):
     analysis_id: str
     analyzed_at: datetime
@@ -80,6 +87,7 @@ class AnalysisConfirmResponse(BaseModel):
     total_carb_g: Decimal
     items: list[AnalysisResultItem]
     recommendation: RecommendationSnapshotResponse
+    disclaimer: DisclaimerResponse
 
 
 class AnalysisHistoryListItem(BaseModel):
@@ -105,3 +113,4 @@ class AnalysisHistoryDetailResponse(BaseModel):
     total_carb_g: Decimal
     items: list[AnalysisResultItem]
     recommendation: RecommendationSnapshotResponse
+    disclaimer: DisclaimerResponse

@@ -10,6 +10,7 @@ from app.core.config import get_settings
 from app.db.models import User
 from app.db.session import get_db
 from app.schemas.auth import AuthMeResponse
+from app.services.consent import build_consent_status, build_required_policy_versions
 from app.services.auth import (
     build_frontend_redirect_url,
     build_line_login_url,
@@ -25,6 +26,17 @@ from app.services.auth import (
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger("app.auth")
+
+
+def build_auth_me_response(db: Session, user: User) -> AuthMeResponse:
+    return AuthMeResponse(
+        id=user.id,
+        display_name=user.display_name,
+        avatar_url=user.avatar_url,
+        theme_preference=user.theme_preference,
+        consent_status=build_consent_status(db, user),
+        required_policy_versions=build_required_policy_versions(),
+    )
 
 
 def build_cookie_debug_context(settings, request: Request) -> dict[str, object]:
@@ -185,11 +197,15 @@ def post_exchange_token(
             **build_cookie_debug_context(settings, request),
         },
     )
-    return AuthMeResponse.model_validate(user)
+    return build_auth_me_response(db, user)
 
 
 @router.get("/me", response_model=AuthMeResponse)
-def get_me(request: Request, user: User = Depends(get_current_user)) -> AuthMeResponse:
+def get_me(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> AuthMeResponse:
     settings = get_settings()
     logger.info(
         "Resolved authenticated user profile",
@@ -201,7 +217,7 @@ def get_me(request: Request, user: User = Depends(get_current_user)) -> AuthMeRe
             **build_cookie_debug_context(settings, request),
         },
     )
-    return AuthMeResponse.model_validate(user)
+    return build_auth_me_response(db, user)
 
 
 @router.post("/logout")

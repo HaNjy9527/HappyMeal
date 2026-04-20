@@ -5,6 +5,7 @@ import pytest
 
 from app.core.config import get_settings
 from app.db.models import ExerciseCatalog
+from app.services.consent import CURRENT_NON_MEDICAL_DISCLOSURE_VERSION, CURRENT_PRIVACY_POLICY_VERSION
 
 
 @pytest.fixture
@@ -40,7 +41,27 @@ def build_profile_payload():
     }
 
 
+def accept_required_consents(client):
+    privacy_response = client.post(
+        "/consents",
+        json={
+            "consent_type": "privacy_policy",
+            "policy_version": CURRENT_PRIVACY_POLICY_VERSION,
+        },
+    )
+    disclosure_response = client.post(
+        "/consents",
+        json={
+            "consent_type": "non_medical_disclosure",
+            "policy_version": CURRENT_NON_MEDICAL_DISCLOSURE_VERSION,
+        },
+    )
+    assert privacy_response.status_code == 201
+    assert disclosure_response.status_code == 201
+
+
 def create_completed_analysis(client, image_name: str = "salad-lunch.jpg"):
+    accept_required_consents(client)
     profile_response = client.put("/profile", json=build_profile_payload())
     assert profile_response.status_code == 200
 
@@ -78,6 +99,7 @@ def create_completed_analysis(client, image_name: str = "salad-lunch.jpg"):
 
 
 def test_post_analysis_draft_creates_draft_analysis(client):
+    accept_required_consents(client)
     response = client.post("/analyses")
 
     assert response.status_code == 201
@@ -87,7 +109,18 @@ def test_post_analysis_draft_creates_draft_analysis(client):
     assert payload["analyzed_at"]
 
 
+def test_post_analysis_draft_requires_consents(client):
+    response = client.post("/analyses")
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == {
+        "code": "CONSENT_REQUIRED",
+        "message": "You must accept the privacy policy and non-medical disclosure before starting a new analysis.",
+    }
+
+
 def test_post_analysis_image_returns_mock_candidates_and_updates_status(client):
+    accept_required_consents(client)
     draft_response = client.post("/analyses")
     analysis_id = draft_response.json()["id"]
 
@@ -105,6 +138,7 @@ def test_post_analysis_image_returns_mock_candidates_and_updates_status(client):
 
 
 def test_post_analysis_image_rejects_non_image_upload(client):
+    accept_required_consents(client)
     draft_response = client.post("/analyses")
     analysis_id = draft_response.json()["id"]
 
@@ -118,6 +152,7 @@ def test_post_analysis_image_rejects_non_image_upload(client):
 
 
 def test_post_analysis_image_rejects_non_draft_analysis(client):
+    accept_required_consents(client)
     draft_response = client.post("/analyses")
     analysis_id = draft_response.json()["id"]
 
@@ -137,6 +172,7 @@ def test_post_analysis_image_rejects_non_draft_analysis(client):
 
 def test_post_analysis_confirm_persists_totals_snapshot_and_cleans_upload(client, db_session, isolated_upload_dir):
     seed_exercises(db_session)
+    accept_required_consents(client)
 
     profile_response = client.put("/profile", json=build_profile_payload())
     assert profile_response.status_code == 200
@@ -186,10 +222,13 @@ def test_post_analysis_confirm_persists_totals_snapshot_and_cleans_upload(client
     assert Decimal(str(payload["recommendation"]["target_calories_kcal"])) == Decimal("2950.00")
     assert len(payload["recommendation"]["recommended_exercises"]) == 3
     assert payload["recommendation"]["recommended_exercises"][0]["category"] == "strength"
+    assert payload["disclaimer"]["title"] == "本服務非醫療用途"
+    assert payload["disclaimer"]["policy_version"] == CURRENT_NON_MEDICAL_DISCLOSURE_VERSION
     assert not (isolated_upload_dir / f"{analysis_id}.jpg").exists()
 
 
 def test_post_analysis_confirm_requires_complete_profile(client, isolated_upload_dir):
+    accept_required_consents(client)
     draft_response = client.post("/analyses")
     analysis_id = draft_response.json()["id"]
 
@@ -250,11 +289,14 @@ def test_get_analysis_detail_returns_saved_items_and_snapshot_without_image_fiel
     assert len(payload["items"]) == 2
     assert payload["items"][0]["food_name"] == "Chicken Salad"
     assert len(payload["recommendation"]["recommended_exercises"]) == 3
+    assert payload["disclaimer"]["title"] == "本服務非醫療用途"
+    assert payload["disclaimer"]["policy_version"] == CURRENT_NON_MEDICAL_DISCLOSURE_VERSION
     assert "image" not in payload
     assert "image_url" not in payload
 
 
 def test_get_analysis_detail_rejects_non_completed_analysis(client):
+    accept_required_consents(client)
     draft_response = client.post("/analyses")
     analysis_id = draft_response.json()["id"]
 

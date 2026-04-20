@@ -1,5 +1,20 @@
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
+type ApiErrorDetail = {
+  code?: string;
+  message?: string;
+};
+
+export class ApiError extends Error {
+  code?: string;
+
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = "ApiError";
+    this.code = code;
+  }
+}
+
 export type ThemePreference = "female_default" | "male_default";
 export type ActivityLevel =
   | "sedentary"
@@ -9,6 +24,18 @@ export type ActivityLevel =
   | "very_active";
 export type GoalType = "muscle_gain" | "fat_loss";
 export type AnalysisStatus = "draft" | "awaiting_confirmation" | "completed";
+
+export type ConsentStatus = {
+  has_privacy_policy: boolean;
+  has_non_medical_disclosure: boolean;
+  can_start_analysis: boolean;
+  can_view_guidance: boolean;
+};
+
+export type RequiredPolicyVersions = {
+  privacy_policy: string;
+  non_medical_disclosure: string;
+};
 
 export type ProfileResponse = {
   user_id: string;
@@ -31,6 +58,15 @@ export type AuthMeResponse = {
   display_name: string;
   avatar_url: string | null;
   theme_preference: ThemePreference;
+  consent_status: ConsentStatus;
+  required_policy_versions: RequiredPolicyVersions;
+};
+
+export type DisclaimerResponse = {
+  title: string;
+  body: string;
+  policy_version: string;
+  consent_type: "privacy_policy" | "non_medical_disclosure";
 };
 
 export type ProfileUpdateRequest = {
@@ -94,6 +130,7 @@ export type AnalysisResultResponse = {
   total_carb_g: string;
   items: AnalysisResultItem[];
   recommendation: RecommendationSnapshotResponse;
+  disclaimer: DisclaimerResponse;
 };
 
 export type AnalysisHistoryListItem = {
@@ -119,7 +156,23 @@ export type AnalysisHistoryDetailResponse = {
   total_carb_g: string;
   items: AnalysisResultItem[];
   recommendation: RecommendationSnapshotResponse;
+  disclaimer: DisclaimerResponse;
 };
+
+function buildApiError(
+  detail: string | ApiErrorDetail | undefined,
+  fallbackMessage: string,
+) {
+  if (typeof detail === "string") {
+    return new ApiError(detail);
+  }
+
+  if (detail && typeof detail === "object") {
+    return new ApiError(detail.message ?? fallbackMessage, detail.code);
+  }
+
+  return new ApiError(fallbackMessage);
+}
 
 export type CandidateDraftItem = {
   food_name: string;
@@ -143,16 +196,18 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     const fallbackMessage = `Request failed with status ${response.status}`;
-    let errorMessage = fallbackMessage;
 
     try {
-      const errorPayload = (await response.json()) as { detail?: string };
-      errorMessage = errorPayload.detail ?? fallbackMessage;
-    } catch {
-      errorMessage = fallbackMessage;
+      const errorPayload = (await response.json()) as {
+        detail?: string | ApiErrorDetail;
+      };
+      throw buildApiError(errorPayload.detail, fallbackMessage);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(fallbackMessage);
     }
-
-    throw new Error(errorMessage);
   }
 
   return (await response.json()) as T;
@@ -173,19 +228,39 @@ export async function getMe() {
 
   if (!response.ok) {
     const fallbackMessage = `Request failed with status ${response.status}`;
-    let errorMessage = fallbackMessage;
 
     try {
-      const errorPayload = (await response.json()) as { detail?: string };
-      errorMessage = errorPayload.detail ?? fallbackMessage;
-    } catch {
-      errorMessage = fallbackMessage;
+      const errorPayload = (await response.json()) as {
+        detail?: string | ApiErrorDetail;
+      };
+      throw buildApiError(errorPayload.detail, fallbackMessage);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(fallbackMessage);
     }
-
-    throw new Error(errorMessage);
   }
 
   return (await response.json()) as AuthMeResponse;
+}
+
+export function createConsent(
+  consentType: "privacy_policy" | "non_medical_disclosure",
+  policyVersion: string,
+) {
+  return requestJson<{
+    id: string;
+    consent_type: string;
+    policy_version: string;
+    accepted_at: string;
+  }>("/consents", {
+    method: "POST",
+    body: JSON.stringify({
+      consent_type: consentType,
+      policy_version: policyVersion,
+    }),
+  });
 }
 
 export function logout() {

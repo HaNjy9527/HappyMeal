@@ -6,6 +6,7 @@ import httpx
 from app.core.config import get_settings
 from app.db.models import User
 from app.services import auth as auth_service
+from app.services.consent import CURRENT_NON_MEDICAL_DISCLOSURE_VERSION, CURRENT_PRIVACY_POLICY_VERSION
 
 
 class MockResponse:
@@ -107,6 +108,16 @@ def test_auth_flow_creates_session_and_logout_clears_it(raw_client, monkeypatch,
         exchange_response = raw_client.post("/auth/exchange-token", json={"token": auth_token})
         assert exchange_response.status_code == 200
         assert exchange_response.json()["display_name"] == "LINE Tester"
+        assert exchange_response.json()["consent_status"] == {
+            "has_privacy_policy": False,
+            "has_non_medical_disclosure": False,
+            "can_start_analysis": False,
+            "can_view_guidance": False,
+        }
+        assert exchange_response.json()["required_policy_versions"] == {
+            "privacy_policy": CURRENT_PRIVACY_POLICY_VERSION,
+            "non_medical_disclosure": CURRENT_NON_MEDICAL_DISCLOSURE_VERSION,
+        }
 
         # Now /auth/me should return 200
         me_response = raw_client.get("/auth/me")
@@ -204,6 +215,10 @@ def test_exchange_token_success(raw_client, monkeypatch, db_session):
     response = raw_client.post("/auth/exchange-token", json={"token": token})
     assert response.status_code == 200
     assert response.json()["display_name"] == "Exchange User"
+    assert response.json()["required_policy_versions"] == {
+        "privacy_policy": CURRENT_PRIVACY_POLICY_VERSION,
+        "non_medical_disclosure": CURRENT_NON_MEDICAL_DISCLOSURE_VERSION,
+    }
 
     # Session should now be active
     me_response = raw_client.get("/auth/me")

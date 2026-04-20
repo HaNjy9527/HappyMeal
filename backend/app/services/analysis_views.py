@@ -8,6 +8,7 @@ from app.db.models import FoodAnalysis, FoodAnalysisItem, RecommendationSnapshot
 from app.schemas.analysis import (
     AnalysisHistoryDetailResponse,
     AnalysisResultItem,
+    DisclaimerResponse,
     RecommendedExerciseItem,
     RecommendationSnapshotResponse,
 )
@@ -73,7 +74,10 @@ def build_recommendation_summary(snapshot: RecommendationSnapshot | None) -> str
     return summary
 
 
-def build_analysis_detail_response(analysis: FoodAnalysis) -> AnalysisHistoryDetailResponse:
+def build_analysis_detail_response(
+    analysis: FoodAnalysis,
+    disclaimer: DisclaimerResponse,
+) -> AnalysisHistoryDetailResponse:
     return AnalysisHistoryDetailResponse(
         analysis_id=analysis.id,
         analyzed_at=analysis.analyzed_at,
@@ -85,4 +89,5 @@ def build_analysis_detail_response(analysis: FoodAnalysis) -> AnalysisHistoryDet
         total_carb_g=analysis.total_carb_g or ZERO_DECIMAL,
         items=build_analysis_result_items(analysis.items),
         recommendation=build_recommendation_response(analysis.recommendation_snapshot),
+        disclaimer=disclaimer,
     )

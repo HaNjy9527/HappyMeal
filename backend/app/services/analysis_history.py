@@ -9,6 +9,7 @@ from app.db.models import AnalysisStatus, FoodAnalysis, User
 from app.schemas.analysis import AnalysisHistoryDetailResponse, AnalysisHistoryListItem, AnalysisHistoryListResponse
 from app.services.analysis import get_analysis_for_user
 from app.services.analysis_views import build_analysis_detail_response, build_food_summary, build_recommendation_summary
+from app.services.consent import build_non_medical_disclaimer
 
 
 ZERO_DECIMAL = Decimal("0.00")
@@ -49,4 +50,4 @@ def get_completed_analysis_detail(db: Session, user: User, analysis_id: str) -> 
         .filter(FoodAnalysis.id == analysis.id, FoodAnalysis.user_id == user.id)
         .one()
     )
-    return build_analysis_detail_response(hydrated_analysis)
+    return build_analysis_detail_response(hydrated_analysis, build_non_medical_disclaimer())

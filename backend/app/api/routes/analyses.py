@@ -16,6 +16,7 @@ from app.services.analysis import create_analysis_draft
 from app.services.analysis_confirm import confirm_analysis
 from app.services.analysis_history import get_completed_analysis_detail, list_completed_analyses
 from app.services.analysis_upload import upload_analysis_image
+from app.services.consent import require_analysis_consents
 
 
 router = APIRouter(prefix="/analyses", tags=["analyses"])
@@ -34,6 +35,7 @@ def post_analysis_draft(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> AnalysisDraftResponse:
+    require_analysis_consents(db, user)
     analysis = create_analysis_draft(db, user)
     return AnalysisDraftResponse.model_validate(analysis)
 
@@ -55,6 +57,7 @@ def post_analysis_confirm(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> AnalysisConfirmResponse:
+    require_analysis_consents(db, user)
     return confirm_analysis(db, user, analysis_id, payload)
 
 

@@ -10,6 +10,7 @@ import { Navigate, Route, Routes, useSearchParams } from "react-router-dom";
 
 import {
   ActivityLevel,
+  ApiError,
   AnalysisHistoryDetailResponse,
   AnalysisHistoryListItem,
   AnalysisResultResponse,
@@ -21,6 +22,7 @@ import {
   ThemePreference,
   apiBaseUrl,
   confirmAnalysis,
+  createConsent,
   createAnalysisDraft,
   exchangeAuthToken,
   createMockImageFile,
@@ -37,7 +39,7 @@ import { useAuth } from "./hooks/useAuth";
 import { useLogout } from "./hooks/useLogout";
 import "./styles.css";
 
-type MainScreen = "analysis" | "history" | "profile";
+type MainScreen = "analysis" | "history" | "profile" | "consent";
 type AnalysisStage = "start" | "confirm" | "result";
 
 type ProfileFormState = {
@@ -106,9 +108,35 @@ function buildValidationMessage(formState: ProfileFormState) {
   return "";
 }
 
+function hasRequiredConsents(user: AuthMeResponse) {
+  return user.consent_status.can_start_analysis;
+}
+
+function DisclaimerCard({
+  title,
+  body,
+  policyVersion,
+}: {
+  title: string;
+  body: string;
+  policyVersion: string;
+}) {
+  return (
+    <article className="panel-card disclaimer-card">
+      <p className="panel-kicker">Non-medical reminder</p>
+      <h3>{title}</h3>
+      <p>{body}</p>
+      <p className="disclaimer-meta">適用版本 {policyVersion}</p>
+    </article>
+  );
+}
+
 function HomeDashboard({ user }: { user: AuthMeResponse }) {
+  const queryClient = useQueryClient();
   const logoutMutation = useLogout();
-  const [screen, setScreen] = useState<MainScreen>("analysis");
+  const [screen, setScreen] = useState<MainScreen>(
+    hasRequiredConsents(user) ? "analysis" : "consent",
+  );
   const [analysisStage, setAnalysisStage] = useState<AnalysisStage>("start");
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [profileForm, setProfileForm] = useState<ProfileFormState>(
@@ -136,10 +164,19 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   const [selectedHistory, setSelectedHistory] =
     useState<AnalysisHistoryDetailResponse | null>(null);
   const [historyDetailLoading, setHistoryDetailLoading] = useState(false);
+  const [consentSaving, setConsentSaving] = useState(false);
+  const [consentMessage, setConsentMessage] = useState<string | null>(null);
+  const [consentError, setConsentError] = useState<string | null>(null);
 
   useEffect(() => {
     void loadProfile();
   }, []);
+
+  useEffect(() => {
+    if (hasRequiredConsents(user) && screen === "consent") {
+      setScreen("analysis");
+    }
+  }, [screen, user]);
 
   async function loadProfile() {
     setProfileLoading(true);
@@ -233,6 +270,13 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   }
 
   async function beginAnalysis(file: File) {
+    if (!user.consent_status.can_start_analysis) {
+      setAnalysisError("開始分析前，請先完成隱私政策與非醫療用途同意。");
+      setConsentError("完成兩項同意後，才能開始新的分析與建議流程。");
+      setScreen("consent");
+      return;
+    }
+
     setAnalysisLoading(true);
     setAnalysisError(null);
 
@@ -245,6 +289,10 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
       setAnalysisResult(null);
       startTransition(() => setAnalysisStage("confirm"));
     } catch (error) {
+      if (error instanceof ApiError && error.code === "CONSENT_REQUIRED") {
+        setConsentError("開始分析前，請先完成隱私政策與非醫療用途同意。");
+        setScreen("consent");
+      }
       setAnalysisError(error instanceof Error ? error.message : "分析建立失敗");
     } finally {
       setAnalysisLoading(false);
@@ -278,6 +326,10 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
       });
       await loadHistory();
     } catch (error) {
+      if (error instanceof ApiError && error.code === "CONSENT_REQUIRED") {
+        setConsentError("完成候選確認前，請先完成隱私政策與非醫療用途同意。");
+        setScreen("consent");
+      }
       setAnalysisError(error instanceof Error ? error.message : "確認分析失敗");
     } finally {
       setAnalysisLoading(false);
@@ -300,9 +352,47 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     }
   }
 
+  async function handleConsentSubmit() {
+    setConsentSaving(true);
+    setConsentError(null);
+    setConsentMessage(null);
+
+    try {
+      await Promise.all([
+        createConsent(
+          "privacy_policy",
+          user.required_policy_versions.privacy_policy,
+        ),
+        createConsent(
+          "non_medical_disclosure",
+          user.required_policy_versions.non_medical_disclosure,
+        ),
+      ]);
+      await queryClient.invalidateQueries({ queryKey: ["me"] });
+      setConsentMessage("同意已更新，現在可以開始分析與查看建議。");
+      startTransition(() => setScreen("analysis"));
+    } catch (error) {
+      setConsentError(
+        error instanceof Error ? error.message : "Consent 儲存失敗",
+      );
+    } finally {
+      setConsentSaving(false);
+    }
+  }
+
+  const analysisAccessLocked = !user.consent_status.can_start_analysis;
   const themeMode = profile?.theme_preference ?? "female_default";
   const validationMessage = buildValidationMessage(profileForm);
+  const tabCount = hasRequiredConsents(user) ? 3 : 4;
+
   const spotlightContent = useMemo(() => {
+    if (screen === "consent") {
+      return {
+        title: "Consent Intro",
+        copy: "先完成隱私政策與非醫療用途同意，才能開始新的分析與建議流程。",
+      };
+    }
+
     if (screen === "history") {
       return {
         title: selectedHistory ? "History Detail" : "History",
@@ -381,7 +471,21 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
           <p className="spotlight-copy">{spotlightContent.copy}</p>
         </section>
 
-        <nav className="tab-strip" aria-label="主要導覽">
+        <nav
+          className="tab-strip"
+          aria-label="主要導覽"
+          style={{ gridTemplateColumns: `repeat(${tabCount}, 1fr)` }}
+        >
+          {!hasRequiredConsents(user) ? (
+            <button
+              className={
+                screen === "consent" ? "tab-chip is-active" : "tab-chip"
+              }
+              onClick={() => handleMainScreenChange("consent")}
+            >
+              Consent
+            </button>
+          ) : null}
           <button
             className={
               screen === "analysis" ? "tab-chip is-active" : "tab-chip"
@@ -403,6 +507,73 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
             Profile
           </button>
         </nav>
+
+        {screen === "consent" ? (
+          <section className="content-stack">
+            <div className="section-heading">
+              <div>
+                <p className="section-kicker">Launch Readiness</p>
+                <h2>Consent Intro</h2>
+              </div>
+            </div>
+
+            {consentError ? (
+              <p className="status-banner is-error">{consentError}</p>
+            ) : null}
+            {consentMessage ? (
+              <p className="status-banner is-success">{consentMessage}</p>
+            ) : null}
+
+            <div className="panel-grid">
+              <article className="panel-card consent-card">
+                <p className="panel-kicker">Privacy & disclosure</p>
+                <h3>開始分析前，請先完成兩項必要同意</h3>
+                <ul className="compact-list">
+                  <li>
+                    隱私政策：照片只作分析暫存，完成後不長期保存。版本{" "}
+                    {user.required_policy_versions.privacy_policy}
+                  </li>
+                  <li>
+                    非醫療用途聲明：所有建議僅供 wellness guidance 參考。版本{" "}
+                    {user.required_policy_versions.non_medical_disclosure}
+                  </li>
+                </ul>
+              </article>
+
+              <article className="panel-card consent-card">
+                <p className="panel-kicker">Current status</p>
+                <h3>目前同意狀態</h3>
+                <ul className="compact-list">
+                  <li>
+                    隱私政策：
+                    {user.consent_status.has_privacy_policy
+                      ? "已完成"
+                      : "尚未完成"}
+                  </li>
+                  <li>
+                    非醫療用途聲明：
+                    {user.consent_status.has_non_medical_disclosure
+                      ? "已完成"
+                      : "尚未完成"}
+                  </li>
+                </ul>
+                <div className="footer-actions">
+                  <span className="helper-copy">
+                    你仍可先編輯
+                    Profile，但開始新分析與產生新建議前必須完成同意。
+                  </span>
+                  <button
+                    className="primary-button"
+                    onClick={() => void handleConsentSubmit()}
+                    disabled={consentSaving}
+                  >
+                    {consentSaving ? "送出中..." : "完成同意"}
+                  </button>
+                </div>
+              </article>
+            </div>
+          </section>
+        ) : null}
 
         {screen === "analysis" ? (
           <section className="content-stack">
@@ -432,6 +603,11 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
             {analysisError ? (
               <p className="status-banner is-error">{analysisError}</p>
             ) : null}
+            {analysisAccessLocked ? (
+              <p className="status-banner is-error">
+                開始分析前，請先完成隱私政策與非醫療用途同意。
+              </p>
+            ) : null}
 
             {analysisStage === "start" ? (
               <div className="panel-grid">
@@ -445,7 +621,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                   <div className="quick-actions">
                     <button
                       className="primary-button"
-                      disabled={analysisLoading}
+                      disabled={analysisLoading || analysisAccessLocked}
                       onClick={() =>
                         void beginAnalysis(createMockImageFile("salad"))
                       }
@@ -454,7 +630,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                     </button>
                     <button
                       className="secondary-button"
-                      disabled={analysisLoading}
+                      disabled={analysisLoading || analysisAccessLocked}
                       onClick={() =>
                         void beginAnalysis(createMockImageFile("rice"))
                       }
@@ -463,7 +639,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                     </button>
                     <button
                       className="secondary-button"
-                      disabled={analysisLoading}
+                      disabled={analysisLoading || analysisAccessLocked}
                       onClick={() =>
                         void beginAnalysis(createMockImageFile("salmon"))
                       }
@@ -482,6 +658,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                       type="file"
                       name="analysis-image"
                       accept="image/png,image/jpeg"
+                      disabled={analysisAccessLocked}
                       onChange={(event) => {
                         void handleFileInput(event.currentTarget.files);
                         event.currentTarget.value = "";
@@ -502,8 +679,21 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                         ? "正在建立 draft 並上傳圖片。"
                         : "尚未開始新的分析。"}
                     </li>
+                    <li>
+                      {analysisAccessLocked
+                        ? "尚未完成必要同意，請先前往 Consent。"
+                        : "已完成必要同意，可開始新的分析。"}
+                    </li>
                     <li>本階段只做單次分析，不做每日累積。</li>
                   </ul>
+                  {analysisAccessLocked ? (
+                    <button
+                      className="secondary-button"
+                      onClick={() => handleMainScreenChange("consent")}
+                    >
+                      前往 Consent
+                    </button>
+                  ) : null}
                 </article>
               </div>
             ) : null}
@@ -610,6 +800,11 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
             {analysisStage === "result" ? (
               analysisResult ? (
                 <div className="content-stack">
+                  <DisclaimerCard
+                    title={analysisResult.disclaimer.title}
+                    body={analysisResult.disclaimer.body}
+                    policyVersion={analysisResult.disclaimer.policy_version}
+                  />
                   <div className="metric-grid">
                     <article className="metric-card">
                       <span>總熱量</span>
@@ -796,6 +991,12 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                   <h3>{selectedHistory.food_summary}</h3>
                   <p>{formatDateLabel(selectedHistory.analyzed_at)}</p>
                 </article>
+
+                <DisclaimerCard
+                  title={selectedHistory.disclaimer.title}
+                  body={selectedHistory.disclaimer.body}
+                  policyVersion={selectedHistory.disclaimer.policy_version}
+                />
 
                 <div className="metric-grid">
                   <article className="metric-card">
@@ -1059,6 +1260,27 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                       {profile?.display_name ?? user.display_name}
                     </strong>
                     <p>目前已改成以 LINE Login session 驗證登入狀態。</p>
+                  </div>
+                  <div className="summary-card">
+                    <span>Consent 狀態</span>
+                    <strong>
+                      {user.consent_status.can_start_analysis
+                        ? "已完成"
+                        : "待補齊"}
+                    </strong>
+                    <p>
+                      {user.consent_status.can_start_analysis
+                        ? "目前已可開始新的分析與建議流程。"
+                        : "開始分析前，請先完成隱私政策與非醫療用途同意。"}
+                    </p>
+                    {!user.consent_status.can_start_analysis ? (
+                      <button
+                        className="secondary-button"
+                        onClick={() => handleMainScreenChange("consent")}
+                      >
+                        前往 Consent
+                      </button>
+                    ) : null}
                   </div>
                 </aside>
               </div>

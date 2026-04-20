@@ -432,6 +432,24 @@ input:focus-visible {
   border-color: rgba(47, 143, 107, 0.14);
 }
 
+.disclaimer-card {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 248, 236, 0.98),
+    rgba(255, 253, 248, 0.94)
+  );
+}
+
+.disclaimer-meta {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.consent-card {
+  display: grid;
+  gap: 16px;
+}
+
 .panel-grid,
 .metric-grid,
 .field-grid,

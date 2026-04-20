@@ -17,6 +17,7 @@ from app.schemas.analysis import (
 )
 from app.services.analysis import get_analysis_for_user
 from app.services.analysis_upload import delete_analysis_uploads
+from app.services.consent import build_non_medical_disclaimer
 from app.services.profile import get_or_create_profile
 from app.services.analysis_views import build_analysis_result_items, build_recommendation_response
 
@@ -169,6 +170,7 @@ def build_confirm_response(analysis, recommended_exercises: list[RecommendedExer
         total_carb_g=analysis.total_carb_g or ZERO_DECIMAL,
         items=build_analysis_result_items(analysis.items),
         recommendation=recommendation,
+        disclaimer=build_non_medical_disclaimer(),
     )
 
 
