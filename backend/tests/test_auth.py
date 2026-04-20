@@ -297,6 +297,9 @@ def test_exchange_token_logs_cookie_policy_context(raw_client, monkeypatch, db_s
 
     monkeypatch.setenv("SESSION_SECRET_KEY", "test-secret")
     monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("SESSION_COOKIE_NAME", "happymeal_prod_session")
+    monkeypatch.setenv("SESSION_COOKIE_DOMAIN", ".happymeal.app")
+    monkeypatch.setenv("SESSION_COOKIE_MAX_AGE", "86400")
     get_settings.cache_clear()
 
     token = auth_service.create_auth_token(user.id, get_settings())
@@ -313,11 +316,15 @@ def test_exchange_token_logs_cookie_policy_context(raw_client, monkeypatch, db_s
     ]
     assert matching_records
     record = matching_records[0]
-    assert record.__dict__.get("session_cookie_name") == "happymeal_session"
+    assert record.__dict__.get("session_cookie_name") == "happymeal_prod_session"
+    assert record.__dict__.get("session_cookie_domain") == ".happymeal.app"
     assert record.__dict__.get("same_site_policy") == "none"
     assert record.__dict__.get("https_only") is True
     assert record.__dict__.get("is_production") is True
+    assert record.__dict__.get("session_cookie_max_age") == 86400
     assert record.__dict__.get("response_will_set_cookie") is True
+
+    get_settings.cache_clear()
     assert record.__dict__.get("session_contains_user_id") is True
 
     get_settings.cache_clear()

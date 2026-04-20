@@ -1,5 +1,5 @@
-from pathlib import Path
 from functools import lru_cache
+from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 from pydantic import Field, field_validator
@@ -20,6 +20,26 @@ class Settings(BaseSettings):
         ],
         alias="CORS_ALLOW_ORIGINS",
     )
+    analysis_upload_dir: str = Field(default="tmp/analysis-uploads", alias="ANALYSIS_UPLOAD_DIR")
+    analysis_max_upload_bytes: int = Field(default=5_000_000, alias="ANALYSIS_MAX_UPLOAD_BYTES")
+    database_url: str = Field(
+        default="postgresql+psycopg://happymeal:happymeal@db:5432/happymeal",
+        alias="DATABASE_URL",
+    )
+    line_channel_id: str = Field(default="", alias="LINE_CHANNEL_ID")
+    line_channel_secret: str = Field(default="", alias="LINE_CHANNEL_SECRET")
+    line_callback_url: str = Field(default="", alias="LINE_CALLBACK_URL")
+    session_secret_key: str = Field(default="", alias="SESSION_SECRET_KEY")
+    session_cookie_name: str = Field(default="happymeal_session", alias="SESSION_COOKIE_NAME")
+    session_cookie_domain: str | None = Field(default=None, alias="SESSION_COOKIE_DOMAIN")
+    session_cookie_same_site: str | None = Field(default=None, alias="SESSION_COOKIE_SAME_SITE")
+    session_cookie_https_only: bool | None = Field(default=None, alias="SESSION_COOKIE_HTTPS_ONLY")
+    session_cookie_max_age: int = Field(default=60 * 60 * 24 * 7, alias="SESSION_COOKIE_MAX_AGE")
+    frontend_url: str = Field(default="", alias="FRONTEND_URL")
+    ai_food_api_key: str = Field(default="", alias="AI_API_KEY")
+    nutrition_data_source: str = Field(default="", alias="NUTRITION_DATA_SOURCE")
+
+    model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")
 
     @field_validator("cors_allow_origins", mode="before")
     @classmethod
@@ -31,21 +51,33 @@ class Settings(BaseSettings):
             if not value.startswith("["):
                 return [origin.strip() for origin in value.split(",") if origin.strip()]
         return v
-    analysis_upload_dir: str = Field(default="tmp/analysis-uploads", alias="ANALYSIS_UPLOAD_DIR")
-    analysis_max_upload_bytes: int = Field(default=5_000_000, alias="ANALYSIS_MAX_UPLOAD_BYTES")
-    database_url: str = Field(
-        default="postgresql+psycopg://happymeal:happymeal@db:5432/happymeal",
-        alias="DATABASE_URL",
-    )
-    line_channel_id: str = Field(default="", alias="LINE_CHANNEL_ID")
-    line_channel_secret: str = Field(default="", alias="LINE_CHANNEL_SECRET")
-    line_callback_url: str = Field(default="", alias="LINE_CALLBACK_URL")
-    session_secret_key: str = Field(default="", alias="SESSION_SECRET_KEY")
-    frontend_url: str = Field(default="", alias="FRONTEND_URL")
-    ai_food_api_key: str = Field(default="", alias="AI_API_KEY")
-    nutrition_data_source: str = Field(default="", alias="NUTRITION_DATA_SOURCE")
 
-    model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")
+    @field_validator("session_cookie_domain", mode="before")
+    @classmethod
+    def normalize_cookie_domain(cls, v: object) -> object:
+        if isinstance(v, str):
+            value = v.strip()
+            return value or None
+        return v
+
+    @field_validator("session_cookie_same_site", mode="before")
+    @classmethod
+    def normalize_same_site(cls, v: object) -> object:
+        if isinstance(v, str):
+            value = v.strip().lower()
+            return value or None
+        return v
+
+    @field_validator("session_cookie_same_site")
+    @classmethod
+    def validate_same_site(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+
+        if v not in {"lax", "strict", "none"}:
+            raise ValueError("SESSION_COOKIE_SAME_SITE must be one of: lax, strict, none")
+
+        return v
 
     @property
     def normalized_database_url(self) -> str:
@@ -63,6 +95,24 @@ class Settings(BaseSettings):
     @property
     def analysis_upload_path(self) -> Path:
         return Path(self.analysis_upload_dir)
+
+    @property
+    def is_production(self) -> bool:
+        return self.app_env == "production"
+
+    @property
+    def effective_session_cookie_same_site(self) -> str:
+        if self.session_cookie_same_site:
+            return self.session_cookie_same_site
+
+        return "none" if self.is_production else "lax"
+
+    @property
+    def effective_session_cookie_https_only(self) -> bool:
+        if self.session_cookie_https_only is not None:
+            return self.session_cookie_https_only
+
+        return self.is_production
 
 
 @lru_cache

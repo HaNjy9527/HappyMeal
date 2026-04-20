@@ -25,19 +25,19 @@ from app.services.auth import (
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger("app.auth")
-SESSION_COOKIE_NAME = "happymeal_session"
 
 
 def build_cookie_debug_context(settings, request: Request) -> dict[str, object]:
-    is_production = settings.app_env == "production"
     return {
-        "session_cookie_name": SESSION_COOKIE_NAME,
-        "same_site_policy": "none" if is_production else "lax",
-        "https_only": is_production,
-        "is_production": is_production,
+        "session_cookie_name": settings.session_cookie_name,
+        "session_cookie_domain": settings.session_cookie_domain,
+        "same_site_policy": settings.effective_session_cookie_same_site,
+        "https_only": settings.effective_session_cookie_https_only,
+        "is_production": settings.is_production,
+        "session_cookie_max_age": settings.session_cookie_max_age,
         "allow_credentials": True,
         "cookie_header_present": request.headers.get("cookie") is not None,
-        "session_cookie_present": SESSION_COOKIE_NAME in request.cookies,
+        "session_cookie_present": settings.session_cookie_name in request.cookies,
         "session_contains_user_id": "user_id" in request.session,
         "session_key_count": len(request.session),
     }

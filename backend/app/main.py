@@ -26,14 +26,14 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
-is_production = settings.app_env == "production"
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.session_secret_key or "dev-session-secret",
-    session_cookie="happymeal_session",
-    max_age=60 * 60 * 24 * 7,
-    same_site="none" if is_production else "lax",
-    https_only=is_production,
+    session_cookie=settings.session_cookie_name,
+    max_age=settings.session_cookie_max_age,
+    same_site=settings.effective_session_cookie_same_site,
+    https_only=settings.effective_session_cookie_https_only,
+    domain=settings.session_cookie_domain,
 )
 app.add_middleware(
     CORSMiddleware,

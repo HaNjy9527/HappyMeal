@@ -5,17 +5,16 @@ from sqlalchemy.orm import Session
 
 from app.db.models import User
 from app.db.session import get_db
+from app.core.config import get_settings
 
 
 logger = logging.getLogger("app.auth")
 
 
-SESSION_COOKIE_NAME = "happymeal_session"
-
-
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
+    settings = get_settings()
     cookie_header_present = request.headers.get("cookie") is not None
-    session_cookie_present = SESSION_COOKIE_NAME in request.cookies
+    session_cookie_present = settings.session_cookie_name in request.cookies
     user_id = request.session.get("user_id")
     if not user_id:
         event_name = (
@@ -34,7 +33,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
                 "cookie_header_present": cookie_header_present,
                 "session_cookie_present": session_cookie_present,
                 "session_contains_user_id": False,
-                "session_cookie_name": SESSION_COOKIE_NAME,
+                "session_cookie_name": settings.session_cookie_name,
                 "session_key_count": len(request.session),
             },
         )
@@ -55,7 +54,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
                 "cookie_header_present": cookie_header_present,
                 "session_cookie_present": session_cookie_present,
                 "session_contains_user_id": True,
-                "session_cookie_name": SESSION_COOKIE_NAME,
+                "session_cookie_name": settings.session_cookie_name,
                 "session_key_count": len(request.session),
             },
         )
