@@ -7,6 +7,58 @@ export type ConsentContentSection = {
   paragraphs: string[];
 };
 
+export const consentUiCopy = {
+  tabLabel: "Consent",
+  spotlight: {
+    title: "Consent Intro",
+    copy: "先完成隱私政策與非醫療用途同意，才能開始新的分析與建議流程。",
+  },
+  section: {
+    kicker: "Launch Readiness",
+    title: "Consent Intro",
+  },
+  introCard: {
+    kicker: "Privacy & disclosure",
+    title: "開始分析前，請先完成兩項必要同意",
+    description:
+      "你可以先看摘要，再依需要展開完整文案。完成兩項勾選後，才能開始新的分析與建議流程。",
+  },
+  statusCard: {
+    kicker: "Current status",
+    title: "目前同意狀態",
+    privacyLabel: "隱私政策：",
+    nonMedicalLabel: "非醫療用途聲明：",
+    completed: "已完成",
+    incomplete: "尚未完成",
+  },
+  helper: {
+    incomplete: "請先勾選兩項同意後，才能繼續。",
+    complete: "已符合送出條件，送出後會回到分析主流程。",
+  },
+  action: {
+    submit: "同意並繼續",
+    submitting: "送出中...",
+    goToConsent: "前往 Consent",
+  },
+  message: {
+    checkboxRequired: "請先勾選兩項同意後，再繼續。",
+    updated: "同意已更新，現在可以開始分析與查看建議。",
+    saveFailed: "Consent 儲存失敗",
+    analysisRequired: "開始分析前，請先完成隱私政策與非醫療用途同意。",
+    flowRequired: "完成兩項同意後，才能開始新的分析與建議流程。",
+    confirmRequired: "完成候選確認前，請先完成隱私政策與非醫療用途同意。",
+    lockedSummary: "尚未完成必要同意，請先前往 Consent。",
+    unlockedSummary: "已完成必要同意，可開始新的分析。",
+    profileReady: "目前已可開始新的分析與建議流程。",
+    profilePending: "開始分析前，請先完成隱私政策與非醫療用途同意。",
+  },
+  profileStatus: {
+    label: "Consent 狀態",
+    completed: "已完成",
+    pending: "待補齊",
+  },
+};
+
 export const consentSections: ConsentContentSection[] = [
   {
     id: "privacy",

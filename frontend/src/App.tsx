@@ -34,6 +34,7 @@ import {
   uploadAnalysisImage,
 } from "./api";
 import {
+  consentUiCopy,
   consentSections,
   type ConsentContentSection,
 } from "./constants/consent";
@@ -349,8 +350,8 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
   async function beginAnalysis(file: File) {
     if (!user.consent_status.can_start_analysis) {
-      setAnalysisError("開始分析前，請先完成隱私政策與非醫療用途同意。");
-      setConsentError("完成兩項同意後，才能開始新的分析與建議流程。");
+      setAnalysisError(consentUiCopy.message.analysisRequired);
+      setConsentError(consentUiCopy.message.flowRequired);
       setScreen("consent");
       return;
     }
@@ -368,7 +369,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
       startTransition(() => setAnalysisStage("confirm"));
     } catch (error) {
       if (error instanceof ApiError && error.code === "CONSENT_REQUIRED") {
-        setConsentError("開始分析前，請先完成隱私政策與非醫療用途同意。");
+        setConsentError(consentUiCopy.message.analysisRequired);
         setScreen("consent");
       }
       setAnalysisError(error instanceof Error ? error.message : "分析建立失敗");
@@ -405,7 +406,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
       await loadHistory();
     } catch (error) {
       if (error instanceof ApiError && error.code === "CONSENT_REQUIRED") {
-        setConsentError("完成候選確認前，請先完成隱私政策與非醫療用途同意。");
+        setConsentError(consentUiCopy.message.confirmRequired);
         setScreen("consent");
       }
       setAnalysisError(error instanceof Error ? error.message : "確認分析失敗");
@@ -432,7 +433,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
   async function handleConsentSubmit() {
     if (!agreePrivacy || !agreeNonMedical) {
-      setConsentError("請先勾選兩項同意後，再繼續。");
+      setConsentError(consentUiCopy.message.checkboxRequired);
       return;
     }
 
@@ -452,11 +453,13 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
         ),
       ]);
       await queryClient.invalidateQueries({ queryKey: ["me"] });
-      setConsentMessage("同意已更新，現在可以開始分析與查看建議。");
+      setConsentMessage(consentUiCopy.message.updated);
       startTransition(() => setScreen("analysis"));
     } catch (error) {
       setConsentError(
-        error instanceof Error ? error.message : "Consent 儲存失敗",
+        error instanceof Error
+          ? error.message
+          : consentUiCopy.message.saveFailed,
       );
     } finally {
       setConsentSaving(false);
@@ -472,8 +475,8 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   const spotlightContent = useMemo(() => {
     if (screen === "consent") {
       return {
-        title: "Consent Intro",
-        copy: "先完成隱私政策與非醫療用途同意，才能開始新的分析與建議流程。",
+        title: consentUiCopy.spotlight.title,
+        copy: consentUiCopy.spotlight.copy,
       };
     }
 
@@ -567,7 +570,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
               }
               onClick={() => handleMainScreenChange("consent")}
             >
-              Consent
+              {consentUiCopy.tabLabel}
             </button>
           ) : null}
           <button
@@ -596,8 +599,8 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
           <section className="content-stack">
             <div className="section-heading">
               <div>
-                <p className="section-kicker">Launch Readiness</p>
-                <h2>Consent Intro</h2>
+                <p className="section-kicker">{consentUiCopy.section.kicker}</p>
+                <h2>{consentUiCopy.section.title}</h2>
               </div>
             </div>
 
@@ -610,11 +613,9 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
             <div className="panel-grid">
               <article className="panel-card consent-intro-card">
-                <p className="panel-kicker">Privacy & disclosure</p>
-                <h3>開始分析前，請先完成兩項必要同意</h3>
-                <p>
-                  你可以先看摘要，再依需要展開完整文案。完成兩項勾選後，才能開始新的分析與建議流程。
-                </p>
+                <p className="panel-kicker">{consentUiCopy.introCard.kicker}</p>
+                <h3>{consentUiCopy.introCard.title}</h3>
+                <p>{consentUiCopy.introCard.description}</p>
               </article>
 
               <ConsentAccordionCard
@@ -646,34 +647,38 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
               />
 
               <article className="panel-card consent-card">
-                <p className="panel-kicker">Current status</p>
-                <h3>目前同意狀態</h3>
+                <p className="panel-kicker">
+                  {consentUiCopy.statusCard.kicker}
+                </p>
+                <h3>{consentUiCopy.statusCard.title}</h3>
                 <ul className="compact-list">
                   <li>
-                    隱私政策：
+                    {consentUiCopy.statusCard.privacyLabel}
                     {user.consent_status.has_privacy_policy
-                      ? "已完成"
-                      : "尚未完成"}
+                      ? consentUiCopy.statusCard.completed
+                      : consentUiCopy.statusCard.incomplete}
                   </li>
                   <li>
-                    非醫療用途聲明：
+                    {consentUiCopy.statusCard.nonMedicalLabel}
                     {user.consent_status.has_non_medical_disclosure
-                      ? "已完成"
-                      : "尚未完成"}
+                      ? consentUiCopy.statusCard.completed
+                      : consentUiCopy.statusCard.incomplete}
                   </li>
                 </ul>
                 <div className="footer-actions">
                   <span className="helper-copy">
                     {!canContinueConsent
-                      ? "請先勾選兩項同意後，才能繼續。"
-                      : "已符合送出條件，送出後會回到分析主流程。"}
+                      ? consentUiCopy.helper.incomplete
+                      : consentUiCopy.helper.complete}
                   </span>
                   <button
                     className="primary-button"
                     onClick={() => void handleConsentSubmit()}
                     disabled={consentSaving || !canContinueConsent}
                   >
-                    {consentSaving ? "送出中..." : "同意並繼續"}
+                    {consentSaving
+                      ? consentUiCopy.action.submitting
+                      : consentUiCopy.action.submit}
                   </button>
                 </div>
               </article>
@@ -711,7 +716,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
             ) : null}
             {analysisAccessLocked ? (
               <p className="status-banner is-error">
-                開始分析前，請先完成隱私政策與非醫療用途同意。
+                {consentUiCopy.message.analysisRequired}
               </p>
             ) : null}
 
@@ -787,8 +792,8 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                     </li>
                     <li>
                       {analysisAccessLocked
-                        ? "尚未完成必要同意，請先前往 Consent。"
-                        : "已完成必要同意，可開始新的分析。"}
+                        ? consentUiCopy.message.lockedSummary
+                        : consentUiCopy.message.unlockedSummary}
                     </li>
                     <li>本階段只做單次分析，不做每日累積。</li>
                   </ul>
@@ -797,7 +802,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                       className="secondary-button"
                       onClick={() => handleMainScreenChange("consent")}
                     >
-                      前往 Consent
+                      {consentUiCopy.action.goToConsent}
                     </button>
                   ) : null}
                 </article>
@@ -1368,23 +1373,23 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                     <p>目前已改成以 LINE Login session 驗證登入狀態。</p>
                   </div>
                   <div className="summary-card">
-                    <span>Consent 狀態</span>
+                    <span>{consentUiCopy.profileStatus.label}</span>
                     <strong>
                       {user.consent_status.can_start_analysis
-                        ? "已完成"
-                        : "待補齊"}
+                        ? consentUiCopy.profileStatus.completed
+                        : consentUiCopy.profileStatus.pending}
                     </strong>
                     <p>
                       {user.consent_status.can_start_analysis
-                        ? "目前已可開始新的分析與建議流程。"
-                        : "開始分析前，請先完成隱私政策與非醫療用途同意。"}
+                        ? consentUiCopy.message.profileReady
+                        : consentUiCopy.message.profilePending}
                     </p>
                     {!user.consent_status.can_start_analysis ? (
                       <button
                         className="secondary-button"
                         onClick={() => handleMainScreenChange("consent")}
                       >
-                        前往 Consent
+                        {consentUiCopy.action.goToConsent}
                       </button>
                     ) : null}
                   </div>
