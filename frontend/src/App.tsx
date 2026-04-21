@@ -642,28 +642,32 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
         </section>
 
         {consentCompleted ? (
-        <nav className="tab-strip" aria-label="主要導覽">
-          <button
-            className={
-              screen === "analysis" ? "tab-chip is-active" : "tab-chip"
-            }
-            onClick={() => handleMainScreenChange("analysis")}
-          >
-            Analysis
-          </button>
-          <button
-            className={screen === "history" ? "tab-chip is-active" : "tab-chip"}
-            onClick={() => handleMainScreenChange("history")}
-          >
-            History
-          </button>
-          <button
-            className={screen === "profile" ? "tab-chip is-active" : "tab-chip"}
-            onClick={() => handleMainScreenChange("profile")}
-          >
-            Profile
-          </button>
-        </nav>
+          <nav className="tab-strip" aria-label="主要導覽">
+            <button
+              className={
+                screen === "analysis" ? "tab-chip is-active" : "tab-chip"
+              }
+              onClick={() => handleMainScreenChange("analysis")}
+            >
+              Analysis
+            </button>
+            <button
+              className={
+                screen === "history" ? "tab-chip is-active" : "tab-chip"
+              }
+              onClick={() => handleMainScreenChange("history")}
+            >
+              History
+            </button>
+            <button
+              className={
+                screen === "profile" ? "tab-chip is-active" : "tab-chip"
+              }
+              onClick={() => handleMainScreenChange("profile")}
+            >
+              Profile
+            </button>
+          </nav>
         ) : null}
 
         {screen === "consent" ? (
@@ -1457,10 +1461,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                   {consentUiCopy.footer.description}
                 </p>
               </div>
-              <button
-                className="ghost-button"
-                onClick={scrollToConsentReview}
-              >
+              <button className="ghost-button" onClick={scrollToConsentReview}>
                 {consentUiCopy.footer.action}
               </button>
             </footer>
@@ -1472,7 +1473,9 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
             >
               <div className="section-heading legal-review-heading">
                 <div>
-                  <p className="section-kicker">{consentUiCopy.review.kicker}</p>
+                  <p className="section-kicker">
+                    {consentUiCopy.review.kicker}
+                  </p>
                   <h2>{consentUiCopy.review.title}</h2>
                 </div>
                 <p className="legal-review-copy">

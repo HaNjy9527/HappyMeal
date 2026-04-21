@@ -29,7 +29,8 @@ export const consentUiCopy = {
   },
   footer: {
     kicker: "Legal & consent",
-    description: "完成同意後，如需重新查看隱私政策與非醫療用途聲明，可從這裡前往頁尾。",
+    description:
+      "完成同意後，如需重新查看隱私政策與非醫療用途聲明，可從這裡前往頁尾。",
     action: "查看隱私與聲明",
   },
   review: {
