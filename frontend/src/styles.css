@@ -543,6 +543,42 @@ input:focus-visible {
   width: 100%;
 }
 
+.legal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.legal-footer-copy,
+.legal-review-copy {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.legal-footer-copy {
+  max-width: 46ch;
+}
+
+.legal-review-section {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+  padding-top: 4px;
+}
+
+.legal-review-heading {
+  align-items: flex-start;
+}
+
+.legal-review-heading .legal-review-copy {
+  max-width: 38ch;
+}
+
 .panel-grid,
 .metric-grid,
 .field-grid,
@@ -780,6 +816,7 @@ input {
   .topbar,
   .spotlight-card,
   .footer-actions,
+  .legal-footer,
   .candidate-head,
   .history-card {
     grid-template-columns: 1fr;
@@ -818,5 +855,9 @@ input {
   .consent-accordion-toggle,
   .consent-checkbox-row {
     width: 100%;
+  }
+
+  .legal-review-heading .legal-review-copy {
+    max-width: none;
   }
 }

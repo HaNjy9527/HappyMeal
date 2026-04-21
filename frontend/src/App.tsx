@@ -3,6 +3,7 @@ import {
   startTransition,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -211,9 +212,54 @@ function ConsentAccordionCard({
   );
 }
 
+function ConsentReviewCard({
+  section,
+  isExpanded,
+  version,
+  onToggle,
+}: {
+  section: ConsentContentSection;
+  isExpanded: boolean;
+  version: string;
+  onToggle: () => void;
+}) {
+  return (
+    <article
+      className={`panel-card consent-card ${isExpanded ? "is-expanded" : ""}`}
+    >
+      <button
+        type="button"
+        className="consent-accordion-toggle"
+        aria-expanded={isExpanded}
+        onClick={onToggle}
+      >
+        <div>
+          <p className="panel-kicker">{section.kicker}</p>
+          <h3>{section.title}</h3>
+        </div>
+        <span className="consent-accordion-icon" aria-hidden="true">
+          {isExpanded ? "收合" : "展開"}
+        </span>
+      </button>
+
+      <p className="consent-summary">{section.summary}</p>
+
+      {isExpanded ? (
+        <div className="consent-copy-stack">
+          {section.paragraphs.map((paragraph) => (
+            <p key={paragraph}>{paragraph}</p>
+          ))}
+          <p className="consent-version">目前版本 {version}</p>
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
 function HomeDashboard({ user }: { user: AuthMeResponse }) {
   const queryClient = useQueryClient();
   const logoutMutation = useLogout();
+  const consentReviewRef = useRef<HTMLElement | null>(null);
   const [screen, setScreen] = useState<MainScreen>(
     hasRequiredConsents(user) ? "analysis" : "consent",
   );
@@ -254,6 +300,12 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     user.consent_status.has_non_medical_disclosure,
   );
   const [expandedSections, setExpandedSections] = useState<
+    Record<ConsentContentSection["id"], boolean>
+  >({
+    privacy: false,
+    "non-medical": false,
+  });
+  const [reviewExpandedSections, setReviewExpandedSections] = useState<
     Record<ConsentContentSection["id"], boolean>
   >({
     privacy: false,
@@ -486,9 +538,9 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
   const analysisAccessLocked = !user.consent_status.can_start_analysis;
   const canContinueConsent = agreePrivacy && agreeNonMedical;
+  const consentCompleted = hasRequiredConsents(user);
   const themeMode = profile?.theme_preference ?? "female_default";
   const validationMessage = buildValidationMessage(profileForm);
-  const tabCount = hasRequiredConsents(user) ? 3 : 4;
   const analysisDisclaimerCopy = analysisResult
     ? resolveDisclaimerCopy(analysisResult.disclaimer)
     : null;
@@ -547,6 +599,13 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     validationMessage,
   ]);
 
+  function scrollToConsentReview() {
+    consentReviewRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
+
   return (
     <main className={`app-shell theme-${themeMode}`}>
       <div className="ambient-orb ambient-orb-left" aria-hidden="true" />
@@ -582,21 +641,8 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
           <p className="spotlight-copy">{spotlightContent.copy}</p>
         </section>
 
-        <nav
-          className="tab-strip"
-          aria-label="主要導覽"
-          style={{ gridTemplateColumns: `repeat(${tabCount}, 1fr)` }}
-        >
-          {!hasRequiredConsents(user) ? (
-            <button
-              className={
-                screen === "consent" ? "tab-chip is-active" : "tab-chip"
-              }
-              onClick={() => handleMainScreenChange("consent")}
-            >
-              {consentUiCopy.tabLabel}
-            </button>
-          ) : null}
+        {consentCompleted ? (
+        <nav className="tab-strip" aria-label="主要導覽">
           <button
             className={
               screen === "analysis" ? "tab-chip is-active" : "tab-chip"
@@ -618,6 +664,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
             Profile
           </button>
         </nav>
+        ) : null}
 
         {screen === "consent" ? (
           <section className="content-stack">
@@ -1400,6 +1447,65 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
               </div>
             )}
           </section>
+        ) : null}
+        {consentCompleted ? (
+          <>
+            <footer className="legal-footer">
+              <div>
+                <p className="panel-kicker">{consentUiCopy.footer.kicker}</p>
+                <p className="legal-footer-copy">
+                  {consentUiCopy.footer.description}
+                </p>
+              </div>
+              <button
+                className="ghost-button"
+                onClick={scrollToConsentReview}
+              >
+                {consentUiCopy.footer.action}
+              </button>
+            </footer>
+
+            <section
+              className="legal-review-section"
+              id="consent-review"
+              ref={consentReviewRef}
+            >
+              <div className="section-heading legal-review-heading">
+                <div>
+                  <p className="section-kicker">{consentUiCopy.review.kicker}</p>
+                  <h2>{consentUiCopy.review.title}</h2>
+                </div>
+                <p className="legal-review-copy">
+                  {consentUiCopy.review.description}
+                </p>
+              </div>
+
+              <div className="panel-grid legal-review-grid">
+                <ConsentReviewCard
+                  section={consentSections[0]}
+                  isExpanded={reviewExpandedSections.privacy}
+                  version={user.required_policy_versions.privacy_policy}
+                  onToggle={() =>
+                    setReviewExpandedSections((current) => ({
+                      ...current,
+                      privacy: !current.privacy,
+                    }))
+                  }
+                />
+                <ConsentReviewCard
+                  section={consentSections[1]}
+                  isExpanded={reviewExpandedSections["non-medical"]}
+                  version={user.required_policy_versions.non_medical_disclosure}
+                  onToggle={() =>
+                    setReviewExpandedSections((current) => ({
+                      ...current,
+                      "non-medical": !current["non-medical"],
+                    }))
+                  }
+                />
+              </div>
+            </section>
+          </>
         ) : null}
       </section>
     </main>
