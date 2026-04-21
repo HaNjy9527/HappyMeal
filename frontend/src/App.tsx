@@ -118,22 +118,40 @@ function hasRequiredConsents(user: AuthMeResponse) {
 }
 
 function DisclaimerCard({
+  kicker,
   title,
   body,
   policyVersion,
 }: {
+  kicker: string;
   title: string;
   body: string;
   policyVersion: string;
 }) {
   return (
     <article className="panel-card disclaimer-card">
-      <p className="panel-kicker">Non-medical reminder</p>
+      <p className="panel-kicker">{kicker}</p>
       <h3>{title}</h3>
       <p>{body}</p>
       <p className="disclaimer-meta">適用版本 {policyVersion}</p>
     </article>
   );
+}
+
+function resolveDisclaimerCopy(
+  disclaimer:
+    | AnalysisResultResponse["disclaimer"]
+    | AnalysisHistoryDetailResponse["disclaimer"],
+) {
+  if (disclaimer.consent_type === "non_medical_disclosure") {
+    return consentUiCopy.disclaimerCard;
+  }
+
+  return {
+    kicker: consentUiCopy.disclaimerCard.kicker,
+    title: disclaimer.title,
+    body: disclaimer.body,
+  };
 }
 
 function ConsentAccordionCard({
@@ -471,6 +489,12 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   const themeMode = profile?.theme_preference ?? "female_default";
   const validationMessage = buildValidationMessage(profileForm);
   const tabCount = hasRequiredConsents(user) ? 3 : 4;
+  const analysisDisclaimerCopy = analysisResult
+    ? resolveDisclaimerCopy(analysisResult.disclaimer)
+    : null;
+  const historyDisclaimerCopy = selectedHistory
+    ? resolveDisclaimerCopy(selectedHistory.disclaimer)
+    : null;
 
   const spotlightContent = useMemo(() => {
     if (screen === "consent") {
@@ -911,11 +935,14 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
             {analysisStage === "result" ? (
               analysisResult ? (
                 <div className="content-stack">
-                  <DisclaimerCard
-                    title={analysisResult.disclaimer.title}
-                    body={analysisResult.disclaimer.body}
-                    policyVersion={analysisResult.disclaimer.policy_version}
-                  />
+                  {analysisDisclaimerCopy ? (
+                    <DisclaimerCard
+                      kicker={analysisDisclaimerCopy.kicker}
+                      title={analysisDisclaimerCopy.title}
+                      body={analysisDisclaimerCopy.body}
+                      policyVersion={analysisResult.disclaimer.policy_version}
+                    />
+                  ) : null}
                   <div className="metric-grid">
                     <article className="metric-card">
                       <span>總熱量</span>
@@ -1103,11 +1130,14 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                   <p>{formatDateLabel(selectedHistory.analyzed_at)}</p>
                 </article>
 
-                <DisclaimerCard
-                  title={selectedHistory.disclaimer.title}
-                  body={selectedHistory.disclaimer.body}
-                  policyVersion={selectedHistory.disclaimer.policy_version}
-                />
+                {historyDisclaimerCopy ? (
+                  <DisclaimerCard
+                    kicker={historyDisclaimerCopy.kicker}
+                    title={historyDisclaimerCopy.title}
+                    body={historyDisclaimerCopy.body}
+                    policyVersion={selectedHistory.disclaimer.policy_version}
+                  />
+                ) : null}
 
                 <div className="metric-grid">
                   <article className="metric-card">

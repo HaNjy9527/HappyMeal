@@ -9,6 +9,11 @@ export type ConsentContentSection = {
 
 export const consentUiCopy = {
   tabLabel: "Consent",
+  disclaimerCard: {
+    kicker: "Non-medical reminder",
+    title: "本服務非醫療用途",
+    body: "此建議僅供日常健康管理參考，不構成醫療診斷、治療或處方。若你有健康疑慮，請諮詢合格醫療專業人士。",
+  },
   spotlight: {
     title: "Consent Intro",
     copy: "先完成隱私政策與非醫療用途同意，才能開始新的分析與建議流程。",
