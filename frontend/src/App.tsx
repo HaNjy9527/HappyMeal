@@ -621,13 +621,6 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
         {screen === "consent" ? (
           <section className="content-stack">
-            <div className="section-heading">
-              <div>
-                <p className="section-kicker">{consentUiCopy.section.kicker}</p>
-                <h2>{consentUiCopy.section.title}</h2>
-              </div>
-            </div>
-
             {consentError ? (
               <p className="status-banner is-error">{consentError}</p>
             ) : null}
@@ -669,43 +662,23 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                 }
                 onCheckChange={setAgreeNonMedical}
               />
+            </div>
 
-              <article className="panel-card consent-card">
-                <p className="panel-kicker">
-                  {consentUiCopy.statusCard.kicker}
-                </p>
-                <h3>{consentUiCopy.statusCard.title}</h3>
-                <ul className="compact-list">
-                  <li>
-                    {consentUiCopy.statusCard.privacyLabel}
-                    {user.consent_status.has_privacy_policy
-                      ? consentUiCopy.statusCard.completed
-                      : consentUiCopy.statusCard.incomplete}
-                  </li>
-                  <li>
-                    {consentUiCopy.statusCard.nonMedicalLabel}
-                    {user.consent_status.has_non_medical_disclosure
-                      ? consentUiCopy.statusCard.completed
-                      : consentUiCopy.statusCard.incomplete}
-                  </li>
-                </ul>
-                <div className="footer-actions">
-                  <span className="helper-copy">
-                    {!canContinueConsent
-                      ? consentUiCopy.helper.incomplete
-                      : consentUiCopy.helper.complete}
-                  </span>
-                  <button
-                    className="primary-button"
-                    onClick={() => void handleConsentSubmit()}
-                    disabled={consentSaving || !canContinueConsent}
-                  >
-                    {consentSaving
-                      ? consentUiCopy.action.submitting
-                      : consentUiCopy.action.submit}
-                  </button>
-                </div>
-              </article>
+            <div className="consent-footer-actions">
+              <span className="helper-copy">
+                {!canContinueConsent
+                  ? consentUiCopy.helper.incomplete
+                  : consentUiCopy.helper.complete}
+              </span>
+              <button
+                className="primary-button"
+                onClick={() => void handleConsentSubmit()}
+                disabled={consentSaving || !canContinueConsent}
+              >
+                {consentSaving
+                  ? consentUiCopy.action.submitting
+                  : consentUiCopy.action.submit}
+              </button>
             </div>
           </section>
         ) : null}

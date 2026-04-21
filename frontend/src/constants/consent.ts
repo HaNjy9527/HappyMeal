@@ -18,23 +18,11 @@ export const consentUiCopy = {
     title: "Consent Intro",
     copy: "先完成隱私政策與非醫療用途同意，才能開始新的分析與建議流程。",
   },
-  section: {
-    kicker: "Launch Readiness",
-    title: "Consent Intro",
-  },
   introCard: {
     kicker: "Privacy & disclosure",
     title: "開始分析前，請先完成兩項必要同意",
     description:
       "你可以先看摘要，再依需要展開完整文案。完成兩項勾選後，才能開始新的分析與建議流程。",
-  },
-  statusCard: {
-    kicker: "Current status",
-    title: "目前同意狀態",
-    privacyLabel: "隱私政策：",
-    nonMedicalLabel: "非醫療用途聲明：",
-    completed: "已完成",
-    incomplete: "尚未完成",
   },
   helper: {
     incomplete: "請先勾選兩項同意後，才能繼續。",

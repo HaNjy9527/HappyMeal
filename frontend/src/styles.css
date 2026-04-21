@@ -533,6 +533,16 @@ input:focus-visible {
   box-shadow: inset 0 0 0 1px rgba(221, 122, 41, 0.08);
 }
 
+.consent-footer-actions {
+  display: grid;
+  gap: 12px;
+  padding: 6px 2px 0;
+}
+
+.consent-footer-actions .primary-button {
+  width: 100%;
+}
+
 .panel-grid,
 .metric-grid,
 .field-grid,
@@ -768,7 +778,6 @@ input {
   }
 
   .topbar,
-  .section-heading,
   .spotlight-card,
   .footer-actions,
   .candidate-head,
