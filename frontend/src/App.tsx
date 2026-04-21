@@ -51,6 +51,15 @@ type ProfileFormState = {
   goal_weight_kg: string;
 };
 
+type ConsentContentSection = {
+  id: "privacy" | "non-medical";
+  kicker: string;
+  title: string;
+  summary: string;
+  checkboxLabel: string;
+  paragraphs: string[];
+};
+
 const activityOptions: Array<{
   value: ActivityLevel;
   label: string;
@@ -66,6 +75,35 @@ const activityOptions: Array<{
 const goalOptions: Array<{ value: GoalType; label: string; hint: string }> = [
   { value: "fat_loss", label: "減脂", hint: "優先控制熱量與維持蛋白質" },
   { value: "muscle_gain", label: "增肌", hint: "優先維持攝取並搭配力量訓練" },
+];
+
+const consentSections: ConsentContentSection[] = [
+  {
+    id: "privacy",
+    kicker: "Privacy Policy",
+    title: "隱私政策說明",
+    summary:
+      "我們會使用你的基本身體資料、目標設定與食物照片來完成分析，原始照片僅供本次分析暫存，完成後不長期保存。",
+    checkboxLabel: "我已閱讀並同意目前版本的隱私政策",
+    paragraphs: [
+      "為了提供飲食分析、營養估算與個人化建議，HappyMeal 會處理你填寫的年齡、身高、體重、活動量、目標設定，以及你上傳的食物照片與分析結果摘要。",
+      "原始食物照片僅用於本次分析流程的暫存處理，分析完成後不作長期保存。歷史紀錄中保存的是分析摘要、營養結果與建議快照，不包含原始照片。",
+      "你的資料僅用於提供本服務所需的功能與體驗優化，不會因前端流程需要而把第三方金鑰或敏感設定暴露在瀏覽器端。",
+    ],
+  },
+  {
+    id: "non-medical",
+    kicker: "Non-medical Disclosure",
+    title: "非醫療用途聲明",
+    summary:
+      "本服務提供的是一般健康管理與 wellness guidance 參考，不構成醫療診斷、治療、處方或專業醫療建議。",
+    checkboxLabel: "我已閱讀並同意非醫療用途聲明",
+    paragraphs: [
+      "HappyMeal 提供的熱量、營養與運動建議，屬於一般健康管理與 wellness guidance 參考，目的在於協助你理解單次飲食與活動安排。",
+      "所有營養結果與建議都屬於估算資訊，不能取代醫師、營養師或其他合格醫療專業人員的判斷，也不應被解讀為診斷、治療、處方或疾病管理方案。",
+      "如果你有慢性病、特殊飲食限制、孕期需求或任何健康疑慮，請優先諮詢合格醫療專業人員，再決定是否依據本服務的資訊調整飲食或運動安排。",
+    ],
+  },
 ];
 
 function profileToFormState(profile: ProfileResponse | null): ProfileFormState {
@@ -131,6 +169,63 @@ function DisclaimerCard({
   );
 }
 
+function ConsentAccordionCard({
+  section,
+  isExpanded,
+  isChecked,
+  version,
+  onToggle,
+  onCheckChange,
+}: {
+  section: ConsentContentSection;
+  isExpanded: boolean;
+  isChecked: boolean;
+  version: string;
+  onToggle: () => void;
+  onCheckChange: (checked: boolean) => void;
+}) {
+  return (
+    <article
+      className={`panel-card consent-card ${isExpanded ? "is-expanded" : ""}`}
+    >
+      <button
+        type="button"
+        className="consent-accordion-toggle"
+        aria-expanded={isExpanded}
+        onClick={onToggle}
+      >
+        <div>
+          <p className="panel-kicker">{section.kicker}</p>
+          <h3>{section.title}</h3>
+        </div>
+        <span className="consent-accordion-icon" aria-hidden="true">
+          {isExpanded ? "收合" : "展開"}
+        </span>
+      </button>
+
+      <p className="consent-summary">{section.summary}</p>
+
+      {isExpanded ? (
+        <div className="consent-copy-stack">
+          {section.paragraphs.map((paragraph) => (
+            <p key={paragraph}>{paragraph}</p>
+          ))}
+          <p className="consent-version">目前版本 {version}</p>
+        </div>
+      ) : null}
+
+      <label className="consent-checkbox-row">
+        <input
+          type="checkbox"
+          checked={isChecked}
+          onChange={(event) => onCheckChange(event.currentTarget.checked)}
+        />
+        <span>{section.checkboxLabel}</span>
+      </label>
+    </article>
+  );
+}
+
 function HomeDashboard({ user }: { user: AuthMeResponse }) {
   const queryClient = useQueryClient();
   const logoutMutation = useLogout();
@@ -167,6 +262,18 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   const [consentSaving, setConsentSaving] = useState(false);
   const [consentMessage, setConsentMessage] = useState<string | null>(null);
   const [consentError, setConsentError] = useState<string | null>(null);
+  const [agreePrivacy, setAgreePrivacy] = useState(
+    user.consent_status.has_privacy_policy,
+  );
+  const [agreeNonMedical, setAgreeNonMedical] = useState(
+    user.consent_status.has_non_medical_disclosure,
+  );
+  const [expandedSections, setExpandedSections] = useState<
+    Record<ConsentContentSection["id"], boolean>
+  >({
+    privacy: false,
+    "non-medical": false,
+  });
 
   useEffect(() => {
     void loadProfile();
@@ -177,6 +284,11 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
       setScreen("analysis");
     }
   }, [screen, user]);
+
+  useEffect(() => {
+    setAgreePrivacy(user.consent_status.has_privacy_policy);
+    setAgreeNonMedical(user.consent_status.has_non_medical_disclosure);
+  }, [user]);
 
   async function loadProfile() {
     setProfileLoading(true);
@@ -353,6 +465,11 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   }
 
   async function handleConsentSubmit() {
+    if (!agreePrivacy || !agreeNonMedical) {
+      setConsentError("請先勾選兩項同意後，再繼續。");
+      return;
+    }
+
     setConsentSaving(true);
     setConsentError(null);
     setConsentMessage(null);
@@ -381,6 +498,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   }
 
   const analysisAccessLocked = !user.consent_status.can_start_analysis;
+  const canContinueConsent = agreePrivacy && agreeNonMedical;
   const themeMode = profile?.theme_preference ?? "female_default";
   const validationMessage = buildValidationMessage(profileForm);
   const tabCount = hasRequiredConsents(user) ? 3 : 4;
@@ -525,20 +643,41 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
             ) : null}
 
             <div className="panel-grid">
-              <article className="panel-card consent-card">
+              <article className="panel-card consent-intro-card">
                 <p className="panel-kicker">Privacy & disclosure</p>
                 <h3>開始分析前，請先完成兩項必要同意</h3>
-                <ul className="compact-list">
-                  <li>
-                    隱私政策：照片只作分析暫存，完成後不長期保存。版本{" "}
-                    {user.required_policy_versions.privacy_policy}
-                  </li>
-                  <li>
-                    非醫療用途聲明：所有建議僅供 wellness guidance 參考。版本{" "}
-                    {user.required_policy_versions.non_medical_disclosure}
-                  </li>
-                </ul>
+                <p>
+                  你可以先看摘要，再依需要展開完整文案。完成兩項勾選後，才能開始新的分析與建議流程。
+                </p>
               </article>
+
+              <ConsentAccordionCard
+                section={consentSections[0]}
+                isExpanded={expandedSections.privacy}
+                isChecked={agreePrivacy}
+                version={user.required_policy_versions.privacy_policy}
+                onToggle={() =>
+                  setExpandedSections((current) => ({
+                    ...current,
+                    privacy: !current.privacy,
+                  }))
+                }
+                onCheckChange={setAgreePrivacy}
+              />
+
+              <ConsentAccordionCard
+                section={consentSections[1]}
+                isExpanded={expandedSections["non-medical"]}
+                isChecked={agreeNonMedical}
+                version={user.required_policy_versions.non_medical_disclosure}
+                onToggle={() =>
+                  setExpandedSections((current) => ({
+                    ...current,
+                    "non-medical": !current["non-medical"],
+                  }))
+                }
+                onCheckChange={setAgreeNonMedical}
+              />
 
               <article className="panel-card consent-card">
                 <p className="panel-kicker">Current status</p>
@@ -559,15 +698,16 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                 </ul>
                 <div className="footer-actions">
                   <span className="helper-copy">
-                    你仍可先編輯
-                    Profile，但開始新分析與產生新建議前必須完成同意。
+                    {!canContinueConsent
+                      ? "請先勾選兩項同意後，才能繼續。"
+                      : "已符合送出條件，送出後會回到分析主流程。"}
                   </span>
                   <button
                     className="primary-button"
                     onClick={() => void handleConsentSubmit()}
-                    disabled={consentSaving}
+                    disabled={consentSaving || !canContinueConsent}
                   >
-                    {consentSaving ? "送出中..." : "完成同意"}
+                    {consentSaving ? "送出中..." : "同意並繼續"}
                   </button>
                 </div>
               </article>

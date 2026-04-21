@@ -119,6 +119,9 @@
 1. 首次登入後進入 Consent Intro，而不是直接視為流程已完成
 2. 在 Analysis Result、History Detail、相關建議區塊補上非醫療用途提醒
 3. 補上 consent 狀態檢查，避免未同意就進入建議流程
+4. 建立正式上線文案稿，並同步到 Consent Intro 畫面
+5. 新增兩個必要 checkbox，兩者皆勾選後才可按下「同意並繼續」
+6. 讓 Consent 文案區塊可收合，降低手機閱讀壓力
 
 ### Priority 2｜把 mock 食物辨識替換成真實 AI provider
 
