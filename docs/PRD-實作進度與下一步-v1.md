@@ -138,6 +138,35 @@
 1. 抽象化 analysis upload / recognition provider 邊界
 2. 接上單一 AI provider 即可，不必一開始就做多 provider 切換
 3. 補 timeout、error handling、fallback 與耗時記錄
+4. 補上「使用者修正後再次請 AI 協助估算」的互動與 API 邊界，但最終確認權仍由使用者保留
+
+目前建議的落地方向：
+
+1. 第一版 provider 優先採 OpenAI，模型首選 `GPT-5.4 mini`
+2. 第一版重點不是追求單次辨識極致準確，而是把「辨識普通但手動修正非常順」做完整
+3. 支援整份餐點中的多個食物，並盡量涵蓋台灣日常飲食與可辨識飲料
+4. 營養結果仍應由正式 nutrition source 或內部 mapping 計算，不直接相信 AI 估出的營養數值
+5. 若 AI 辨識不足，應以 `manual_required` 或同等 fallback 方式讓使用者在同一主鏈完成補輸入
+6. 月預算若僅約新台幣 `200` 元，較適合 PoC 或少量封測，不適合作為真實使用者規模的長期月預算假設
+
+推薦的執行優先順序：
+
+1. 先抽出 `analysis upload -> recognition provider -> normalization` 的後端邊界，避免後續直接把 OpenAI 細節寫死在 upload service 內
+2. 先接上單一 provider 與最小可用 prompt，讓 `/analyses/{id}/image` 能從真實圖片回傳 candidate，而不是先花時間做多 provider 或過度抽象化
+3. 優先補 `manual_required`、timeout、provider error handling，確保 AI 不穩時主鏈仍可走完
+4. 接著補前端 Candidate Confirmation 的順手修正能力，至少包含編輯名稱、調整份量、刪除誤判與補新增食物
+5. 在 Candidate Confirmation 可用後，再補「再次請 AI 估算」能力，讓使用者修改內容後可請 AI 重新推估候選與份量，但不直接覆蓋使用者最後輸入
+6. 再補最小觀測性，先記錄 latency、timeout、error rate、manual fallback rate、correction rate 與 re-estimation 使用率
+7. 最後才根據真實照片與 correction data，調整 prompt、模型等級或是否要更換 provider
+
+這個順序的理由是：
+
+1. 先把技術邊界切乾淨，後面才不會因為換模型或補 fallback 造成大面積重寫
+2. 先讓真實圖片主鏈跑通，比提早優化準確率或提早做監控儀表板更有驗證價值
+3. 在 HappyMeal 的前提下，AI 不完美是可接受的，但不能讓使用者卡住，因此 fallback 與修正體驗應早於精修模型表現
+4. 「再次請 AI 估算」屬於加強修正效率的第二層能力，應建立在基本修正體驗已可用的前提上，否則只會增加複雜度而不穩定
+
+相關詳細規格請見：[功能開發/真實-AI-食物辨識-MVP-規格-v1.md](./功能開發/真實-AI-食物辨識-MVP-規格-v1.md)
 
 ### Priority 3｜把 preset 營養估算替換成正式 nutrition source
 
