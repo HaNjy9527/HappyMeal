@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     session_cookie_max_age: int = Field(default=60 * 60 * 24 * 7, alias="SESSION_COOKIE_MAX_AGE")
     frontend_url: str = Field(default="", alias="FRONTEND_URL")
     ai_food_api_key: str = Field(default="", alias="AI_API_KEY")
+    ai_food_model: str = Field(default="gpt-5.4-mini", alias="AI_FOOD_MODEL")
     nutrition_data_source: str = Field(default="", alias="NUTRITION_DATA_SOURCE")
 
     model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")

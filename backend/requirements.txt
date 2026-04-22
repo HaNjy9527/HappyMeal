@@ -8,4 +8,5 @@ pytest==8.4.2
 httpx==0.28.1
 itsdangerous==2.2.0
 python-multipart==0.0.20
+openai==1.109.1
 
