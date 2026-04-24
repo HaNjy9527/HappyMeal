@@ -124,6 +124,10 @@ input:focus-visible {
   backdrop-filter: blur(14px);
 }
 
+.app-frame-profile {
+  backdrop-filter: none;
+}
+
 .landing-frame {
   display: grid;
   gap: 24px;

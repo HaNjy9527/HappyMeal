@@ -11,4 +11,4 @@ dist/
 postgres_data/
 backend/tmp/
 
-docs/deploy-log/
+docs/dev-log/

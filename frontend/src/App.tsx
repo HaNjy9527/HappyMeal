@@ -611,7 +611,11 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
       <div className="ambient-orb ambient-orb-left" aria-hidden="true" />
       <div className="ambient-orb ambient-orb-right" aria-hidden="true" />
 
-      <section className="app-frame">
+      <section
+        className={
+          screen === "profile" ? "app-frame app-frame-profile" : "app-frame"
+        }
+      >
         <header className="topbar">
           <div>
             <p className="eyebrow">HappyMeal Step 2 MVP</p>
@@ -1277,12 +1281,13 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                         name="age"
                         value={profileForm.age}
                         inputMode="numeric"
-                        onChange={(event) =>
+                        onChange={(event) => {
+                          const nextValue = event.currentTarget.value;
                           setProfileForm((current) => ({
                             ...current,
-                            age: event.currentTarget.value,
-                          }))
-                        }
+                            age: nextValue,
+                          }));
+                        }}
                       />
                     </label>
                     <label>
@@ -1291,12 +1296,13 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                         name="height_cm"
                         value={profileForm.height_cm}
                         inputMode="numeric"
-                        onChange={(event) =>
+                        onChange={(event) => {
+                          const nextValue = event.currentTarget.value;
                           setProfileForm((current) => ({
                             ...current,
-                            height_cm: event.currentTarget.value,
-                          }))
-                        }
+                            height_cm: nextValue,
+                          }));
+                        }}
                       />
                     </label>
                     <label>
@@ -1305,12 +1311,13 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                         name="weight_kg"
                         value={profileForm.weight_kg}
                         inputMode="decimal"
-                        onChange={(event) =>
+                        onChange={(event) => {
+                          const nextValue = event.currentTarget.value;
                           setProfileForm((current) => ({
                             ...current,
-                            weight_kg: event.currentTarget.value,
-                          }))
-                        }
+                            weight_kg: nextValue,
+                          }));
+                        }}
                       />
                     </label>
                     <label>
@@ -1319,12 +1326,13 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                         name="goal_weight_kg"
                         value={profileForm.goal_weight_kg}
                         inputMode="decimal"
-                        onChange={(event) =>
+                        onChange={(event) => {
+                          const nextValue = event.currentTarget.value;
                           setProfileForm((current) => ({
                             ...current,
-                            goal_weight_kg: event.currentTarget.value,
-                          }))
-                        }
+                            goal_weight_kg: nextValue,
+                          }));
+                        }}
                       />
                     </label>
                   </div>
