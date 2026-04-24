@@ -23,7 +23,12 @@ services:
     build:
       context: ./frontend
       target: dev
-    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+    command:
+      [
+        "sh",
+        "-c",
+        "if [ ! -d /app/node_modules/@tanstack/react-query ]; then npm install; fi && npm run dev -- --host 0.0.0.0 --port 5173",
+      ]
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     ports:

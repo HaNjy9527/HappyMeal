@@ -69,6 +69,14 @@ class Settings(BaseSettings):
             return value or None
         return v
 
+    @field_validator("session_cookie_https_only", mode="before")
+    @classmethod
+    def normalize_https_only(cls, v: object) -> object:
+        if isinstance(v, str):
+            value = v.strip().lower()
+            return value or None
+        return v
+
     @field_validator("session_cookie_same_site")
     @classmethod
     def validate_same_site(cls, v: str | None) -> str | None:
