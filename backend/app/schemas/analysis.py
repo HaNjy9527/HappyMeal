@@ -47,6 +47,12 @@ class AnalysisResultItem(BaseModel):
     normalized_food_name: str
     portion_value: Decimal
     portion_unit: str
+    source_portion_unit: str | None = None
+    canonical_food_name: str | None = None
+    nutrition_source: str | None = None
+    is_estimated: bool = False
+    resolved_weight_g: Decimal | None = None
+    weight_estimation_method: str | None = None
     confidence_score: Decimal | None
     kcal: Decimal
     protein_g: Decimal

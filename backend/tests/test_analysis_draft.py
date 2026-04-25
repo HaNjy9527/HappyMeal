@@ -219,6 +219,12 @@ def test_post_analysis_confirm_persists_totals_snapshot_and_cleans_upload(client
     assert Decimal(str(payload["total_fat_g"])) == Decimal("23.30")
     assert Decimal(str(payload["total_carb_g"])) == Decimal("12.60")
     assert len(payload["items"]) == 2
+    assert payload["items"][0]["nutrition_source"] == "preset"
+    assert payload["items"][0]["is_estimated"] is False
+    assert payload["items"][0]["source_portion_unit"] == "bowl"
+    assert payload["items"][0]["canonical_food_name"] == "chicken_salad"
+    assert Decimal(str(payload["items"][0]["resolved_weight_g"])) == Decimal("280.00")
+    assert payload["items"][0]["weight_estimation_method"] == "exact_unit_match"
     assert Decimal(str(payload["recommendation"]["target_calories_kcal"])) == Decimal("2950.00")
     assert len(payload["recommendation"]["recommended_exercises"]) == 3
     assert payload["recommendation"]["recommended_exercises"][0]["category"] == "strength"
@@ -255,6 +261,122 @@ def test_post_analysis_confirm_requires_complete_profile(client, isolated_upload
 
     assert confirm_response.status_code == 409
     assert confirm_response.json()["detail"] == "Profile is incomplete for recommendation generation"
+
+
+def test_post_analysis_confirm_accepts_unknown_foods_and_units_with_fallback_estimates(client, db_session, isolated_upload_dir):
+    seed_exercises(db_session)
+    accept_required_consents(client)
+
+    profile_response = client.put("/profile", json=build_profile_payload())
+    assert profile_response.status_code == 200
+
+    draft_response = client.post("/analyses")
+    analysis_id = draft_response.json()["id"]
+
+    upload_response = client.post(
+        f"/analyses/{analysis_id}/image",
+        files={"file": ("taiwanese-lunch.jpg", BytesIO(b"fake-jpeg-data"), "image/jpeg")},
+    )
+
+    assert upload_response.status_code == 200
+
+    confirm_response = client.post(
+        f"/analyses/{analysis_id}/confirm",
+        json={
+            "items": [
+                {
+                    "food_name": "雞肉飯",
+                    "normalized_food_name": "chicken_rice_bowl",
+                    "portion_value": "1.0",
+                    "portion_unit": "bowl",
+                    "confidence_score": "0.95",
+                },
+                {
+                    "food_name": "高麗菜",
+                    "normalized_food_name": "cabbage",
+                    "portion_value": "1.0",
+                    "portion_unit": "bag",
+                    "confidence_score": "0.88",
+                },
+                {
+                    "food_name": "薑絲",
+                    "normalized_food_name": "ginger_shreds",
+                    "portion_value": "1.0",
+                    "portion_unit": "tbsp",
+                    "confidence_score": "0.86",
+                },
+                {
+                    "food_name": "辣椒醬",
+                    "normalized_food_name": "chili_sauce",
+                    "portion_value": "1.0",
+                    "portion_unit": "tbsp",
+                    "confidence_score": "0.84",
+                },
+                {
+                    "food_name": "白飯",
+                    "normalized_food_name": "white_rice",
+                    "portion_value": "1.0",
+                    "portion_unit": "cup",
+                    "confidence_score": "0.82",
+                },
+            ]
+        },
+    )
+
+    assert confirm_response.status_code == 200
+    payload = confirm_response.json()
+    assert payload["status"] == "completed"
+    assert len(payload["items"]) == 5
+    assert Decimal(str(payload["total_kcal"])) > Decimal("0")
+    assert payload["items"][1]["portion_unit"] == "bag"
+    assert payload["items"][4]["portion_unit"] == "cup"
+    assert payload["items"][0]["nutrition_source"] == "alias_mapping"
+    assert payload["items"][0]["is_estimated"] is True
+    assert payload["items"][0]["canonical_food_name"] == "generic_mixed_meal"
+    assert Decimal(str(payload["items"][0]["resolved_weight_g"])) == Decimal("320.00")
+    assert payload["items"][1]["weight_estimation_method"] == "common_unit_conversion"
+    assert Decimal(str(payload["items"][0]["kcal"])) > Decimal("0")
+    assert Decimal(str(payload["items"][3]["kcal"])) > Decimal("0")
+
+
+def test_post_analysis_confirm_converts_supported_food_units_instead_of_rejecting(client, db_session, isolated_upload_dir):
+    seed_exercises(db_session)
+    accept_required_consents(client)
+
+    profile_response = client.put("/profile", json=build_profile_payload())
+    assert profile_response.status_code == 200
+
+    draft_response = client.post("/analyses")
+    analysis_id = draft_response.json()["id"]
+
+    upload_response = client.post(
+        f"/analyses/{analysis_id}/image",
+        files={"file": ("chicken-rice.jpg", BytesIO(b"fake-jpeg-data"), "image/jpeg")},
+    )
+
+    assert upload_response.status_code == 200
+
+    confirm_response = client.post(
+        f"/analyses/{analysis_id}/confirm",
+        json={
+            "items": [
+                {
+                    "food_name": "Chicken Rice",
+                    "normalized_food_name": "grilled_chicken_rice",
+                    "portion_value": "1.0",
+                    "portion_unit": "bowl",
+                    "confidence_score": "0.91",
+                }
+            ]
+        },
+    )
+
+    assert confirm_response.status_code == 200
+    payload = confirm_response.json()
+    assert payload["items"][0]["portion_unit"] == "bowl"
+    assert Decimal(str(payload["items"][0]["kcal"])) == Decimal("468.00")
+    assert Decimal(str(payload["items"][0]["resolved_weight_g"])) == Decimal("324.00")
+    assert payload["items"][0]["weight_estimation_method"] == "common_unit_conversion"
 
 
 def test_get_analysis_history_returns_completed_items_only(client, db_session, isolated_upload_dir):
