@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import base64
 import json
+from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
 
-from openai import OpenAI
+from openai import APIConnectionError, APITimeoutError, BadRequestError, OpenAI, RateLimitError
 
 from app.core.config import get_settings
 from app.services.recognition_provider import ProviderCandidate
@@ -98,6 +99,16 @@ Rules:
 """.strip()
 
 
+@dataclass(slots=True)
+class RecognitionProviderFailure(Exception):
+    reason: str
+    message: str
+    manual_review_required: bool = True
+
+    def __post_init__(self) -> None:
+        super().__init__(self.message)
+
+
 def create_openai_client() -> OpenAI:
     settings = get_settings()
     return OpenAI(api_key=settings.ai_food_api_key)
@@ -156,25 +167,47 @@ def parse_openai_response(output_text: str) -> list[ProviderCandidate]:
 def request_openai_candidates(*, image_path: Path) -> list[ProviderCandidate]:
     settings = get_settings()
     client = create_openai_client()
-    response = client.responses.create(
-        model=settings.ai_food_model,
-        instructions=OPENAI_RECOGNITION_PROMPT,
-        input=[
-            {
-                "role": "user",
-                "content": [
-                    {"type": "input_text", "text": "Identify the foods and drinks in this meal photo."},
-                    {
-                        "type": "input_image",
-                        "image_url": get_image_data_url(image_path),
-                        "detail": "high",
-                    },
-                ],
-            }
-        ],
-        temperature=0,
-        max_output_tokens=400,
-    )
+    try:
+        response = client.responses.create(
+            model=settings.ai_food_model,
+            instructions=OPENAI_RECOGNITION_PROMPT,
+            input=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "input_text", "text": "Identify the foods and drinks in this meal photo."},
+                        {
+                            "type": "input_image",
+                            "image_url": get_image_data_url(image_path),
+                            "detail": "high",
+                        },
+                    ],
+                }
+            ],
+            temperature=0,
+            max_output_tokens=400,
+        )
+    except RateLimitError as error:
+        raise RecognitionProviderFailure(
+            reason="quota_exceeded",
+            message="AI 服務目前額度不足，請直接手動調整或稍後再試。",
+        ) from error
+    except BadRequestError as error:
+        raise RecognitionProviderFailure(
+            reason="invalid_image",
+            message="這張圖片目前無法穩定分析，請直接手動調整或改用其他圖片。",
+        ) from error
+    except APITimeoutError as error:
+        raise RecognitionProviderFailure(
+            reason="provider_timeout",
+            message="AI 分析逾時，請直接手動調整或稍後再試。",
+        ) from error
+    except APIConnectionError as error:
+        raise RecognitionProviderFailure(
+            reason="provider_unavailable",
+            message="AI 服務目前無法連線，請直接手動調整或稍後再試。",
+        ) from error
+
     return parse_openai_response(response.output_text)
 
 

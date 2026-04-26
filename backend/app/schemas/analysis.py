@@ -28,6 +28,9 @@ class AnalysisCandidateResponse(BaseModel):
     analysis_id: str
     status: AnalysisStatus
     candidates: list[AnalysisCandidateItem]
+    manual_review_required: bool = False
+    fallback_reason: str | None = None
+    message: str | None = None
 
 
 class AnalysisConfirmItemRequest(BaseModel):

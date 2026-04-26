@@ -436,6 +436,12 @@ input:focus-visible {
   border-color: rgba(47, 143, 107, 0.14);
 }
 
+.status-banner.is-info {
+  color: var(--text-primary);
+  background: rgba(199, 225, 255, 0.45);
+  border-color: rgba(91, 142, 214, 0.2);
+}
+
 .disclaimer-card {
   background: linear-gradient(
     135deg,
@@ -663,6 +669,15 @@ input {
   color: var(--text-primary);
 }
 
+select {
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(24, 50, 61, 0.14);
+  background: white;
+  color: var(--text-primary);
+}
+
 .choice-grid {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
@@ -752,6 +767,73 @@ input {
   font-size: 1.08rem;
 }
 
+.candidate-card {
+  display: grid;
+  gap: 16px;
+}
+
+.candidate-card-manual {
+  border-color: rgba(29, 141, 159, 0.22);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 1),
+    rgba(233, 247, 249, 0.82)
+  );
+}
+
+.candidate-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.candidate-kind-label {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.candidate-edit-grid {
+  grid-template-columns: minmax(0, 2fr) minmax(120px, 1fr) minmax(110px, 0.9fr);
+}
+
+.candidate-remove-button {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(24, 50, 61, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text-secondary);
+}
+
+.candidate-support-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.candidate-support-copy {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.candidate-support-copy-muted {
+  color: var(--text-muted);
+}
+
+.add-food-button {
+  width: 100%;
+}
+
+.empty-panel-card {
+  display: grid;
+  gap: 14px;
+}
+
 .result-row p,
 .history-card p,
 .summary-card p,
@@ -839,12 +921,21 @@ input {
 
   .tab-strip,
   .field-grid,
+  .candidate-edit-grid,
   .field-grid-wide,
   .target-grid,
   .choice-grid,
   .choice-grid.two-columns,
   .metric-grid {
     grid-template-columns: 1fr;
+  }
+
+  .candidate-remove-button {
+    width: 100%;
+  }
+
+  .candidate-support-row {
+    flex-direction: column;
   }
 
   .backend-badge,

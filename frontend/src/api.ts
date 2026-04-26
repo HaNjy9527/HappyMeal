@@ -90,6 +90,9 @@ export type AnalysisCandidateResponse = {
   analysis_id: string;
   status: AnalysisStatus;
   candidates: AnalysisCandidateItem[];
+  manual_review_required: boolean;
+  fallback_reason: string | null;
+  message: string | null;
 };
 
 export type AnalysisResultItem = {
@@ -97,6 +100,12 @@ export type AnalysisResultItem = {
   normalized_food_name: string;
   portion_value: string;
   portion_unit: string;
+  source_portion_unit: string | null;
+  canonical_food_name: string | null;
+  nutrition_source: string | null;
+  is_estimated: boolean;
+  resolved_weight_g: string | null;
+  weight_estimation_method: string | null;
   confidence_score: string | null;
   kcal: string;
   protein_g: string;
@@ -175,6 +184,8 @@ function buildApiError(
 }
 
 export type CandidateDraftItem = {
+  id: string;
+  is_manual: boolean;
   food_name: string;
   normalized_food_name: string;
   portion_value: string;

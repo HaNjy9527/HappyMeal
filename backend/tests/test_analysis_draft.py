@@ -5,6 +5,7 @@ import pytest
 
 from app.core.config import get_settings
 from app.db.models import ExerciseCatalog
+from app.services.analysis_recognition import AnalysisRecognitionResult
 from app.services.consent import CURRENT_NON_MEDICAL_DISCLOSURE_VERSION, CURRENT_PRIVACY_POLICY_VERSION
 
 
@@ -15,6 +16,17 @@ def isolated_upload_dir(tmp_path, monkeypatch):
 
     try:
         yield tmp_path
+    finally:
+        get_settings.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def disable_real_ai_provider(monkeypatch):
+    monkeypatch.setenv("AI_API_KEY", "")
+    get_settings.cache_clear()
+
+    try:
+        yield
     finally:
         get_settings.cache_clear()
 
@@ -133,8 +145,47 @@ def test_post_analysis_image_returns_mock_candidates_and_updates_status(client):
     payload = upload_response.json()
     assert payload["analysis_id"] == analysis_id
     assert payload["status"] == "awaiting_confirmation"
+    assert payload["manual_review_required"] is False
+    assert payload["fallback_reason"] is None
+    assert payload["message"] is None
     assert len(payload["candidates"]) == 2
     assert payload["candidates"][0]["food_name"] == "Chicken Salad"
+
+
+def test_post_analysis_image_returns_manual_review_fallback_for_provider_failures(
+    client, isolated_upload_dir, monkeypatch
+):
+    accept_required_consents(client)
+    draft_response = client.post("/analyses")
+    analysis_id = draft_response.json()["id"]
+
+    def fake_recognize_analysis_image(*, filename, image_path):
+        return AnalysisRecognitionResult(
+            candidates=[],
+            manual_review_required=True,
+            fallback_reason="provider_timeout",
+            message="AI 分析逾時，請直接手動調整或稍後再試。",
+        )
+
+    monkeypatch.setattr(
+        "app.services.analysis_upload.recognize_analysis_image",
+        fake_recognize_analysis_image,
+    )
+
+    upload_response = client.post(
+        f"/analyses/{analysis_id}/image",
+        files={"file": ("salad-lunch.jpg", BytesIO(b"fake-jpeg-data"), "image/jpeg")},
+    )
+
+    assert upload_response.status_code == 200
+    payload = upload_response.json()
+    assert payload["analysis_id"] == analysis_id
+    assert payload["status"] == "awaiting_confirmation"
+    assert payload["candidates"] == []
+    assert payload["manual_review_required"] is True
+    assert payload["fallback_reason"] == "provider_timeout"
+    assert payload["message"] == "AI 分析逾時，請直接手動調整或稍後再試。"
+    assert not (isolated_upload_dir / f"{analysis_id}.jpg").exists()
 
 
 def test_post_analysis_image_rejects_non_image_upload(client):
@@ -186,7 +237,7 @@ def test_post_analysis_confirm_persists_totals_snapshot_and_cleans_upload(client
     )
 
     assert upload_response.status_code == 200
-    assert (isolated_upload_dir / f"{analysis_id}.jpg").exists()
+    assert not (isolated_upload_dir / f"{analysis_id}.jpg").exists()
 
     confirm_response = client.post(
         f"/analyses/{analysis_id}/confirm",

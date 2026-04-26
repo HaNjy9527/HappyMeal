@@ -72,8 +72,12 @@ def upload_analysis_image(
 
     validate_image_upload(file)
     target_path = build_upload_path(analysis_id, file.filename)
-    save_upload_file(file, target_path)
-    candidates = recognize_analysis_image(filename=file.filename, image_path=target_path)
+
+    try:
+        save_upload_file(file, target_path)
+        recognition_result = recognize_analysis_image(filename=file.filename, image_path=target_path)
+    finally:
+        delete_analysis_uploads(analysis_id)
 
     analysis.status = AnalysisStatus.AWAITING_CONFIRMATION
     db.add(analysis)
@@ -83,5 +87,8 @@ def upload_analysis_image(
     return AnalysisCandidateResponse(
         analysis_id=analysis.id,
         status=analysis.status,
-        candidates=candidates,
+        candidates=recognition_result.candidates,
+        manual_review_required=recognition_result.manual_review_required,
+        fallback_reason=recognition_result.fallback_reason,
+        message=recognition_result.message,
     )

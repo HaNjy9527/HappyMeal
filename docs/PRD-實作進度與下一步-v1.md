@@ -21,6 +21,12 @@
 
 若要追蹤 Step 2 工作包、Ticket 與驗收矩陣，仍以 [setup/Step2-核心開發任務清單-v1.md](./setup/Step2-%E6%A0%B8%E5%BF%83%E9%96%8B%E7%99%BC%E4%BB%BB%E5%8B%99%E6%B8%85%E5%96%AE-v1.md) 為準。
 
+補充說明：
+
+1. 本文件處理的是「PRD v1 尚未補齊的產品缺口」，不是重新定義 Step 1 到 Step 5 的開發順序
+2. 截至 2026-04，專案的 CI/CD 與 AWS 部署鏈路已經建立，因此目前討論的 Priority 1 到 Priority 5，應視為「產品補完優先順序」，不是「開發起點步驟」
+3. 若要避免混淆，閱讀上建議把 `Step 1-5` 視為歷史開發路徑，把 `Priority 1-5` 視為目前活躍中的補齊主題
+
 ---
 
 ## 2. 判讀範圍與依據
@@ -49,6 +55,33 @@
 2. 若以 PRD v1 完整 MVP 體驗為標準，整體約落在「主鏈已通，但仍需補齊正式能力與使用者可見流程」的階段
 3. 目前最明確已完成的項目是 LINE Login、Profile、Theme、Consent API、Analysis 主鏈、History 主鏈與後端測試骨架
 4. 目前最明確未做滿的項目是真實 AI 食物辨識、正式營養資料來源、Consent Intro 與非醫療提醒覆蓋、以及 IA 中較完整的頁面體驗
+
+另外，文件閱讀上需要先分清楚兩件事：
+
+1. `Step 1-5` 是當初的開發順序文件，用來說明先本地、再 CI、再 AWS、再 CD 的路徑
+2. `Priority 1-5` 是目前產品補齊順序，用來說明接下來該優先補哪條功能主鏈
+
+因此，現在若要跟進開發進度，應優先看本文件第 7 節與對應的 Priority 細文件，而不是再把 Step 4 或 Step 5 當作待做事項。
+
+---
+
+## 3.1 目前開發步驟狀態
+
+為避免文件中的 `Step` 與 `Priority` 混在一起，先單獨列出目前專案所處位置：
+
+| 路徑   | 原始用途                 | 目前狀態       | 現在應如何使用                             |
+| ------ | ------------------------ | -------------- | ------------------------------------------ |
+| Step 1 | Docker 本地開發基線      | 已完成         | 當環境壞掉或新同伴加入時，作為本地環境參考 |
+| Step 2 | 核心主流程開發與驗收     | 主鏈已大致完成 | 作為 scope baseline 與驗收矩陣參考         |
+| Step 3 | GitHub Actions CI        | 已完成         | 作為 CI 設定與維護參考                     |
+| Step 4 | AWS / Lightsail 基礎設施 | 已完成         | 作為部署環境維護參考                       |
+| Step 5 | GitHub Actions CD        | 已完成         | 作為部署流程維護參考                       |
+
+結論：
+
+1. 目前不應再把 Step 4 或 Step 5 寫成「下一步開發優先順序」
+2. 目前真正的下一步，應聚焦在 PRD v1 尚未補齊的產品缺口
+3. 這些缺口已改由本文件第 7 節與其拆分文件來承接
 
 ---
 
@@ -104,106 +137,46 @@
 
 本節的目的不是擴張新需求，而是先補齊 PRD v1 尚未完成的缺口。
 
+為了避免本文件一次涵蓋太多內容，以下只保留 Priority 總覽；各 Priority 的詳細拆解、範圍、驗收條件與目前狀態，已拆到獨立文件。
+
+### 7.1 Priority 總覽表
+
+| Priority   | 主題                       | 目標                     | 詳細文件                                                                                                                                                                                                |
+| ---------- | -------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Priority 1 | Consent 與非醫療提醒主鏈   | 補齊合規與使用者可見流程 | [功能開發/Priority1-Consent-與非醫療提醒主鏈-v1.md](./功能開發/Priority1-Consent-%E8%88%87%E9%9D%9E%E9%86%AB%E7%99%82%E6%8F%90%E9%86%92%E4%B8%BB%E9%8F%88-v1.md)                                        |
+| Priority 2 | 真實 AI 食物辨識與候選修正 | 補齊核心產品價值主鏈     | [功能開發/Priority2-真實-AI-食物辨識與候選修正-v1.md](./功能開發/Priority2-%E7%9C%9F%E5%AF%A6-AI-%E9%A3%9F%E7%89%A9%E8%BE%A8%E8%AD%98%E8%88%87%E5%80%99%E9%81%B8%E4%BF%AE%E6%AD%A3-v1.md)               |
+| Priority 3 | 正式營養資料來源與估算策略 | 讓營養結果可持續使用     | [功能開發/Priority3-正式營養資料來源與估算策略-v1.md](./功能開發/Priority3-%E6%AD%A3%E5%BC%8F%E7%87%9F%E9%A4%8A%E8%B3%87%E6%96%99%E4%BE%86%E6%BA%90%E8%88%87%E4%BC%B0%E7%AE%97%E7%AD%96%E7%95%A5-v1.md) |
+| Priority 4 | 前端 IA 與手機體驗補齊     | 讓 MVP 更接近 PRD 體驗   | [功能開發/Priority4-前端IA與手機體驗補齊-v1.md](./功能開發/Priority4-%E5%89%8D%E7%AB%AFIA%E8%88%87%E6%89%8B%E6%A9%9F%E9%AB%94%E9%A9%97%E8%A3%9C%E9%BD%8A-v1.md)                                         |
+| Priority 5 | 觀測性與效能基線           | 讓 AI 與部署驗收更可量測 | [功能開發/Priority5-觀測性與效能基線-v1.md](./功能開發/Priority5-%E8%A7%80%E6%B8%AC%E6%80%A7%E8%88%87%E6%95%88%E8%83%BD%E5%9F%BA%E7%B7%9A-v1.md)                                                        |
+
+### 7.2 Priority 閱讀順序
+
+若你目前最擔心的是「是否往自己不確定的方向前進」，建議閱讀順序如下：
+
+1. 先看 Priority 2 詳細文件，因為目前核心不確定性主要集中在 AI 辨識、candidate review 與 fallback 主鏈
+2. 接著看 Priority 3，因為真實辨識接上後，營養資料來源會直接影響結果可信度
+3. 再看 Priority 1 與 Priority 4，確認前端流程、合規與產品體驗如何補齊
+4. 最後看 Priority 5，作為部署後持續驗證的量測基線
+
 ### Priority 1｜補齊 Consent 與非醫療提醒主鏈
 
-目標：先把合規與使用者可見流程補完整。
-
-原因：
-
-1. FR-11 與驗收條件第 6 點目前還沒有真正完成
-2. Consent API 已存在，補前端成本低，卻能直接讓 MVP 更接近 PRD 驗收
-3. 這屬於既有主鏈補完，不是新範圍擴張
-
-建議包含：
-
-1. 首次登入後進入 Consent Intro，而不是直接視為流程已完成
-2. 在 Analysis Result、History Detail、相關建議區塊補上非醫療用途提醒
-3. 補上 consent 狀態檢查，避免未同意就進入建議流程
-4. 建立正式上線文案稿，並同步到 Consent Intro 畫面
-5. 新增兩個必要 checkbox，兩者皆勾選後才可按下「同意並繼續」
-6. 讓 Consent 文案區塊可收合，降低手機閱讀壓力
+詳見：[功能開發/Priority1-Consent-與非醫療提醒主鏈-v1.md](./功能開發/Priority1-Consent-%E8%88%87%E9%9D%9E%E9%86%AB%E7%99%82%E6%8F%90%E9%86%92%E4%B8%BB%E9%8F%88-v1.md)
 
 ### Priority 2｜把 mock 食物辨識替換成真實 AI provider
 
-目標：讓 FR-04 從「可演示」升級到「可驗證真實產品價值」。
-
-原因：
-
-1. 目前 analysis 主鏈雖然能跑通，但核心產品價值仍建立在 mock candidate 上
-2. 若沒有真實辨識，PRD 成功指標中的分析成功率與手動修正率無法被真正驗證
-3. 這是最接近 HappyMeal 核心價值主張的功能缺口
-
-建議包含：
-
-1. 抽象化 analysis upload / recognition provider 邊界
-2. 接上單一 AI provider 即可，不必一開始就做多 provider 切換
-3. 補 timeout、error handling、fallback 與耗時記錄
-4. 補上「使用者修正後再次請 AI 協助估算」的互動與 API 邊界，但最終確認權仍由使用者保留
-
-目前建議的落地方向：
-
-1. 第一版 provider 優先採 OpenAI，模型首選 `GPT-5.4 mini`
-2. 第一版重點不是追求單次辨識極致準確，而是把「辨識普通但手動修正非常順」做完整
-3. 支援整份餐點中的多個食物，並盡量涵蓋台灣日常飲食與可辨識飲料
-4. 營養結果仍應由正式 nutrition source 或內部 mapping 計算，不直接相信 AI 估出的營養數值
-5. 若 AI 辨識不足，應以 `manual_required` 或同等 fallback 方式讓使用者在同一主鏈完成補輸入
-6. 月預算若僅約新台幣 `200` 元，較適合 PoC 或少量封測，不適合作為真實使用者規模的長期月預算假設
-
-推薦的執行優先順序：
-
-1. 先抽出 `analysis upload -> recognition provider -> normalization` 的後端邊界，避免後續直接把 OpenAI 細節寫死在 upload service 內
-2. 先接上單一 provider 與最小可用 prompt，讓 `/analyses/{id}/image` 能從真實圖片回傳 candidate，而不是先花時間做多 provider 或過度抽象化
-3. 優先補 `manual_required`、timeout、provider error handling，確保 AI 不穩時主鏈仍可走完
-4. 接著補前端 Candidate Confirmation 的順手修正能力，至少包含編輯名稱、調整份量、刪除誤判與補新增食物
-5. 在 Candidate Confirmation 可用後，再補「再次請 AI 估算」能力，讓使用者修改內容後可請 AI 重新推估候選與份量，但不直接覆蓋使用者最後輸入
-6. 再補最小觀測性，先記錄 latency、timeout、error rate、manual fallback rate、correction rate 與 re-estimation 使用率
-7. 最後才根據真實照片與 correction data，調整 prompt、模型等級或是否要更換 provider
-
-這個順序的理由是：
-
-1. 先把技術邊界切乾淨，後面才不會因為換模型或補 fallback 造成大面積重寫
-2. 先讓真實圖片主鏈跑通，比提早優化準確率或提早做監控儀表板更有驗證價值
-3. 在 HappyMeal 的前提下，AI 不完美是可接受的，但不能讓使用者卡住，因此 fallback 與修正體驗應早於精修模型表現
-4. 「再次請 AI 估算」屬於加強修正效率的第二層能力，應建立在基本修正體驗已可用的前提上，否則只會增加複雜度而不穩定
-
-相關詳細規格請見：[功能開發/真實-AI-食物辨識-MVP-規格-v1.md](./功能開發/真實-AI-食物辨識-MVP-規格-v1.md)
+詳見：[功能開發/Priority2-真實-AI-食物辨識與候選修正-v1.md](./功能開發/Priority2-%E7%9C%9F%E5%AF%A6-AI-%E9%A3%9F%E7%89%A9%E8%BE%A8%E8%AD%98%E8%88%87%E5%80%99%E9%81%B8%E4%BF%AE%E6%AD%A3-v1.md)
 
 ### Priority 3｜把 preset 營養估算替換成正式 nutrition source
 
-目標：讓 FR-06 與 FR-07 的結果從 demo 級提升到可持續使用的 MVP 級。
-
-原因：
-
-1. 目前 totals 正確性只對 preset 食物成立
-2. 真實辨識接上後，若營養來源仍是硬編碼，結果品質仍不足
-3. 這一層完成後，history 與 recommendation 的資料才有真正價值
-
-建議包含：
-
-1. 建立 normalized food name 到 nutrition data 的 mapping 策略
-2. 保留估算值標示
-3. 避免一開始就擴成完整手動搜尋食物資料庫
+詳見：[功能開發/Priority3-正式營養資料來源與估算策略-v1.md](./功能開發/Priority3-%E6%AD%A3%E5%BC%8F%E7%87%9F%E9%A4%8A%E8%B3%87%E6%96%99%E4%BE%86%E6%BA%90%E8%88%87%E4%BC%B0%E7%AE%97%E7%AD%96%E7%95%A5-v1.md)
 
 ### Priority 4｜補齊 IA 中缺少的前端頁面與手機體驗
 
-目標：把最小主流程殼補成較接近 PRD 的可用產品。
-
-建議包含：
-
-1. 補強 Landing Page 產品價值與免責說明
-2. 補出更完整的 Home Dashboard，而不是只依賴 tab 化主流程頁
-3. 補 Theme Preference 與 Consent Review 的明確頁面結構
-4. 依 [IA-User-Flows-v1.md](./IA-User-Flows-v1.md) 補齊錯誤、空狀態與內容策略
+詳見：[功能開發/Priority4-前端IA與手機體驗補齊-v1.md](./功能開發/Priority4-%E5%89%8D%E7%AB%AFIA%E8%88%87%E6%89%8B%E6%A9%9F%E9%AB%94%E9%A9%97%E8%A3%9C%E9%BD%8A-v1.md)
 
 ### Priority 5｜補觀測性與效能基線
 
-目標：為正式 AI provider 與後續部署驗收準備基礎量測。
-
-建議包含：
-
-1. 記錄 analysis 耗時、provider timeout、error rate
-2. 對照 [部署與用量預估-v1.md](./%E9%83%A8%E7%BD%B2%E8%88%87%E7%94%A8%E9%87%8F%E9%A0%90%E4%BC%B0-v1.md) 的監控建議補最小指標
-3. 讓後續 Step 4 / Step 5 與真實流量驗收更可判讀
+詳見：[功能開發/Priority5-觀測性與效能基線-v1.md](./功能開發/Priority5-%E8%A7%80%E6%B8%AC%E6%80%A7%E8%88%87%E6%95%88%E8%83%BD%E5%9F%BA%E7%B7%9A-v1.md)
 
 ---
 
@@ -236,6 +209,8 @@
 
 ## 9. 建議的決策方式
 
+這一節處理的是「現在接下來要補哪一個產品缺口」，不是「下一個開發步驟是 Step 幾」。
+
 若下一輪只做一個主題，建議優先選：
 
 1. Consent 與非醫療提醒主鏈補齊
@@ -258,5 +233,7 @@
 若後續要把本文件拆得更細，建議分工如下：
 
 1. PRD 若有產品範圍變更，更新 [PRD-v1.md](./PRD-v1.md) 或另開 `PRD-v2.md`
-2. 若只是補齊 v1 未完成項目，可維持本文件作為進度盤點
-3. 若要排票與驗收，更新 [setup/Step2-核心開發任務清單-v1.md](./setup/Step2-%E6%A0%B8%E5%BF%83%E9%96%8B%E7%99%BC%E4%BB%BB%E5%8B%99%E6%B8%85%E5%96%AE-v1.md) 或另開下一階段 backlog 文件
+2. 若只是補齊 v1 未完成項目，本文件保留為總覽與導覽
+3. Priority 1 到 Priority 5 的詳細內容，各自維護在 `docs/功能開發/` 下的獨立文件
+4. 若要追蹤 Step 2 的歷史工作包、Ticket 與驗收矩陣，維持 [setup/Step2-核心開發任務清單-v1.md](./setup/Step2-%E6%A0%B8%E5%BF%83%E9%96%8B%E7%99%BC%E4%BB%BB%E5%8B%99%E6%B8%85%E5%96%AE-v1.md)
+5. 若要查看 CI/CD 與 AWS 部署維護事項，回到 `docs/setup/` 下對應文件，不再把它們寫進 Priority 詳細文件

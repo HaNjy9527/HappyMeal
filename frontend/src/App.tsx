@@ -57,6 +57,24 @@ type ProfileFormState = {
   goal_weight_kg: string;
 };
 
+const candidateUnitOptions = [
+  "g",
+  "bowl",
+  "plate",
+  "cup",
+  "pcs",
+  "box",
+  "bag",
+  "tbsp",
+] as const;
+
+let candidateDraftSequence = 0;
+
+function nextCandidateDraftId() {
+  candidateDraftSequence += 1;
+  return `candidate-${candidateDraftSequence}`;
+}
+
 const activityOptions: Array<{
   value: ActivityLevel;
   label: string;
@@ -89,12 +107,45 @@ function toCandidateDraftItems(
   result: Awaited<ReturnType<typeof uploadAnalysisImage>>["candidates"],
 ): CandidateDraftItem[] {
   return result.map((candidate) => ({
+    id: nextCandidateDraftId(),
+    is_manual: false,
     food_name: candidate.food_name,
     normalized_food_name: candidate.normalized_food_name,
     portion_value: candidate.portion_default,
     portion_unit: candidate.portion_unit,
     confidence_score: candidate.confidence_score,
   }));
+}
+
+function buildManualCandidateItem(): CandidateDraftItem {
+  return {
+    id: nextCandidateDraftId(),
+    is_manual: true,
+    food_name: "",
+    normalized_food_name: "manual_entry",
+    portion_value: "100",
+    portion_unit: "g",
+    confidence_score: null,
+  };
+}
+
+function validateCandidateItems(items: CandidateDraftItem[]) {
+  if (items.length === 0) {
+    return "請至少保留 1 個食物，或手動新增後再送出。";
+  }
+
+  for (const item of items) {
+    if (!item.food_name.trim()) {
+      return "每個食物都需要名稱，請先完成空白欄位。";
+    }
+
+    const portionValue = Number(item.portion_value);
+    if (!Number.isFinite(portionValue) || portionValue <= 0) {
+      return "份量需要是大於 0 的數字。";
+    }
+  }
+
+  return null;
 }
 
 function formatDateLabel(value: string) {
@@ -260,6 +311,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   const queryClient = useQueryClient();
   const logoutMutation = useLogout();
   const consentReviewRef = useRef<HTMLElement | null>(null);
+  const pendingCandidateFocusId = useRef<string | null>(null);
   const [screen, setScreen] = useState<MainScreen>(
     hasRequiredConsents(user) ? "analysis" : "consent",
   );
@@ -281,6 +333,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     useState<AnalysisResultResponse | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [analysisNotice, setAnalysisNotice] = useState<string | null>(null);
 
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
@@ -326,6 +379,18 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     setAgreePrivacy(user.consent_status.has_privacy_policy);
     setAgreeNonMedical(user.consent_status.has_non_medical_disclosure);
   }, [user]);
+
+  useEffect(() => {
+    if (!pendingCandidateFocusId.current) {
+      return;
+    }
+
+    const nextInput = document.querySelector<HTMLInputElement>(
+      `input[name="candidate-food-name-${pendingCandidateFocusId.current}"]`,
+    );
+    nextInput?.focus();
+    pendingCandidateFocusId.current = null;
+  }, [candidateItems]);
 
   async function loadProfile() {
     setProfileLoading(true);
@@ -428,6 +493,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
     setAnalysisLoading(true);
     setAnalysisError(null);
+    setAnalysisNotice(null);
 
     try {
       const draft = await createAnalysisDraft();
@@ -435,6 +501,12 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
       setAnalysisId(candidateResponse.analysis_id);
       setCandidateItems(toCandidateDraftItems(candidateResponse.candidates));
+      setAnalysisNotice(
+        candidateResponse.manual_review_required
+          ? (candidateResponse.message ??
+              "這張照片 AI 沒有穩定辨識成功，請直接手動調整或新增食物。")
+          : null,
+      );
       setAnalysisResult(null);
       startTransition(() => setAnalysisStage("confirm"));
     } catch (error) {
@@ -463,8 +535,15 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
       return;
     }
 
+    const validationError = validateCandidateItems(candidateItems);
+    if (validationError) {
+      setAnalysisError(validationError);
+      return;
+    }
+
     setAnalysisLoading(true);
     setAnalysisError(null);
+    setAnalysisNotice(null);
 
     try {
       const response = await confirmAnalysis(analysisId, candidateItems);
@@ -483,6 +562,29 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     } finally {
       setAnalysisLoading(false);
     }
+  }
+
+  function updateCandidateItem(
+    candidateId: string,
+    updater: (item: CandidateDraftItem) => CandidateDraftItem,
+  ) {
+    setCandidateItems((current) =>
+      current.map((item) => (item.id === candidateId ? updater(item) : item)),
+    );
+  }
+
+  function removeCandidateItem(candidateId: string) {
+    setCandidateItems((current) =>
+      current.filter((item) => item.id !== candidateId),
+    );
+    setAnalysisError(null);
+  }
+
+  function addManualCandidateItem() {
+    const nextItem = buildManualCandidateItem();
+    pendingCandidateFocusId.current = nextItem.id;
+    setCandidateItems((current) => [...current, nextItem]);
+    setAnalysisError(null);
   }
 
   async function handleHistoryDetailOpen(analysisIdToOpen: string) {
@@ -766,6 +868,9 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
             {analysisError ? (
               <p className="status-banner is-error">{analysisError}</p>
             ) : null}
+            {analysisStage === "confirm" && analysisNotice ? (
+              <p className="status-banner is-info">{analysisNotice}</p>
+            ) : null}
             {analysisAccessLocked ? (
               <p className="status-banner is-error">
                 {consentUiCopy.message.analysisRequired}
@@ -867,78 +972,135 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                   <p className="panel-kicker">Candidate Confirmation</p>
                   <h3>調整食物名稱與份量後送出確認</h3>
                   <p>
-                    目前允許修改食物名稱與份量，維持 MVP
-                    範圍，不串手動搜尋資料庫。
+                    單位優先用 g，也可切換常見份量單位；你可以刪除誤判，
+                    或手動新增 AI 漏掉的食物。
                   </p>
                 </article>
 
                 {candidateItems.length === 0 ? (
-                  <p className="empty-panel">
-                    目前沒有候選項目，請回到 Start Analysis 重新上傳。
-                  </p>
+                  <article className="panel-card empty-panel-card">
+                    <p className="empty-panel">
+                      目前沒有候選項目。你可以重新上傳，或先手動新增食物。
+                    </p>
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={addManualCandidateItem}
+                    >
+                      新增食物
+                    </button>
+                  </article>
                 ) : null}
 
                 <div className="candidate-stack">
-                  {candidateItems.map((item, index) => (
+                  {candidateItems.map((item) => (
                     <article
-                      className="candidate-card"
-                      key={`${item.normalized_food_name}-${index}`}
+                      className={
+                        item.is_manual
+                          ? "candidate-card candidate-card-manual"
+                          : "candidate-card"
+                      }
+                      key={item.id}
                     >
                       <div className="candidate-head">
                         <div>
-                          <p className="confidence-label">
-                            信心分數 {item.confidence_score ?? "-"}
+                          <p className="candidate-kind-label">
+                            {item.is_manual ? "手動新增" : "AI 辨識候選"}
                           </p>
                           <h3>{item.food_name}</h3>
                         </div>
-                        <span className="portion-pill">
-                          {item.portion_unit}
-                        </span>
+                        <button
+                          className="candidate-remove-button"
+                          type="button"
+                          onClick={() => removeCandidateItem(item.id)}
+                        >
+                          刪除
+                        </button>
                       </div>
 
-                      <div className="field-grid">
+                      <div className="field-grid candidate-edit-grid">
                         <label>
                           食物名稱
                           <input
-                            name={`candidate-food-name-${index}`}
+                            name={`candidate-food-name-${item.id}`}
+                            placeholder="例如：白飯、豆漿、雞腿便當"
                             value={item.food_name}
                             onChange={(event) => {
                               const nextValue = event.currentTarget.value;
-                              setCandidateItems((current) =>
-                                current.map((currentItem, currentIndex) =>
-                                  currentIndex === index
-                                    ? { ...currentItem, food_name: nextValue }
-                                    : currentItem,
-                                ),
-                              );
+                              updateCandidateItem(item.id, (currentItem) => ({
+                                ...currentItem,
+                                food_name: nextValue,
+                              }));
                             }}
                           />
                         </label>
                         <label>
                           份量
                           <input
-                            name={`candidate-portion-${index}`}
+                            name={`candidate-portion-${item.id}`}
                             inputMode="decimal"
+                            placeholder="100"
                             value={item.portion_value}
                             onChange={(event) => {
                               const nextValue = event.currentTarget.value;
-                              setCandidateItems((current) =>
-                                current.map((currentItem, currentIndex) =>
-                                  currentIndex === index
-                                    ? {
-                                        ...currentItem,
-                                        portion_value: nextValue,
-                                      }
-                                    : currentItem,
-                                ),
-                              );
+                              updateCandidateItem(item.id, (currentItem) => ({
+                                ...currentItem,
+                                portion_value: nextValue,
+                              }));
                             }}
                           />
                         </label>
+                        <label>
+                          單位
+                          <select
+                            name={`candidate-unit-${item.id}`}
+                            value={item.portion_unit}
+                            onChange={(event) => {
+                              const nextValue = event.currentTarget.value;
+                              updateCandidateItem(item.id, (currentItem) => ({
+                                ...currentItem,
+                                portion_unit: nextValue,
+                              }));
+                            }}
+                          >
+                            {candidateUnitOptions.map((unitOption) => (
+                              <option key={unitOption} value={unitOption}>
+                                {unitOption}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+
+                      <div className="candidate-support-row">
+                        <span className="candidate-support-copy">
+                          {item.portion_unit === "g"
+                            ? "系統會直接用克數計算。"
+                            : "系統會盡量把這個單位換算成克。"}
+                        </span>
+                        {item.confidence_score ? (
+                          <span className="candidate-support-copy candidate-support-copy-muted">
+                            AI 已先給一版候選，你可以直接覆蓋。
+                          </span>
+                        ) : (
+                          <span className="candidate-support-copy candidate-support-copy-muted">
+                            手動新增項目會直接以你輸入的名稱與份量送出。
+                          </span>
+                        )}
                       </div>
                     </article>
                   ))}
                 </div>
+
+                {candidateItems.length > 0 ? (
+                  <button
+                    className="secondary-button add-food-button"
+                    type="button"
+                    onClick={addManualCandidateItem}
+                  >
+                    新增食物
+                  </button>
+                ) : null}
 
                 <div className="footer-actions">
                   <button
@@ -951,7 +1113,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                   </button>
                   <button
                     className="primary-button"
-                    disabled={analysisLoading}
+                    disabled={analysisLoading || candidateItems.length === 0}
                     onClick={() => void handleConfirmAnalysis()}
                   >
                     {analysisLoading ? "確認中..." : "完成確認"}
