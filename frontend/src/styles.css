@@ -50,7 +50,9 @@ body {
 }
 
 button,
-input {
+input,
+textarea,
+select {
   font: inherit;
 }
 
@@ -59,7 +61,9 @@ button {
 }
 
 button:focus-visible,
-input:focus-visible {
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
   outline: 3px solid rgba(221, 122, 41, 0.28);
   outline-offset: 2px;
 }
@@ -669,6 +673,16 @@ input {
   color: var(--text-primary);
 }
 
+textarea {
+  min-height: 96px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(24, 50, 61, 0.14);
+  background: white;
+  color: var(--text-primary);
+  resize: vertical;
+}
+
 select {
   min-height: 48px;
   padding: 0 14px;
@@ -827,6 +841,24 @@ select {
 
 .add-food-button {
   width: 100%;
+}
+
+.reestimate-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.reestimate-label {
+  display: grid;
+  gap: 8px;
+  color: var(--text-secondary);
+}
+
+.reestimate-suggestion-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
 }
 
 .empty-panel-card {

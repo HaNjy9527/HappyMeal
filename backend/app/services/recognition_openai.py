@@ -98,12 +98,40 @@ Rules:
 - If nothing reliable is visible, return {"candidates": []}.
 """.strip()
 
+OPENAI_REESTIMATE_PROMPT = """
+You are helping revise a meal analysis draft.
+
+You will receive:
+- the current meal items the user is editing
+- an optional user instruction that corrects names or portions
+
+Return JSON only in this shape:
+{
+    "candidates": [
+        {
+            "food_name": "display name",
+            "normalized_food_name": "snake_case_english_name",
+            "confidence_score": 0.0,
+            "portion_default": 1.0,
+            "portion_unit": "bowl"
+        }
+    ]
+}
+
+Rules:
+- Treat the user instruction as high-priority correction context.
+- If the user says the label is wrong, prefer the corrected label.
+- If the user says they ate half, adjust the portion accordingly.
+- Keep the candidate list short and practical.
+- Do not invent extra foods unless the instruction strongly implies them.
+""".strip()
+
 
 @dataclass(slots=True)
 class RecognitionProviderFailure(Exception):
     reason: str
     message: str
-    manual_review_required: bool = True
+    manual_review_required: bool = False
 
     def __post_init__(self) -> None:
         super().__init__(self.message)
@@ -190,22 +218,71 @@ def request_openai_candidates(*, image_path: Path) -> list[ProviderCandidate]:
     except RateLimitError as error:
         raise RecognitionProviderFailure(
             reason="quota_exceeded",
-            message="AI 服務目前額度不足，請直接手動調整或稍後再試。",
+            message="AI 服務目前額度不足，請重拍、換圖或稍後再試。",
         ) from error
     except BadRequestError as error:
         raise RecognitionProviderFailure(
             reason="invalid_image",
-            message="這張圖片目前無法穩定分析，請直接手動調整或改用其他圖片。",
+            message="這張圖片目前無法穩定分析，請重拍或改用其他圖片。",
         ) from error
     except APITimeoutError as error:
         raise RecognitionProviderFailure(
             reason="provider_timeout",
-            message="AI 分析逾時，請直接手動調整或稍後再試。",
+            message="AI 分析逾時，請重拍、換圖或稍後再試。",
         ) from error
     except APIConnectionError as error:
         raise RecognitionProviderFailure(
             reason="provider_unavailable",
-            message="AI 服務目前無法連線，請直接手動調整或稍後再試。",
+            message="AI 服務目前無法連線，請重拍、換圖或稍後再試。",
+        ) from error
+
+    return parse_openai_response(response.output_text)
+
+
+def request_openai_reestimate_candidates(
+    *,
+    items_payload: list[dict[str, object]],
+    user_instruction: str | None,
+) -> list[ProviderCandidate]:
+    settings = get_settings()
+    client = create_openai_client()
+    instruction_payload = {
+        "items": items_payload,
+        "user_instruction": user_instruction or "",
+    }
+
+    try:
+        response = client.responses.create(
+            model=settings.ai_food_model,
+            instructions=OPENAI_REESTIMATE_PROMPT,
+            input=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": json.dumps(instruction_payload, ensure_ascii=False),
+                        }
+                    ],
+                }
+            ],
+            temperature=0,
+            max_output_tokens=400,
+        )
+    except RateLimitError as error:
+        raise RecognitionProviderFailure(
+            reason="quota_exceeded",
+            message="AI 服務目前額度不足，暫時無法重新估算，請稍後再試。",
+        ) from error
+    except APITimeoutError as error:
+        raise RecognitionProviderFailure(
+            reason="provider_timeout",
+            message="AI 重新估算逾時，請稍後再試。",
+        ) from error
+    except APIConnectionError as error:
+        raise RecognitionProviderFailure(
+            reason="provider_unavailable",
+            message="AI 服務目前無法連線，暫時無法重新估算。",
         ) from error
 
     return parse_openai_response(response.output_text)
@@ -227,3 +304,19 @@ def recognize_meal_image_with_openai(*, filename: str | None, image_path: Path) 
             return MOCK_CANDIDATE_PRESETS["rice"]
 
     return DEFAULT_PROVIDER_CANDIDATES
+
+
+def reestimate_meal_items_with_openai(
+    *,
+    items_payload: list[dict[str, object]],
+    user_instruction: str | None,
+) -> list[ProviderCandidate]:
+    settings = get_settings()
+
+    if settings.ai_food_api_key:
+        return request_openai_reestimate_candidates(
+            items_payload=items_payload,
+            user_instruction=user_instruction,
+        )
+
+    return []

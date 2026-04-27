@@ -2,10 +2,17 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
+from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.db.models import AnalysisStatus, ConsentType
+
+
+class RecognitionStatus(str, Enum):
+    SUCCESS = "success"
+    PARTIAL = "partial"
+    COMPLETE_FAILURE = "complete_failure"
 
 
 class AnalysisDraftResponse(BaseModel):
@@ -27,6 +34,7 @@ class AnalysisCandidateItem(BaseModel):
 class AnalysisCandidateResponse(BaseModel):
     analysis_id: str
     status: AnalysisStatus
+    recognition_status: RecognitionStatus
     candidates: list[AnalysisCandidateItem]
     manual_review_required: bool = False
     fallback_reason: str | None = None
@@ -43,6 +51,23 @@ class AnalysisConfirmItemRequest(BaseModel):
 
 class AnalysisConfirmRequest(BaseModel):
     items: list[AnalysisConfirmItemRequest] = Field(min_length=1)
+
+
+class AnalysisReestimateItemRequest(AnalysisConfirmItemRequest):
+    is_user_edited: bool = False
+
+
+class AnalysisReestimateRequest(BaseModel):
+    items: list[AnalysisReestimateItemRequest] = Field(min_length=1)
+    user_instruction: str | None = Field(default=None, max_length=500)
+
+
+class AnalysisReestimateResponse(BaseModel):
+    analysis_id: str
+    recognition_status: RecognitionStatus
+    message: str | None = None
+    candidates: list[AnalysisCandidateItem]
+    fallback_reason: str | None = None
 
 
 class AnalysisResultItem(BaseModel):

@@ -57,7 +57,7 @@
 1. 比旗艦模型便宜，較適合 MVP 驗證。
 2. 相比傳統 vision label API，較能處理台灣日常混合餐、飲料與語意描述。
 3. 相比專用 food API，更容易先接上現有主鏈並自定結構化輸出。
-4. 現有 PRD 已接受「AI 不準時，由使用者手動修正後完成分析」，因此第一版關鍵不是把模型做到最強，而是把 correction flow 做到最低摩擦。
+4. 現有 PRD 已接受「AI 不準時，由使用者手動修正後完成分析」，但前提仍是 AI 至少提供部分可用候選；若 AI 完全失敗，產品應優先引導重拍或換圖。因此第一版關鍵不是把模型做到最強，而是把 correction flow 做到最低摩擦。
 
 ### 3.4 風險提醒
 
@@ -80,7 +80,7 @@
 3. 輸出：1 到 5 個候選項目。
 4. 每個候選至少包含：顯示名稱、normalized food name 候選、信心分數、份量數值、份量單位、是否為飲料。
 5. 候選結果進入前端 Candidate Confirmation 供使用者修改。
-6. 使用者修改候選內容後，可選擇再次請 AI 協助估算名稱補全、份量與候選調整，但 AI 只提供建議，不直接覆蓋使用者最終確認值。
+6. 使用者修改候選內容或補充備註後，可選擇再次請 AI 協助估算名稱補全、份量與候選調整，但 AI 只提供建議，不直接覆蓋使用者最終確認值。
 7. confirm 後仍由營養資料來源計算 kcal、protein、fat、carb，不直接相信 AI 估出的營養數值。
 
 ### 4.3 非目標
@@ -120,8 +120,8 @@
 {
   "analysis_id": "analysis_id",
   "status": "awaiting_confirmation",
-  "detection_status": "success",
-  "warnings": [],
+  "recognition_status": "success",
+  "message": null,
   "candidates": [
     {
       "food_name": "雞腿便當",
@@ -143,11 +143,13 @@
 }
 ```
 
-`detection_status` 建議值：
+`recognition_status` 建議值：
 
 1. `success`：有足夠候選可直接進入確認。
 2. `partial`：有候選，但信心偏低或份量估計不穩，需要前端明顯提醒使用者確認。
-3. `manual_required`：無足夠候選，但仍成功建立可手動補輸入的確認頁。
+3. `complete_failure`：沒有足夠可靠候選，應直接引導使用者重拍或換圖，而不是要求手動補完整份餐點。
+
+補充：目前程式已補出 `recognition_status`，並以 `message`、`fallback_reason` 作為輔助欄位；`partial` 的判定規則仍在後續收斂中，因此目前較穩定的已落地分流是 `success` 與 `complete_failure`。
 
 #### POST /analyses/{analysis_id}/confirm
 
@@ -219,8 +221,8 @@
 ```json
 {
   "analysis_id": "analysis_id",
-  "detection_status": "partial",
-  "warnings": ["AI 已根據你修改後的內容重新估算，請再次確認份量與飲料"],
+  "recognition_status": "partial",
+  "message": "AI 已根據你修改後的內容重新估算，請再次確認份量與飲料",
   "candidates": [
     {
       "food_name": "雞腿便當",
@@ -254,9 +256,9 @@
 
 #### AI provider 錯誤
 
-1. provider timeout：不要直接讓流程終止；優先回 `manual_required`，讓使用者手動輸入。
-2. provider 5xx 或 network error：記錄錯誤、保留 analysis，前端顯示「辨識暫時失敗，可直接手動補輸入」。
-3. provider 回傳格式不完整：經 normalization 後若無足夠候選，改為 `manual_required`。
+1. provider timeout：不要讓系統卡死；若本次無可靠候選，應回 `complete_failure` 並引導重拍或換圖。
+2. provider 5xx 或 network error：記錄錯誤、保留 analysis，前端顯示「辨識暫時失敗，請重拍或稍後再試」。
+3. provider 回傳格式不完整：經 normalization 後若仍有部分候選，回 `partial`；若無足夠候選，改為 `complete_failure`。
 
 #### 再次估算錯誤
 
@@ -315,34 +317,34 @@
 - 檢查 confidence score 是否低於建議門檻
 - 檢查候選是否重複、是否過度模糊、是否缺少份量資訊
 
-3. `analysis_recognition` 依 normalization 結果決定 `detection_status`：
+3. `analysis_recognition` 依 normalization 結果決定 `recognition_status`：
 
 - `success`：至少有足夠候選可直接確認
 - `partial`：有候選，但低信心、份量不穩或需要使用者特別確認
-- `manual_required`：沒有足夠可靠候選，但仍可轉入手動補輸入
+- `complete_failure`：沒有足夠可靠候選，應改為引導使用者重拍或換圖
 
 4. `analysis_recognition` 產出對外 `AnalysisCandidateResponse` 需要的標準格式。
-5. `analysis_recognition` 同步記錄最小觀測資料，例如 provider latency、candidate count、fallback 여부與 warning 數量。
+5. `analysis_recognition` 同步記錄最小觀測資料，例如 provider latency、candidate count、partial / complete_failure 分布與 warning 數量。
 
 #### Phase E 更新分析狀態並回 Candidate Confirmation
 
-1. `analysis_upload` 收到辨識結果後，將 analysis 狀態更新為 `awaiting_confirmation`。
-2. 即使 `detection_status=manual_required`，analysis 仍應進入 `awaiting_confirmation`，因為使用者下一步是手動補齊，而不是重新建立 analysis。
+1. `analysis_upload` 收到辨識結果後，若結果為 `success` 或 `partial`，才將 analysis 狀態更新為 `awaiting_confirmation`。
+2. 若 `recognition_status=complete_failure`，應保留可重試上下文，但前端不應直接把使用者送進完整人工補填流程。
 3. 後端回傳：
 
 - `analysis_id`
-- `status=awaiting_confirmation`
-- `detection_status`
-- `warnings`
+- `status`：成功或部分成功時為 `awaiting_confirmation`；完全失敗時為可重試的狀態或等價表達
+- `recognition_status`
+- `message`
 - `candidates`
 
 4. 前端進入 Candidate Confirmation 頁：
 
 - `success`：直接顯示候選卡片
 - `partial`：顯示候選卡片並加上柔性提醒
-- `manual_required`：預設建立至少一張空白卡片，讓使用者手動補輸入
+- `complete_failure`：顯示辨識失敗訊息，提供重拍 / 換圖或重新分析動作
 
-5. Candidate Confirmation 應同時保留一個次要動作：`再次請 AI 估算`，供使用者在手動修改部分內容後再次取得建議。
+5. Candidate Confirmation 應同時保留一個次要動作：`再次請 AI 估算`，供使用者在修改部分內容或補充備註後再次取得建議。
 
 #### Phase F 使用者修正與確認
 
@@ -352,7 +354,7 @@
 - 調整份量數值與單位
 - 刪除誤判候選
 - 補新增食物或飲料
-- 在已修改部分內容後，再次請 AI 協助估算
+- 在已修改部分內容或補充備註後，再次請 AI 協助估算
 
 2. 前端在送出前做最小驗證：
 
@@ -399,12 +401,12 @@
 
 - 記錄 timeout
 - 不讓 analysis 卡死在 `draft`
-- 回 `manual_required`，讓使用者直接補輸入
+- 回 `complete_failure`，引導使用者重拍或換圖
 
 2. 若 provider 回傳格式錯誤或候選不足：
 
 - 記錄 parsing / normalization error
-- 回 `manual_required`
+- 視候選品質回 `partial` 或 `complete_failure`
 
 3. 若使用者確認後 nutrition mapping 仍失敗：
 
@@ -420,11 +422,11 @@
 
 ### 4.7 驗收標準
 
-1. 使用者可從真實圖片取得至少 1 個候選或成功進入手動修正模式。
-2. AI 無法正確辨識時，使用者仍可在不離開主鏈的情況下完成 confirm。
+1. 使用者可從真實圖片取得至少 1 個候選，或在完全失敗時收到清楚的重拍 / 換圖引導。
+2. AI 部分成功時，使用者可在不離開主鏈的情況下完成修正與 confirm。
 3. 結果頁仍能顯示總熱量、三大營養素、建議與免責聲明。
 4. 原始圖片完成流程後仍會刪除。
-5. 會記錄 provider latency、timeout、error rate、manual fallback rate。
+5. 會記錄 provider latency、timeout、error rate、partial rate 與 complete failure rate。
 
 ---
 
@@ -509,7 +511,7 @@ $$
 
 1. 每次分析的實際圖片 token 用量
 2. 平均 output tokens
-3. manual fallback rate
+3. complete failure rate
 4. correction rate
 5. 平均 latency 與 p95 latency
 
@@ -557,7 +559,7 @@ $$
 1. 驗證圖片格式與大小。
 2. 儲存暫存圖片。
 3. 呼叫 `analysis_recognition.recognize_analysis_image(...)`。
-4. 將 analysis 狀態更新為 `awaiting_confirmation`。
+4. 依辨識結果決定 analysis 是否進入 `awaiting_confirmation`，或保留在可重試的上傳上下文。
 5. 回傳對外 `AnalysisCandidateResponse`。
 
 不負責：
@@ -574,8 +576,8 @@ $$
 2. 呼叫 provider adapter。
 3. 呼叫 normalization service。
 4. 產出 HappyMeal 標準候選格式。
-5. 決定 `success / partial / manual_required`。
-6. 記錄 latency、fallback、warning。
+5. 決定 `success / partial / complete_failure`。
+6. 記錄 latency、partial / complete_failure、warning。
 
 #### recognition_provider.py
 
@@ -652,7 +654,7 @@ class RecognitionProvider(Protocol):
 
 1. 多數使用者可在 30 秒內完成常見餐點確認。
 2. 不需要返回上一頁或重傳圖片才能修正小錯誤。
-3. 即使 AI 幾乎沒辨識出來，使用者仍可在同頁完成手動補輸入。
+3. 若 AI 完全失敗，使用者能快速理解應重拍或換圖；若 AI 部分成功，使用者能在同頁完成少量修正。
 
 ### 7.3 畫面結構
 
@@ -662,7 +664,7 @@ class RecognitionProvider(Protocol):
 2. 圖片縮圖與隱私提醒短句。
 3. 候選食物列表。
 4. `新增食物` 按鈕。
-5. `重新分析` 次要按鈕。
+5. `再次請 AI 估算` 或 `重拍 / 換圖` 次要按鈕。
 6. `確認並查看結果` 主要 CTA。
 
 ### 7.4 候選卡片規格
@@ -704,7 +706,7 @@ class RecognitionProvider(Protocol):
 #### 再次請 AI 估算
 
 1. 在 Candidate Confirmation 頁提供次要按鈕 `再次請 AI 估算`。
-2. 此動作用途是：當使用者已修正一部分內容後，請 AI 依據最新表單狀態重新推估其他候選或份量。
+2. 此動作用途是：當使用者已修正一部分內容，或補充像「我只吃半份」、「這不是甜不辣，是炸雞」這類備註後，請 AI 依據最新表單狀態重新推估其他候選或份量。
 3. 重新估算時應保留目前表單內容，不得先清空畫面。
 4. 回來的 AI 結果應以「可套用建議」方式呈現，而不是直接覆蓋使用者欄位。
 5. 若差異較大，前端可標示 `AI 新建議`，讓使用者決定是否採用。
@@ -716,12 +718,12 @@ class RecognitionProvider(Protocol):
 1. `confidence_score < 0.7` 時，卡片顯示柔性提醒，例如 `這項可能需要你多確認一下`。
 2. 不要用紅色錯誤感表現，避免增加壓力。
 
-#### manual_required
+#### complete_failure
 
-1. 若 AI 沒有可靠候選，仍進入同一頁。
-2. 畫面文案改為 `這張照片我沒有把握，直接手動補上也可以。`
-3. 自動先建立一張空白食物卡片，避免畫面看起來像失敗頁。
-4. 即使是 `manual_required`，只要使用者已補上部分內容，仍可提供 `再次請 AI 估算`，讓 AI 參考使用者修正後的上下文重新協助。
+1. 若 AI 沒有可靠候選，不應直接把使用者送進完整人工補填頁。
+2. 畫面文案改為 `這張照片我這次沒有把握，請重拍或換一張更清楚的圖片。`
+3. 提供高可見的 `重拍 / 換圖` 動作，而不是預設建立多張空白食物卡片。
+4. 若使用者之後重新上傳並取得部分候選，才進入 Candidate Confirmation 與後續 `再次請 AI 估算` 流程。
 
 ### 7.7 CTA 與驗證規則
 
@@ -753,7 +755,7 @@ class RecognitionProvider(Protocol):
 1. `analysis_provider_latency_ms`
 2. `analysis_provider_timeout_count`
 3. `analysis_provider_error_count`
-4. `analysis_manual_required_count`
+4. `analysis_complete_failure_count`
 5. `analysis_correction_submit_count`
 6. `analysis_candidate_count_avg`
 7. `analysis_reestimate_request_count`
@@ -782,7 +784,7 @@ class RecognitionProvider(Protocol):
 
 1. 先抽出 recognition provider 邊界與 internal schema。
 2. 接入 GPT-5.4 mini，讓 `/analyses/{id}/image` 不再回 mock candidate。
-3. 補 detection status、warning 與 manual fallback。
+3. 補 recognition status、message 與 complete failure / partial 分流。
 4. 補 Candidate Confirmation 的新增、刪除、快速調整份量 UX。
 5. 補 `re-estimate` API 與 Candidate Confirmation 的 `再次請 AI 估算` 互動，但要以前端保留使用者當前輸入為前提。
 6. 補最小觀測性與成本回填欄位。

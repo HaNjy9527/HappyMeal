@@ -24,6 +24,7 @@ export type ActivityLevel =
   | "very_active";
 export type GoalType = "muscle_gain" | "fat_loss";
 export type AnalysisStatus = "draft" | "awaiting_confirmation" | "completed";
+export type RecognitionStatus = "success" | "partial" | "complete_failure";
 
 export type ConsentStatus = {
   has_privacy_policy: boolean;
@@ -89,10 +90,19 @@ export type AnalysisCandidateItem = {
 export type AnalysisCandidateResponse = {
   analysis_id: string;
   status: AnalysisStatus;
+  recognition_status: RecognitionStatus;
   candidates: AnalysisCandidateItem[];
   manual_review_required: boolean;
   fallback_reason: string | null;
   message: string | null;
+};
+
+export type AnalysisReestimateResponse = {
+  analysis_id: string;
+  recognition_status: RecognitionStatus;
+  message: string | null;
+  fallback_reason: string | null;
+  candidates: AnalysisCandidateItem[];
 };
 
 export type AnalysisResultItem = {
@@ -339,6 +349,30 @@ export function confirmAnalysis(
           portion_unit: item.portion_unit,
           confidence_score: item.confidence_score,
         })),
+      }),
+    },
+  );
+}
+
+export function reestimateAnalysis(
+  analysisId: string,
+  items: CandidateDraftItem[],
+  userInstruction: string,
+) {
+  return requestJson<AnalysisReestimateResponse>(
+    `/analyses/${analysisId}/re-estimate`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        items: items.map((item) => ({
+          food_name: item.food_name,
+          normalized_food_name: item.normalized_food_name,
+          portion_value: item.portion_value,
+          portion_unit: item.portion_unit,
+          confidence_score: item.confidence_score,
+          is_user_edited: true,
+        })),
+        user_instruction: userInstruction.trim() || null,
       }),
     },
   );

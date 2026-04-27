@@ -30,6 +30,7 @@ import {
   getAnalysisDetail,
   getAnalysisHistory,
   getProfile,
+  reestimateAnalysis,
   updateProfile,
   updateThemePreference,
   uploadAnalysisImage,
@@ -334,6 +335,11 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [analysisNotice, setAnalysisNotice] = useState<string | null>(null);
+  const [reestimateNote, setReestimateNote] = useState("");
+  const [reestimateSuggestions, setReestimateSuggestions] = useState<
+    CandidateDraftItem[]
+  >([]);
+  const [reestimateLoading, setReestimateLoading] = useState(false);
 
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
@@ -494,20 +500,33 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     setAnalysisLoading(true);
     setAnalysisError(null);
     setAnalysisNotice(null);
+    setReestimateSuggestions([]);
+    setReestimateNote("");
 
     try {
       const draft = await createAnalysisDraft();
       const candidateResponse = await uploadAnalysisImage(draft.id, file);
 
       setAnalysisId(candidateResponse.analysis_id);
+      setAnalysisResult(null);
+
+      if (candidateResponse.recognition_status === "complete_failure") {
+        setCandidateItems([]);
+        setAnalysisNotice(
+          candidateResponse.message ??
+            "這張照片 AI 這次沒有穩定辨識成功，請重拍或換一張更清楚的圖片。",
+        );
+        startTransition(() => setAnalysisStage("start"));
+        return;
+      }
+
       setCandidateItems(toCandidateDraftItems(candidateResponse.candidates));
       setAnalysisNotice(
-        candidateResponse.manual_review_required
+        candidateResponse.recognition_status === "partial"
           ? (candidateResponse.message ??
-              "這張照片 AI 沒有穩定辨識成功，請直接手動調整或新增食物。")
+              "AI 已先給一版候選，請幫我再確認名稱和份量。")
           : null,
       );
-      setAnalysisResult(null);
       startTransition(() => setAnalysisStage("confirm"));
     } catch (error) {
       if (error instanceof ApiError && error.code === "CONSENT_REQUIRED") {
@@ -548,6 +567,8 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     try {
       const response = await confirmAnalysis(analysisId, candidateItems);
       setAnalysisResult(response);
+      setReestimateSuggestions([]);
+      setReestimateNote("");
       startTransition(() => {
         setAnalysisStage("result");
         setScreen("analysis");
@@ -585,6 +606,55 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     pendingCandidateFocusId.current = nextItem.id;
     setCandidateItems((current) => [...current, nextItem]);
     setAnalysisError(null);
+  }
+
+  async function handleReestimateAnalysis() {
+    if (!analysisId) {
+      setAnalysisError("找不到 analysis id，請重新開始。");
+      return;
+    }
+
+    const validationError = validateCandidateItems(candidateItems);
+    if (validationError) {
+      setAnalysisError(validationError);
+      return;
+    }
+
+    setReestimateLoading(true);
+    setAnalysisError(null);
+
+    try {
+      const response = await reestimateAnalysis(
+        analysisId,
+        candidateItems,
+        reestimateNote,
+      );
+      setReestimateSuggestions(toCandidateDraftItems(response.candidates));
+      setAnalysisNotice(
+        response.message ?? "AI 已根據你目前的修正重新估算，請再次確認。",
+      );
+    } catch (error) {
+      setAnalysisError(
+        error instanceof Error ? error.message : "再次請 AI 估算失敗",
+      );
+    } finally {
+      setReestimateLoading(false);
+    }
+  }
+
+  function applyReestimateSuggestions() {
+    if (reestimateSuggestions.length === 0) {
+      return;
+    }
+
+    setCandidateItems(reestimateSuggestions);
+    setReestimateSuggestions([]);
+    setAnalysisNotice("已套用 AI 新建議，你可以再檢查一次後送出確認。");
+  }
+
+  function dismissReestimateSuggestions() {
+    setReestimateSuggestions([]);
+    setAnalysisNotice("已保留你目前的內容，AI 建議未套用。");
   }
 
   async function handleHistoryDetailOpen(analysisIdToOpen: string) {
@@ -868,7 +938,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
             {analysisError ? (
               <p className="status-banner is-error">{analysisError}</p>
             ) : null}
-            {analysisStage === "confirm" && analysisNotice ? (
+            {analysisNotice ? (
               <p className="status-banner is-info">{analysisNotice}</p>
             ) : null}
             {analysisAccessLocked ? (
@@ -1100,6 +1170,74 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                   >
                     新增食物
                   </button>
+                ) : null}
+
+                <article className="panel-card reestimate-panel">
+                  <p className="panel-kicker">AI 校正</p>
+                  <h3>補充給 AI 的說明後重新估算</h3>
+                  <p>
+                    例如：我只吃半份、這不是甜不辣，是炸雞。 AI
+                    只會提供新建議，不會直接覆蓋你目前的內容。
+                  </p>
+                  <label className="reestimate-label">
+                    備註或校正說明
+                    <textarea
+                      name="reestimate-note"
+                      placeholder="例如：主菜其實是炸雞，我只吃半份白飯。"
+                      value={reestimateNote}
+                      onChange={(event) =>
+                        setReestimateNote(event.currentTarget.value)
+                      }
+                      rows={3}
+                    />
+                  </label>
+                  <div className="footer-actions">
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      disabled={
+                        reestimateLoading ||
+                        analysisLoading ||
+                        candidateItems.length === 0
+                      }
+                      onClick={() => void handleReestimateAnalysis()}
+                    >
+                      {reestimateLoading ? "重新估算中..." : "再次請 AI 估算"}
+                    </button>
+                  </div>
+                </article>
+
+                {reestimateSuggestions.length > 0 ? (
+                  <article className="panel-card reestimate-panel">
+                    <p className="panel-kicker">AI 新建議</p>
+                    <h3>選擇是否套用這版建議</h3>
+                    <div className="compact-list">
+                      {reestimateSuggestions.map((item) => (
+                        <p className="reestimate-suggestion-row" key={item.id}>
+                          <strong>{item.food_name}</strong>
+                          <span>
+                            {item.portion_value} {item.portion_unit}
+                          </span>
+                        </p>
+                      ))}
+                    </div>
+                    <div className="footer-actions">
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        onClick={dismissReestimateSuggestions}
+                      >
+                        保留目前內容
+                      </button>
+                      <button
+                        className="primary-button"
+                        type="button"
+                        onClick={applyReestimateSuggestions}
+                      >
+                        套用 AI 建議
+                      </button>
+                    </div>
+                  </article>
                 ) : null}
 
                 <div className="footer-actions">

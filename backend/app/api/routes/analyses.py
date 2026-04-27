@@ -11,10 +11,13 @@ from app.schemas.analysis import (
     AnalysisDraftResponse,
     AnalysisHistoryDetailResponse,
     AnalysisHistoryListResponse,
+    AnalysisReestimateRequest,
+    AnalysisReestimateResponse,
 )
 from app.services.analysis import create_analysis_draft
 from app.services.analysis_confirm import confirm_analysis
 from app.services.analysis_history import get_completed_analysis_detail, list_completed_analyses
+from app.services.analysis_reestimate import reestimate_analysis
 from app.services.analysis_upload import upload_analysis_image
 from app.services.consent import require_analysis_consents
 
@@ -59,6 +62,17 @@ def post_analysis_confirm(
 ) -> AnalysisConfirmResponse:
     require_analysis_consents(db, user)
     return confirm_analysis(db, user, analysis_id, payload)
+
+
+@router.post("/{analysis_id}/re-estimate", response_model=AnalysisReestimateResponse)
+def post_analysis_reestimate(
+    analysis_id: str,
+    payload: AnalysisReestimateRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> AnalysisReestimateResponse:
+    require_analysis_consents(db, user)
+    return reestimate_analysis(db, user, analysis_id, payload)
 
 
 @router.get("/{analysis_id}", response_model=AnalysisHistoryDetailResponse)

@@ -6,6 +6,7 @@ import pytest
 from app.core.config import get_settings
 from app.db.models import ExerciseCatalog
 from app.services.analysis_recognition import AnalysisRecognitionResult
+from app.schemas.analysis import RecognitionStatus
 from app.services.consent import CURRENT_NON_MEDICAL_DISCLOSURE_VERSION, CURRENT_PRIVACY_POLICY_VERSION
 
 
@@ -145,6 +146,7 @@ def test_post_analysis_image_returns_mock_candidates_and_updates_status(client):
     payload = upload_response.json()
     assert payload["analysis_id"] == analysis_id
     assert payload["status"] == "awaiting_confirmation"
+    assert payload["recognition_status"] == "success"
     assert payload["manual_review_required"] is False
     assert payload["fallback_reason"] is None
     assert payload["message"] is None
@@ -161,10 +163,11 @@ def test_post_analysis_image_returns_manual_review_fallback_for_provider_failure
 
     def fake_recognize_analysis_image(*, filename, image_path):
         return AnalysisRecognitionResult(
+            recognition_status=RecognitionStatus.COMPLETE_FAILURE,
             candidates=[],
-            manual_review_required=True,
+            manual_review_required=False,
             fallback_reason="provider_timeout",
-            message="AI 分析逾時，請直接手動調整或稍後再試。",
+            message="AI 分析逾時，請重拍、換圖或稍後再試。",
         )
 
     monkeypatch.setattr(
@@ -180,12 +183,73 @@ def test_post_analysis_image_returns_manual_review_fallback_for_provider_failure
     assert upload_response.status_code == 200
     payload = upload_response.json()
     assert payload["analysis_id"] == analysis_id
-    assert payload["status"] == "awaiting_confirmation"
+    assert payload["status"] == "draft"
+    assert payload["recognition_status"] == "complete_failure"
     assert payload["candidates"] == []
-    assert payload["manual_review_required"] is True
+    assert payload["manual_review_required"] is False
     assert payload["fallback_reason"] == "provider_timeout"
-    assert payload["message"] == "AI 分析逾時，請直接手動調整或稍後再試。"
+    assert payload["message"] == "AI 分析逾時，請重拍、換圖或稍後再試。"
     assert not (isolated_upload_dir / f"{analysis_id}.jpg").exists()
+
+
+def test_post_analysis_reestimate_returns_ai_suggestions(client, monkeypatch):
+    accept_required_consents(client)
+    profile_response = client.put("/profile", json=build_profile_payload())
+    assert profile_response.status_code == 200
+
+    draft_response = client.post("/analyses")
+    analysis_id = draft_response.json()["id"]
+    upload_response = client.post(
+        f"/analyses/{analysis_id}/image",
+        files={"file": ("salad-lunch.jpg", BytesIO(b"fake-jpeg-data"), "image/jpeg")},
+    )
+    assert upload_response.status_code == 200
+
+    def fake_reestimate_analysis(db, user, analysis_id, payload):
+        return {
+            "analysis_id": analysis_id,
+            "recognition_status": "partial",
+            "message": "AI 已根據你的備註重新估算。",
+            "fallback_reason": None,
+            "candidates": [
+                {
+                    "food_name": "Fried Chicken",
+                    "normalized_food_name": "fried_chicken",
+                    "confidence_score": "0.91",
+                    "portion_default": "0.50",
+                    "portion_unit": "box",
+                }
+            ],
+        }
+
+    monkeypatch.setattr(
+        "app.api.routes.analyses.reestimate_analysis",
+        fake_reestimate_analysis,
+    )
+
+    reestimate_response = client.post(
+        f"/analyses/{analysis_id}/re-estimate",
+        json={
+            "items": [
+                {
+                    "food_name": "Tempura",
+                    "normalized_food_name": "tempura",
+                    "portion_value": "1.0",
+                    "portion_unit": "box",
+                    "confidence_score": "0.70",
+                    "is_user_edited": True,
+                }
+            ],
+            "user_instruction": "這不是甜不辣，是炸雞，而且我只吃半份",
+        },
+    )
+
+    assert reestimate_response.status_code == 200
+    payload = reestimate_response.json()
+    assert payload["analysis_id"] == analysis_id
+    assert payload["recognition_status"] == "partial"
+    assert payload["message"] == "AI 已根據你的備註重新估算。"
+    assert payload["candidates"][0]["food_name"] == "Fried Chicken"
 
 
 def test_post_analysis_image_rejects_non_image_upload(client):

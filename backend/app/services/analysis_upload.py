@@ -8,9 +8,16 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.db.models import AnalysisStatus, User
-from app.schemas.analysis import AnalysisCandidateResponse
+from app.schemas.analysis import AnalysisCandidateResponse, RecognitionStatus
 from app.services.analysis import get_analysis_for_user
 from app.services.analysis_recognition import recognize_analysis_image
+
+
+def resolve_analysis_status(recognition_status: RecognitionStatus) -> AnalysisStatus:
+    if recognition_status == RecognitionStatus.COMPLETE_FAILURE:
+        return AnalysisStatus.DRAFT
+
+    return AnalysisStatus.AWAITING_CONFIRMATION
 
 
 def validate_image_upload(file: UploadFile) -> None:
@@ -79,7 +86,7 @@ def upload_analysis_image(
     finally:
         delete_analysis_uploads(analysis_id)
 
-    analysis.status = AnalysisStatus.AWAITING_CONFIRMATION
+    analysis.status = resolve_analysis_status(recognition_result.recognition_status)
     db.add(analysis)
     db.commit()
     db.refresh(analysis)
@@ -87,6 +94,7 @@ def upload_analysis_image(
     return AnalysisCandidateResponse(
         analysis_id=analysis.id,
         status=analysis.status,
+        recognition_status=recognition_result.recognition_status,
         candidates=recognition_result.candidates,
         manual_review_required=recognition_result.manual_review_required,
         fallback_reason=recognition_result.fallback_reason,
