@@ -7,6 +7,7 @@ from app.services.analysis_recognition import recognize_analysis_image
 from app.services.recognition_openai import parse_openai_response, recognize_meal_image_with_openai
 from app.services.recognition_provider import ProviderCandidate
 from app.services.recognition_normalization import normalize_provider_candidates
+from app.schemas.analysis import RecognitionStatus
 
 
 def test_normalize_provider_candidates_skips_blank_names_and_applies_defaults():
@@ -66,11 +67,12 @@ def test_recognize_analysis_image_uses_provider_output(monkeypatch):
         fake_recognize_meal_image_with_openai,
     )
 
-    candidates = recognize_analysis_image(filename="meal.jpg", image_path=Path("tmp/meal.jpg"))
+    result = recognize_analysis_image(filename="meal.jpg", image_path=Path("tmp/meal.jpg"))
 
-    assert len(candidates) == 1
-    assert candidates[0].food_name == "Lunch Box"
-    assert candidates[0].normalized_food_name == "lunch_box"
+    assert result.recognition_status == RecognitionStatus.SUCCESS
+    assert len(result.candidates) == 1
+    assert result.candidates[0].food_name == "Lunch Box"
+    assert result.candidates[0].normalized_food_name == "lunch_box"
 
 
 def test_parse_openai_response_builds_provider_candidates():
