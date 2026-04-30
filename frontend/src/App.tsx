@@ -1452,7 +1452,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                       </div>
                     </article>
 
-                    <article className="panel-card">
+                    <article className="panel-card recommendation-panel">
                       <p className="panel-kicker">Recommendation</p>
                       <h3>每日目標與推薦運動</h3>
                       {analysisDisclaimerCopy ? (
@@ -1644,7 +1644,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                     </div>
                   </article>
 
-                  <article className="panel-card">
+                  <article className="panel-card recommendation-panel">
                     <p className="panel-kicker">Recommendation Snapshot</p>
                     <h3>當次建議快照</h3>
                     {historyDisclaimerCopy ? (

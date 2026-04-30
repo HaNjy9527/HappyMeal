@@ -458,6 +458,11 @@ select:focus-visible {
   overflow-wrap: break-word;
 }
 
+.recommendation-panel .inline-disclaimer-note + .target-grid,
+.recommendation-panel .inline-disclaimer-note + .result-list {
+  margin-top: 4px;
+}
+
 .consent-card {
   display: grid;
   gap: 16px;

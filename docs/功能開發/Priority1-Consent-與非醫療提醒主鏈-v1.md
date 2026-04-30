@@ -108,7 +108,7 @@
 
 ### P1-04 非醫療提醒覆蓋
 
-狀態：已完成最小版，inline note 文案與視覺已精修。
+狀態：已完成最小版，inline note 文案、視覺與 History 一致性已精修。
 
 目標：在結果與歷史相關頁面補齊短版提醒，並避免大面積聲明卡片干擾主要任務。
 
@@ -119,7 +119,7 @@
 3. 相關建議區塊保留 wellness guidance 語氣
 4. 不要求在每個建議畫面顯示完整聲明段落或大型 legal card
 
-目前實作：Analysis Result 的「每日目標與推薦運動」與 History Detail 的「當次建議快照」已改用短版 inline note 顯示非醫療提醒；文案已壓縮為日常健康管理參考提醒，視覺改為低警示感的輕量提示，不再於結果頂部或 snapshot 後常駐大型聲明卡片。
+目前實作：Analysis Result 的「每日目標與推薦運動」與 History Detail 的「當次建議快照」已改用短版 inline note 顯示非醫療提醒；兩者共用同一元件、短版文案與 recommendation panel spacing，視覺改為低警示感的輕量提示，不再於結果頂部或 snapshot 後常駐大型聲明卡片。
 
 ### P1-05 全站頁尾回看入口
 
