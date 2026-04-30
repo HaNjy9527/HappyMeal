@@ -3,7 +3,7 @@
 - 文件名稱：Priority 1｜Consent 與非醫療提醒主鏈
 - 版本：v1
 - 日期：2026-04-26
-- 狀態：Draft
+- 狀態：最小版完成，後續精修移交 Priority 4
 - 用途：把 PRD v1 尚未補齊的 Consent 與非醫療提醒主鏈拆成可追蹤的補完項目
 
 ---
@@ -50,9 +50,44 @@
 11. 頁尾 legal dialog 細節已精修，包含 focus trap、Escape/overlay 關閉、關閉後焦點回到觸發按鈕、背景捲動鎖定與手機 bottom sheet 呈現
 12. Analysis Result 與 History Detail 的 inline note 已縮短文案並降低視覺重量，避免看起來像警告或大型 legal block
 
-目前仍未完成的重點：
+### 3.1 最小版已完成，後續精修項目
 
-1. Priority 1 主鏈、閱讀精修與手機版密度調整已完成最小版
+Priority 1 目前可視為最小版已完成。
+
+完成範圍包含：首次必要同意、未同意前的 analysis / guidance guard、完成同意後的頁尾回看入口、Analysis Result / History Detail 的短版非醫療提醒，以及手機實機最小流程驗收。
+
+後續若還要繼續打磨，建議不要再把 Priority 1 擴張成前端整體體驗項目，而是移交 Priority 4「前端 IA 與手機體驗補齊」承接。
+
+後續精修可包含：
+
+1. Home / Analysis / History 的整體手機掃讀節奏
+2. legal footer 與低頻 review dialog 在整體頁尾中的一致性
+3. recommendation 區塊與 inline note 在更完整資料量下的視覺節奏
+4. 空狀態、錯誤狀態與 helper copy 的產品語氣收斂
+
+### 3.2 手機實機驗收紀錄
+
+驗收結論：Priority 1 手機實機最小流程已通過，可作為目前版本的完成基線。
+
+已驗收項目：
+
+1. 首次進入時，Consent Intro 可閱讀，兩項必要同意可完成
+2. 未完成同意前，使用者不會直接進入 analysis / guidance 主流程
+3. 完成同意後，Analysis、History、Profile 等主要頁面底部可回看隱私政策與非醫療用途聲明
+4. 頁尾 legal dialog 在手機上可開啟、閱讀、捲動與關閉
+5. Analysis Result 與 History Detail 的非醫療提醒已改為 recommendation 附近的短版 inline note，不再形成大型 legal block
+
+未納入本次完成判定的項目：
+
+1. 整體 Home / IA 的產品化重排
+2. 更完整的手機視覺 polish 與跨裝置細節驗收
+3. 大規模無障礙稽核或通用 modal / note component 抽象化
+
+上述未納入項目若要繼續追蹤，應移交 Priority 4。
+
+後續處理方向：
+
+1. Priority 1 主鏈、閱讀精修、手機版密度調整與手動驗收紀錄已完成最小版
 2. 若要進一步打磨，建議移交 Priority 4，納入整體前端 IA 與手機體驗補齊
 
 ---

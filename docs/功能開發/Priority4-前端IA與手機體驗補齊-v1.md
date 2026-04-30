@@ -39,6 +39,7 @@
 1. Landing / Home / Theme Preference / Consent Review 等頁面仍未整理成較完整的產品頁結構
 2. 空狀態、錯誤狀態與 helper copy 仍有不少區塊偏向開發驗證語氣
 3. 手機優先排版雖可用，但整體節奏、導引與畫面連續性仍待收斂
+4. Priority 1 已完成 Consent 與非醫療提醒最小版；後續若要繼續打磨 legal footer、review dialog、inline note 與 recommendation 區塊節奏，應納入本 Priority 的整體 IA 與手機體驗精修，而不是繼續擴張 Priority 1
 
 ---
 
@@ -62,6 +63,12 @@
 ### P4-02 Candidate review / result / history 的手機動線微調
 
 ### P4-03 Theme Preference 與 Consent Review 的頁面結構補齊
+
+包含：
+
+1. 將 Consent / legal review 相關低頻入口放進整體 Home / Profile / footer IA 中檢查
+2. 驗證頁尾 legal dialog、inline non-medical note 與 recommendation 區塊在手機上的掃讀節奏
+3. 若後續 legal / wellness guidance 提醒類型變多，再評估是否抽成共用 note 或 modal component
 
 ### P4-04 錯誤、空狀態與 helper copy 收斂
 
