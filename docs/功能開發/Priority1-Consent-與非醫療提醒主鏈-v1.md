@@ -46,10 +46,11 @@
 7. Analysis Result 與 History Detail 已移除大型 DisclaimerCard，改在 recommendation 區塊附近顯示短版非醫療提醒
 8. 手機實機驗收已完成，Consent Intro、頁尾回看入口與短版提醒在最小版流程上可接受
 9. Consent Intro 閱讀體驗已精修，包含第一眼文案、accordion 摘要、checkbox 區分與貼近操作的錯誤提示
+10. Consent Intro 手機版密度已調整，包含 card 間距、accordion 展開內容、checkbox row、CTA 與 status/error banner
 
 目前仍未完成的重點：
 
-1. Priority 1 主鏈與閱讀精修已完成最小版
+1. Priority 1 主鏈、閱讀精修與手機版密度調整已完成最小版
 2. 若要進一步打磨，建議移交 Priority 4，納入整體前端 IA 與手機體驗補齊
 
 ---
@@ -69,7 +70,7 @@
 
 ### P1-01 首次登入導入
 
-狀態：已完成最小精修。
+狀態：已完成最小精修，手機版密度已調整。
 
 目標：首次登入後先看到 Consent Intro，而不是直接略過。
 
@@ -81,7 +82,7 @@
 
 ### P1-02 勾選與送出主鏈
 
-狀態：已完成最小精修。
+狀態：已完成最小精修，手機版密度已調整。
 
 目標：讓兩項同意可被清楚閱讀、勾選與送出。
 
