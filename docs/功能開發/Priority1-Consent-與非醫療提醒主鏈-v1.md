@@ -44,11 +44,12 @@
 5. Analysis 建立、confirm、re-estimate、History List 與 History Detail 已套用最新版必要同意保護
 6. 完成同意後，會員主要頁面底部已提供「隱私政策」與「非醫療用途聲明」文字連結，並以輕量 dialog 回看內容
 7. Analysis Result 與 History Detail 已移除大型 DisclaimerCard，改在 recommendation 區塊附近顯示短版非醫療提醒
+8. 手機實機驗收已完成，Consent Intro、頁尾回看入口與短版提醒在最小版流程上可接受
 
 目前仍未完成的重點：
 
-1. Consent Intro 與登入後導入仍偏最小實作，需要確認首次登入時的引導是否穩定
-2. Consent Intro、頁尾回看入口與短版提醒雖已完成最小版，但手機閱讀、細節視覺與手動驗收紀錄仍可再精修
+1. Consent Intro、頁尾回看入口與短版提醒雖已完成最小版，但手機閱讀與細節視覺仍可再精修
+2. 若要進一步打磨，建議移交 Priority 4，納入整體前端 IA 與手機體驗補齊
 
 ---
 
