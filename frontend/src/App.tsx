@@ -769,9 +769,9 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
       setAnalysisNotice(
         response.message ?? "AI 已根據你目前的修正重新估算，請再次確認。",
       );
-    } catch (error) {
+    } catch {
       setAnalysisError(
-        error instanceof Error ? error.message : "再次請 AI 估算失敗",
+        "AI 重新估算失敗，你目前的修改都已保留，可以繼續手動調整或直接送出確認。",
       );
     } finally {
       setReestimateLoading(false);
