@@ -635,6 +635,7 @@ select:focus-visible {
   padding: 18px;
   background: rgba(54, 43, 35, 0.34);
   backdrop-filter: blur(8px);
+  animation: legal-backdrop-fade 160ms ease-out;
 }
 
 .legal-dialog {
@@ -647,15 +648,20 @@ select:focus-visible {
   border: 1px solid var(--line);
   background: var(--surface-strong);
   box-shadow: var(--shadow);
+  animation: legal-dialog-enter 180ms ease-out;
 }
 
 .legal-dialog-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
   padding: 20px 20px 14px;
   border-bottom: 1px solid var(--line);
+  background: var(--surface-strong);
 }
 
 .legal-dialog-header h3 {
@@ -683,7 +689,38 @@ select:focus-visible {
   gap: 16px;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 18px 20px 20px;
+}
+
+@keyframes legal-backdrop-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes legal-dialog-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .legal-dialog-backdrop,
+  .legal-dialog {
+    animation: none;
+  }
 }
 
 .panel-grid,
@@ -1170,19 +1207,40 @@ select {
 
   .legal-dialog-backdrop {
     align-items: end;
-    padding: 10px;
+    padding: 10px 10px max(10px, env(safe-area-inset-bottom));
+    place-items: end center;
   }
 
   .legal-dialog {
+    width: 100%;
     max-height: min(82dvh, 720px);
-    border-radius: 22px;
+    border-radius: 22px 22px 18px 18px;
+    animation-name: legal-sheet-enter;
   }
 
   .legal-dialog-header {
     flex-direction: column;
+    gap: 12px;
+    padding: 18px 18px 14px;
   }
 
   .legal-dialog-close {
     width: 100%;
+  }
+
+  .legal-dialog-body {
+    padding: 16px 18px max(22px, env(safe-area-inset-bottom));
+  }
+}
+
+@keyframes legal-sheet-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

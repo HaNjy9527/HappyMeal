@@ -42,11 +42,12 @@
 3. consent 相關文案已有草稿與獨立文件，可作為前端導入基礎
 4. 系統邏輯上已經把 consent 視為正式資料，而不是一次性的靜態頁面
 5. Analysis 建立、confirm、re-estimate、History List 與 History Detail 已套用最新版必要同意保護
-6. 完成同意後，會員主要頁面底部已提供「隱私政策」與「非醫療用途聲明」文字連結，並以輕量 dialog 回看內容
+6. 完成同意後，會員主要頁面底部已提供「隱私政策」與「非醫療用途聲明」文字連結，並以輕量 dialog 回看內容；dialog 已補齊手機 bottom sheet、長內容捲動、背景鎖定與鍵盤焦點控制
 7. Analysis Result 與 History Detail 已移除大型 DisclaimerCard，改在 recommendation 區塊附近顯示短版非醫療提醒
 8. 手機實機驗收已完成，Consent Intro、頁尾回看入口與短版提醒在最小版流程上可接受
 9. Consent Intro 閱讀體驗已精修，包含第一眼文案、accordion 摘要、checkbox 區分與貼近操作的錯誤提示
 10. Consent Intro 手機版密度已調整，包含 card 間距、accordion 展開內容、checkbox row、CTA 與 status/error banner
+11. 頁尾 legal dialog 細節已精修，包含 focus trap、Escape/overlay 關閉、關閉後焦點回到觸發按鈕、背景捲動鎖定與手機 bottom sheet 呈現
 
 目前仍未完成的重點：
 
@@ -121,7 +122,7 @@
 
 ### P1-05 全站頁尾回看入口
 
-狀態：已完成最小版。
+狀態：已完成最小版，dialog 細節已精修。
 
 目標：讓使用者在完成同意後，能隨時從頁面最下方回看隱私與聲明內容。
 
@@ -132,7 +133,7 @@
 3. 頁尾入口只作為日常回看，不取代首次必要同意與 checkbox
 4. 頁尾不常駐完整聲明段落，避免壓縮 Analysis、History、Profile 等主要任務空間
 
-目前實作：登入後主畫面底部顯示兩個文字連結，點擊後以同頁輕量 dialog 顯示對應版本內容；此入口只提供日常回看，不影響首次必要同意流程。
+目前實作：登入後主畫面底部顯示兩個文字連結，點擊後以同頁輕量 dialog 顯示對應版本內容；dialog 已補上鍵盤 focus trap、初始焦點、關閉後返回焦點、背景捲動鎖定、手機 bottom sheet 樣式與長內容獨立捲動。此入口只提供日常回看，不影響首次必要同意流程。
 
 ---
 
