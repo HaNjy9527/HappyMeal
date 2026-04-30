@@ -11,6 +11,7 @@ export const consentUiCopy = {
   disclaimerCard: {
     kicker: "Non-medical reminder",
     title: "本服務非醫療用途",
+    inlineBody: "以下建議僅供日常健康管理參考，不屬於醫療診斷、治療或處方。",
     body: "此建議僅供日常健康管理參考，不構成醫療診斷、治療或處方。若你有健康疑慮，請諮詢合格醫療專業人士。",
   },
   spotlight: {

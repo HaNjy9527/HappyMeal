@@ -186,6 +186,7 @@ function resolveDisclaimerCopy(
   return {
     kicker: consentUiCopy.disclaimerCard.kicker,
     title: disclaimer.title,
+    inlineBody: disclaimer.body,
     body: disclaimer.body,
   };
 }
@@ -1456,7 +1457,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                       <h3>每日目標與推薦運動</h3>
                       {analysisDisclaimerCopy ? (
                         <InlineDisclaimerNote
-                          body={analysisDisclaimerCopy.body}
+                          body={analysisDisclaimerCopy.inlineBody}
                         />
                       ) : null}
                       <div className="target-grid">
@@ -1647,7 +1648,9 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                     <p className="panel-kicker">Recommendation Snapshot</p>
                     <h3>當次建議快照</h3>
                     {historyDisclaimerCopy ? (
-                      <InlineDisclaimerNote body={historyDisclaimerCopy.body} />
+                      <InlineDisclaimerNote
+                        body={historyDisclaimerCopy.inlineBody}
+                      />
                     ) : null}
                     <div className="result-list">
                       {selectedHistory.recommendation.recommended_exercises.map(

@@ -99,7 +99,7 @@
 | FR-08    | 熱門運動熱量消耗      | 部分完成 | 已有 20 筆 ExerciseCatalog seed，confirm 後可推薦 3 個運動並估算消耗                                                                                                  | 尚未形成獨立查詢頁或完整查詢體驗                 |
 | FR-09    | 分析歷史              | 已完成   | 已有 history list 與 detail，且回傳建議快照，不保存原始圖片                                                                                                           | 符合主鏈需求                                     |
 | FR-10    | 主題切換              | 部分完成 | theme_preference 已可跨裝置保存，前端亦可切換兩種主題                                                                                                                 | 目前偏最小版，尚未發展成完整 Theme Preference 頁 |
-| FR-11    | 同意與聲明            | 部分完成 | Consent API、資料保存、Consent Intro 閱讀精修與手機版密度調整、guidance read-path guard、全站頁尾回看入口與 legal dialog 細節精修、短版非醫療提醒與手機實機驗收已完成 | 後續整體 IA 與 Home 體驗打磨可移交 Priority 4    |
+| FR-11    | 同意與聲明            | 部分完成 | Consent API、資料保存、Consent Intro 閱讀精修與手機版密度調整、guidance read-path guard、全站頁尾回看入口與 legal dialog 細節精修、短版非醫療提醒含 inline note 視覺精修與手機實機驗收已完成 | 後續整體 IA 與 Home 體驗打磨可移交 Priority 4    |
 
 ---
 
@@ -112,7 +112,7 @@
 | 歷史紀錄可查看過去分析摘要與建議快照             | 已完成   | history list 與 detail 已具備                                                                                                       |
 | 系統不長期保存原始圖片                           | 已完成   | analysis 完成後會刪除暫存圖片                                                                                                       |
 | 主題切換後重新登入仍保留偏好                     | 部分完成 | 偏好保存已完成，但仍建議補實際跨裝置手動驗收紀錄                                                                                    |
-| 所有建議相關頁面皆顯示非醫療用途提醒             | 已完成   | Analysis Result 與 History Detail 已改在 recommendation 區塊附近顯示短版 inline note；全站頁尾回看入口已補齊                        |
+| 所有建議相關頁面皆顯示非醫療用途提醒             | 已完成   | Analysis Result 與 History Detail 已改在 recommendation 區塊附近顯示短版 inline note，並已降低警示感與 legal block 視覺重量；全站頁尾回看入口已補齊 |
 
 ---
 
