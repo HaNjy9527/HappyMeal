@@ -1,3 +1,6 @@
+from app.services.consent import CURRENT_NON_MEDICAL_DISCLOSURE_VERSION, CURRENT_PRIVACY_POLICY_VERSION
+
+
 def test_get_profile_creates_default_user_and_profile(client):
     response = client.get("/profile")
 
@@ -80,3 +83,62 @@ def test_post_same_consent_version_is_idempotent(client):
     assert first_response.status_code == 201
     assert second_response.status_code == 201
     assert first_response.json()["id"] == second_response.json()["id"]
+
+
+def test_auth_me_reports_required_current_consents_after_acceptance(client):
+    privacy_response = client.post(
+        "/consents",
+        json={
+            "consent_type": "privacy_policy",
+            "policy_version": CURRENT_PRIVACY_POLICY_VERSION,
+        },
+    )
+    disclosure_response = client.post(
+        "/consents",
+        json={
+            "consent_type": "non_medical_disclosure",
+            "policy_version": CURRENT_NON_MEDICAL_DISCLOSURE_VERSION,
+        },
+    )
+    assert privacy_response.status_code == 201
+    assert disclosure_response.status_code == 201
+
+    me_response = client.get("/auth/me")
+
+    assert me_response.status_code == 200
+    assert me_response.json()["consent_status"] == {
+        "has_privacy_policy": True,
+        "has_non_medical_disclosure": True,
+        "can_start_analysis": True,
+        "can_view_guidance": True,
+    }
+
+
+def test_auth_me_treats_outdated_consent_versions_as_incomplete(client):
+    old_policy_version = "2026-03-v1"
+    privacy_response = client.post(
+        "/consents",
+        json={
+            "consent_type": "privacy_policy",
+            "policy_version": old_policy_version,
+        },
+    )
+    disclosure_response = client.post(
+        "/consents",
+        json={
+            "consent_type": "non_medical_disclosure",
+            "policy_version": old_policy_version,
+        },
+    )
+    assert privacy_response.status_code == 201
+    assert disclosure_response.status_code == 201
+
+    me_response = client.get("/auth/me")
+
+    assert me_response.status_code == 200
+    assert me_response.json()["consent_status"] == {
+        "has_privacy_policy": False,
+        "has_non_medical_disclosure": False,
+        "can_start_analysis": False,
+        "can_view_guidance": False,
+    }

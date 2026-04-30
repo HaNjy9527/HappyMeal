@@ -87,19 +87,19 @@
 
 ## 4. PRD 功能對照表
 
-| PRD 項目 | 功能名稱              | 目前狀態 | 目前判讀                                                                                                            | 備註                                                                |
-| -------- | --------------------- | -------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| FR-01    | LINE Login 註冊與登入 | 已完成   | 後端已具備 LINE OAuth、callback、signed token exchange、session、`/auth/me`、logout；前端也已串登入頁與受保護頁流程 | 目前可視為已完成                                                    |
-| FR-02    | 個人資料管理          | 已完成   | 已支援 profile 讀取與更新，包含 age、height、weight、activity、goal、goal weight                                    | 已能支撐 recommendation                                             |
-| FR-03    | 拍照與圖片上傳        | 部分完成 | 已支援 JPG、PNG 上傳與大小限制，並在完成後刪除暫存圖片                                                              | 手機相機體驗與前端流程仍屬最小版                                    |
-| FR-04    | 食物辨識              | 部分完成 | 候選結果流程已存在，但目前仍是 mock candidate preset，不是真實 AI provider                                          | 主鏈可驗證，但不算正式完成                                          |
-| FR-05    | 手動修正與份量確認    | 已完成   | 前端可修改 food name 與 portion，後端可接收 confirm 結果並寫入 item                                                 | 已可完成候選確認                                                    |
-| FR-06    | 營養估算              | 部分完成 | 可計算 kcal、protein、fat、carb 並回傳總和與明細，但目前來自 preset mapping，不是正式 nutrition source              | 能展示結果，但資料來源仍需升級                                      |
-| FR-07    | 增肌／減脂建議        | 已完成   | 已依 profile 與 goal 產生 target calories、macro 與推薦運動，語氣仍維持 wellness guidance                           | 已能形成 MVP 第一層建議                                             |
-| FR-08    | 熱門運動熱量消耗      | 部分完成 | 已有 20 筆 ExerciseCatalog seed，confirm 後可推薦 3 個運動並估算消耗                                                | 尚未形成獨立查詢頁或完整查詢體驗                                    |
-| FR-09    | 分析歷史              | 已完成   | 已有 history list 與 detail，且回傳建議快照，不保存原始圖片                                                         | 符合主鏈需求                                                        |
-| FR-10    | 主題切換              | 部分完成 | theme_preference 已可跨裝置保存，前端亦可切換兩種主題                                                               | 目前偏最小版，尚未發展成完整 Theme Preference 頁                    |
-| FR-11    | 同意與聲明            | 部分完成 | Consent API、資料保存與最小版 Consent Intro 已完成                                                                  | 尚需收斂全站頁尾回看入口、短版非醫療提醒與 guidance read-path guard |
+| PRD 項目 | 功能名稱              | 目前狀態 | 目前判讀                                                                                                            | 備註                                             |
+| -------- | --------------------- | -------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| FR-01    | LINE Login 註冊與登入 | 已完成   | 後端已具備 LINE OAuth、callback、signed token exchange、session、`/auth/me`、logout；前端也已串登入頁與受保護頁流程 | 目前可視為已完成                                 |
+| FR-02    | 個人資料管理          | 已完成   | 已支援 profile 讀取與更新，包含 age、height、weight、activity、goal、goal weight                                    | 已能支撐 recommendation                          |
+| FR-03    | 拍照與圖片上傳        | 部分完成 | 已支援 JPG、PNG 上傳與大小限制，並在完成後刪除暫存圖片                                                              | 手機相機體驗與前端流程仍屬最小版                 |
+| FR-04    | 食物辨識              | 部分完成 | 候選結果流程已存在，但目前仍是 mock candidate preset，不是真實 AI provider                                          | 主鏈可驗證，但不算正式完成                       |
+| FR-05    | 手動修正與份量確認    | 已完成   | 前端可修改 food name 與 portion，後端可接收 confirm 結果並寫入 item                                                 | 已可完成候選確認                                 |
+| FR-06    | 營養估算              | 部分完成 | 可計算 kcal、protein、fat、carb 並回傳總和與明細，但目前來自 preset mapping，不是正式 nutrition source              | 能展示結果，但資料來源仍需升級                   |
+| FR-07    | 增肌／減脂建議        | 已完成   | 已依 profile 與 goal 產生 target calories、macro 與推薦運動，語氣仍維持 wellness guidance                           | 已能形成 MVP 第一層建議                          |
+| FR-08    | 熱門運動熱量消耗      | 部分完成 | 已有 20 筆 ExerciseCatalog seed，confirm 後可推薦 3 個運動並估算消耗                                                | 尚未形成獨立查詢頁或完整查詢體驗                 |
+| FR-09    | 分析歷史              | 已完成   | 已有 history list 與 detail，且回傳建議快照，不保存原始圖片                                                         | 符合主鏈需求                                     |
+| FR-10    | 主題切換              | 部分完成 | theme_preference 已可跨裝置保存，前端亦可切換兩種主題                                                               | 目前偏最小版，尚未發展成完整 Theme Preference 頁 |
+| FR-11    | 同意與聲明            | 部分完成 | Consent API、資料保存、最小版 Consent Intro 與 guidance read-path guard 已完成                                      | 尚需收斂全站頁尾回看入口與短版非醫療提醒 UI      |
 
 ---
 

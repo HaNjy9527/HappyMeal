@@ -19,7 +19,7 @@ from app.services.analysis_confirm import confirm_analysis
 from app.services.analysis_history import get_completed_analysis_detail, list_completed_analyses
 from app.services.analysis_reestimate import reestimate_analysis
 from app.services.analysis_upload import upload_analysis_image
-from app.services.consent import require_analysis_consents
+from app.services.consent import require_analysis_consents, require_guidance_consents
 
 
 router = APIRouter(prefix="/analyses", tags=["analyses"])
@@ -30,6 +30,7 @@ def get_analysis_history(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> AnalysisHistoryListResponse:
+    require_guidance_consents(db, user)
     return list_completed_analyses(db, user)
 
 
@@ -81,4 +82,5 @@ def get_analysis_detail(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> AnalysisHistoryDetailResponse:
+    require_guidance_consents(db, user)
     return get_completed_analysis_detail(db, user, analysis_id)

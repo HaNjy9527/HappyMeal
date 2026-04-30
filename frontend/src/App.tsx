@@ -376,8 +376,13 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   }, []);
 
   useEffect(() => {
-    if (hasRequiredConsents(user) && screen === "consent") {
+    const hasConsents = hasRequiredConsents(user);
+    if (hasConsents && screen === "consent") {
       setScreen("analysis");
+    }
+    if (!hasConsents && screen !== "consent") {
+      setSelectedHistory(null);
+      setScreen("consent");
     }
   }, [screen, user]);
 
@@ -432,6 +437,12 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   }
 
   function handleMainScreenChange(nextScreen: MainScreen) {
+    if (nextScreen !== "consent" && !hasRequiredConsents(user)) {
+      setConsentError(consentUiCopy.message.flowRequired);
+      startTransition(() => setScreen("consent"));
+      return;
+    }
+
     startTransition(() => {
       setScreen(nextScreen);
       if (nextScreen === "history") {

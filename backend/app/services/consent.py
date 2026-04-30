@@ -57,6 +57,20 @@ def require_analysis_consents(db: Session, user: User) -> None:
     )
 
 
+def require_guidance_consents(db: Session, user: User) -> None:
+    consent_status = build_consent_status(db, user)
+    if consent_status.can_view_guidance:
+        return
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail={
+            "code": CONSENT_REQUIRED_ERROR_CODE,
+            "message": "You must accept the privacy policy and non-medical disclosure before viewing guidance.",
+        },
+    )
+
+
 def build_non_medical_disclaimer() -> DisclaimerResponse:
     return DisclaimerResponse(
         title="本服務非醫療用途",

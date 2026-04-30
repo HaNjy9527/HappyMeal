@@ -132,6 +132,47 @@ def test_post_analysis_draft_requires_consents(client):
     }
 
 
+def test_post_analysis_draft_requires_both_current_consents(client):
+    privacy_response = client.post(
+        "/consents",
+        json={
+            "consent_type": "privacy_policy",
+            "policy_version": CURRENT_PRIVACY_POLICY_VERSION,
+        },
+    )
+    assert privacy_response.status_code == 201
+
+    response = client.post("/analyses")
+
+    assert response.status_code == 403
+    assert response.json()["detail"]["code"] == "CONSENT_REQUIRED"
+
+
+def test_post_analysis_draft_rejects_outdated_consent_versions(client):
+    old_policy_version = "2026-03-v1"
+    privacy_response = client.post(
+        "/consents",
+        json={
+            "consent_type": "privacy_policy",
+            "policy_version": old_policy_version,
+        },
+    )
+    disclosure_response = client.post(
+        "/consents",
+        json={
+            "consent_type": "non_medical_disclosure",
+            "policy_version": old_policy_version,
+        },
+    )
+    assert privacy_response.status_code == 201
+    assert disclosure_response.status_code == 201
+
+    response = client.post("/analyses")
+
+    assert response.status_code == 403
+    assert response.json()["detail"]["code"] == "CONSENT_REQUIRED"
+
+
 def test_post_analysis_image_returns_mock_candidates_and_updates_status(client):
     accept_required_consents(client)
     draft_response = client.post("/analyses")
@@ -512,6 +553,20 @@ def test_get_analysis_history_returns_completed_items_only(client, db_session, i
     assert Decimal(str(payload["items"][0]["total_kcal"])) == Decimal("398.00")
 
 
+def test_get_analysis_history_requires_current_guidance_consents(client, db_session, isolated_upload_dir, monkeypatch):
+    seed_exercises(db_session)
+    create_completed_analysis(client)
+    monkeypatch.setattr("app.services.consent.CURRENT_PRIVACY_POLICY_VERSION", "2026-05-v1")
+
+    history_response = client.get("/analyses")
+
+    assert history_response.status_code == 403
+    assert history_response.json()["detail"] == {
+        "code": "CONSENT_REQUIRED",
+        "message": "You must accept the privacy policy and non-medical disclosure before viewing guidance.",
+    }
+
+
 def test_get_analysis_detail_returns_saved_items_and_snapshot_without_image_fields(client, db_session, isolated_upload_dir):
     seed_exercises(db_session)
     completed_analysis = create_completed_analysis(client)
@@ -530,6 +585,17 @@ def test_get_analysis_detail_returns_saved_items_and_snapshot_without_image_fiel
     assert payload["disclaimer"]["policy_version"] == CURRENT_NON_MEDICAL_DISCLOSURE_VERSION
     assert "image" not in payload
     assert "image_url" not in payload
+
+
+def test_get_analysis_detail_requires_current_guidance_consents(client, db_session, isolated_upload_dir, monkeypatch):
+    seed_exercises(db_session)
+    completed_analysis = create_completed_analysis(client)
+    monkeypatch.setattr("app.services.consent.CURRENT_NON_MEDICAL_DISCLOSURE_VERSION", "2026-05-v1")
+
+    detail_response = client.get(f"/analyses/{completed_analysis['analysis_id']}")
+
+    assert detail_response.status_code == 403
+    assert detail_response.json()["detail"]["code"] == "CONSENT_REQUIRED"
 
 
 def test_get_analysis_detail_rejects_non_completed_analysis(client):
