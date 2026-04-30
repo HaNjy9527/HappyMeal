@@ -194,6 +194,8 @@ function ConsentAccordionCard({
   section,
   isExpanded,
   isChecked,
+  showError,
+  errorMessage,
   version,
   onToggle,
   onCheckChange,
@@ -201,13 +203,19 @@ function ConsentAccordionCard({
   section: ConsentContentSection;
   isExpanded: boolean;
   isChecked: boolean;
+  showError: boolean;
+  errorMessage: string;
   version: string;
   onToggle: () => void;
   onCheckChange: (checked: boolean) => void;
 }) {
+  const errorId = `consent-${section.id}-error`;
+
   return (
     <article
-      className={`panel-card consent-card ${isExpanded ? "is-expanded" : ""}`}
+      className={`panel-card consent-card ${isExpanded ? "is-expanded" : ""} ${
+        showError ? "has-error" : ""
+      }`}
     >
       <button
         type="button"
@@ -239,10 +247,17 @@ function ConsentAccordionCard({
         <input
           type="checkbox"
           checked={isChecked}
+          aria-invalid={showError}
+          aria-describedby={showError ? errorId : undefined}
           onChange={(event) => onCheckChange(event.currentTarget.checked)}
         />
         <span>{section.checkboxLabel}</span>
       </label>
+      {showError ? (
+        <p className="consent-inline-error" id={errorId} role="alert">
+          {errorMessage}
+        </p>
+      ) : null}
     </article>
   );
 }
@@ -394,6 +409,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   const [consentSaving, setConsentSaving] = useState(false);
   const [consentMessage, setConsentMessage] = useState<string | null>(null);
   const [consentError, setConsentError] = useState<string | null>(null);
+  const [consentSubmitAttempted, setConsentSubmitAttempted] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(
     user.consent_status.has_privacy_policy,
   );
@@ -727,6 +743,8 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   }
 
   async function handleConsentSubmit() {
+    setConsentSubmitAttempted(true);
+
     if (!agreePrivacy || !agreeNonMedical) {
       setConsentError(consentUiCopy.message.checkboxRequired);
       return;
@@ -749,6 +767,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
       ]);
       await queryClient.invalidateQueries({ queryKey: ["me"] });
       setConsentMessage(consentUiCopy.message.updated);
+      setConsentSubmitAttempted(false);
       startTransition(() => setScreen("analysis"));
     } catch (error) {
       setConsentError(
@@ -763,6 +782,8 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
   const analysisAccessLocked = !user.consent_status.can_start_analysis;
   const canContinueConsent = agreePrivacy && agreeNonMedical;
+  const showPrivacyConsentError = consentSubmitAttempted && !agreePrivacy;
+  const showNonMedicalConsentError = consentSubmitAttempted && !agreeNonMedical;
   const consentCompleted = hasRequiredConsents(user);
   const themeMode = profile?.theme_preference ?? "female_default";
   const validationMessage = buildValidationMessage(profileForm);
@@ -912,6 +933,8 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                 section={consentSections[0]}
                 isExpanded={expandedSections.privacy}
                 isChecked={agreePrivacy}
+                showError={showPrivacyConsentError}
+                errorMessage={consentUiCopy.inlineError.privacy}
                 version={user.required_policy_versions.privacy_policy}
                 onToggle={() =>
                   setExpandedSections((current) => ({
@@ -919,13 +942,18 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                     privacy: !current.privacy,
                   }))
                 }
-                onCheckChange={setAgreePrivacy}
+                onCheckChange={(checked) => {
+                  setAgreePrivacy(checked);
+                  setConsentError(null);
+                }}
               />
 
               <ConsentAccordionCard
                 section={consentSections[1]}
                 isExpanded={expandedSections["non-medical"]}
                 isChecked={agreeNonMedical}
+                showError={showNonMedicalConsentError}
+                errorMessage={consentUiCopy.inlineError.nonMedical}
                 version={user.required_policy_versions.non_medical_disclosure}
                 onToggle={() =>
                   setExpandedSections((current) => ({
@@ -933,7 +961,10 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                     "non-medical": !current["non-medical"],
                   }))
                 }
-                onCheckChange={setAgreeNonMedical}
+                onCheckChange={(checked) => {
+                  setAgreeNonMedical(checked);
+                  setConsentError(null);
+                }}
               />
             </div>
 
@@ -946,7 +977,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
               <button
                 className="primary-button"
                 onClick={() => void handleConsentSubmit()}
-                disabled={consentSaving || !canContinueConsent}
+                disabled={consentSaving}
               >
                 {consentSaving
                   ? consentUiCopy.action.submitting

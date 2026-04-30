@@ -21,11 +21,11 @@ export const consentUiCopy = {
     kicker: "Privacy & disclosure",
     title: "開始分析前，請先完成兩項必要同意",
     description:
-      "你可以先看摘要，再依需要展開完整文案。完成兩項勾選後，才能開始新的分析與建議流程。",
+      "HappyMeal 需要處理你的身體資料與食物照片來完成分析；後續建議僅供日常健康管理參考，不屬於醫療用途。",
   },
   helper: {
-    incomplete: "請先勾選兩項同意後，才能繼續。",
-    complete: "已符合送出條件，送出後會回到分析主流程。",
+    incomplete: "請完成兩項勾選後繼續。",
+    complete: "已可送出，完成後會回到 Analysis。",
   },
   footer: {
     kicker: "Legal & consent",
@@ -38,7 +38,7 @@ export const consentUiCopy = {
     goToConsent: "前往 Consent",
   },
   message: {
-    checkboxRequired: "請先勾選兩項同意後，再繼續。",
+    checkboxRequired: "請補齊下方未勾選的同意項目。",
     updated: "同意已更新，現在可以開始分析與查看建議。",
     saveFailed: "Consent 儲存失敗",
     analysisRequired: "開始分析前，請先完成隱私政策與非醫療用途同意。",
@@ -48,6 +48,10 @@ export const consentUiCopy = {
     unlockedSummary: "已完成必要同意，可開始新的分析。",
     profileReady: "目前已可開始新的分析與建議流程。",
     profilePending: "開始分析前，請先完成隱私政策與非醫療用途同意。",
+  },
+  inlineError: {
+    privacy: "請先同意資料與照片處理方式。",
+    nonMedical: "請先理解本服務不是醫療診斷或處方。",
   },
   profileStatus: {
     label: "Consent 狀態",
@@ -62,8 +66,8 @@ export const consentSections: ConsentContentSection[] = [
     kicker: "Privacy Policy",
     title: "隱私政策說明",
     summary:
-      "我們會使用你的基本身體資料、目標設定與食物照片來完成分析，原始照片僅供本次分析暫存，完成後不長期保存。",
-    checkboxLabel: "我已閱讀並同意目前版本的隱私政策",
+      "我們會使用你的身體資料、目標與食物照片完成分析；原始照片只暫存本次流程，完成後不長期保存。",
+    checkboxLabel: "我同意目前版本的隱私政策，包含資料與照片處理方式",
     paragraphs: [
       "為了提供飲食分析、營養估算與個人化建議，HappyMeal 會處理你填寫的年齡、身高、體重、活動量、目標設定，以及你上傳的食物照片與分析結果摘要。",
       "原始食物照片僅用於本次分析流程的暫存處理，分析完成後不作長期保存。歷史紀錄中保存的是分析摘要、營養結果與建議快照，不包含原始照片。",
@@ -75,8 +79,8 @@ export const consentSections: ConsentContentSection[] = [
     kicker: "Non-medical Disclosure",
     title: "非醫療用途聲明",
     summary:
-      "本服務提供的是一般健康管理與 wellness guidance 參考，不構成醫療診斷、治療、處方或專業醫療建議。",
-    checkboxLabel: "我已閱讀並同意非醫療用途聲明",
+      "本服務提供一般健康管理與 wellness guidance 參考，不構成醫療診斷、治療、處方或專業醫療建議。",
+    checkboxLabel: "我理解並同意非醫療用途聲明，本服務不是醫療診斷或處方",
     paragraphs: [
       "HappyMeal 提供的熱量、營養與運動建議，屬於一般健康管理與 wellness guidance 參考，目的在於協助你理解單次飲食與活動安排。",
       "所有營養結果與建議都屬於估算資訊，不能取代醫師、營養師或其他合格醫療專業人員的判斷，也不應被解讀為診斷、治療、處方或疾病管理方案。",
