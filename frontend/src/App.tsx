@@ -264,54 +264,113 @@ function ConsentAccordionCard({
   );
 }
 
-function ConsentReviewCard({
+function LegalReviewDialog({
   section,
-  isExpanded,
   version,
-  onToggle,
+  onClose,
 }: {
   section: ConsentContentSection;
-  isExpanded: boolean;
   version: string;
-  onToggle: () => void;
+  onClose: () => void;
+}) {
+  const titleId = `legal-review-title-${section.id}`;
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div
+      className="legal-dialog-backdrop"
+      role="presentation"
+      onClick={onClose}
+    >
+      <section
+        className="legal-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="legal-dialog-header">
+          <div>
+            <p className="panel-kicker">{section.kicker}</p>
+            <h3 id={titleId}>{section.title}</h3>
+          </div>
+          <button
+            type="button"
+            className="legal-dialog-close"
+            onClick={onClose}
+            aria-label="關閉隱私與聲明內容"
+          >
+            關閉
+          </button>
+        </header>
+
+        <div className="legal-dialog-body">
+          <p className="consent-summary">{section.summary}</p>
+          <div className="consent-copy-stack">
+            {section.paragraphs.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+            <p className="consent-version">目前版本 {version}</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function LegalFooter({
+  onOpenReview,
+}: {
+  onOpenReview: (sectionId: ConsentContentSection["id"]) => void;
 }) {
   return (
-    <article
-      className={`panel-card consent-card ${isExpanded ? "is-expanded" : ""}`}
-    >
-      <button
-        type="button"
-        className="consent-accordion-toggle"
-        aria-expanded={isExpanded}
-        onClick={onToggle}
-      >
-        <div>
-          <p className="panel-kicker">{section.kicker}</p>
-          <h3>{section.title}</h3>
-        </div>
-        <span className="consent-accordion-icon" aria-hidden="true">
-          {isExpanded ? "收合" : "展開"}
-        </span>
-      </button>
-
-      <p className="consent-summary">{section.summary}</p>
-
-      {isExpanded ? (
-        <div className="consent-copy-stack">
-          {section.paragraphs.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
-          ))}
-          <p className="consent-version">目前版本 {version}</p>
-        </div>
-      ) : null}
-    </article>
+    <footer className="legal-footer">
+      <div>
+        <p className="panel-kicker">{consentUiCopy.footer.kicker}</p>
+        <p className="legal-footer-copy">{consentUiCopy.footer.description}</p>
+      </div>
+      <div className="legal-link-list" aria-label="隱私與聲明回看入口">
+        {consentSections.map((section) => (
+          <button
+            key={section.id}
+            type="button"
+            className="legal-link-button"
+            onClick={() => onOpenReview(section.id)}
+          >
+            {section.id === "privacy" ? "隱私政策" : "非醫療用途聲明"}
+          </button>
+        ))}
+      </div>
+    </footer>
   );
+}
+
+function resolveConsentSectionVersion(
+  sectionId: ConsentContentSection["id"],
+  user: AuthMeResponse,
+) {
+  return sectionId === "privacy"
+    ? user.required_policy_versions.privacy_policy
+    : user.required_policy_versions.non_medical_disclosure;
+}
+
+function resolveConsentSection(sectionId: ConsentContentSection["id"] | null) {
+  return consentSections.find((section) => section.id === sectionId) ?? null;
 }
 
 function HomeDashboard({ user }: { user: AuthMeResponse }) {
   const queryClient = useQueryClient();
   const logoutMutation = useLogout();
-  const consentReviewRef = useRef<HTMLElement | null>(null);
   const pendingCandidateFocusId = useRef<string | null>(null);
   const [screen, setScreen] = useState<MainScreen>(
     hasRequiredConsents(user) ? "analysis" : "consent",
@@ -364,12 +423,11 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     privacy: false,
     "non-medical": false,
   });
-  const [reviewExpandedSections, setReviewExpandedSections] = useState<
-    Record<ConsentContentSection["id"], boolean>
-  >({
-    privacy: false,
-    "non-medical": false,
-  });
+  const [activeLegalReview, setActiveLegalReview] = useState<
+    ConsentContentSection["id"] | null
+  >(null);
+
+  const activeLegalSection = resolveConsentSection(activeLegalReview);
 
   useEffect(() => {
     void loadProfile();
@@ -381,6 +439,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
       setScreen("analysis");
     }
     if (!hasConsents && screen !== "consent") {
+      setActiveLegalReview(null);
       setSelectedHistory(null);
       setScreen("consent");
     }
@@ -781,13 +840,6 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     selectedHistory,
     validationMessage,
   ]);
-
-  function scrollToConsentReview() {
-    consentReviewRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  }
 
   return (
     <main className={`app-shell theme-${themeMode}`}>
@@ -1772,62 +1824,14 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
           </section>
         ) : null}
         {consentCompleted ? (
-          <>
-            <footer className="legal-footer">
-              <div>
-                <p className="panel-kicker">{consentUiCopy.footer.kicker}</p>
-                <p className="legal-footer-copy">
-                  {consentUiCopy.footer.description}
-                </p>
-              </div>
-              <button className="ghost-button" onClick={scrollToConsentReview}>
-                {consentUiCopy.footer.action}
-              </button>
-            </footer>
-
-            <section
-              className="legal-review-section"
-              id="consent-review"
-              ref={consentReviewRef}
-            >
-              <div className="section-heading legal-review-heading">
-                <div>
-                  <p className="section-kicker">
-                    {consentUiCopy.review.kicker}
-                  </p>
-                  <h2>{consentUiCopy.review.title}</h2>
-                </div>
-                <p className="legal-review-copy">
-                  {consentUiCopy.review.description}
-                </p>
-              </div>
-
-              <div className="panel-grid legal-review-grid">
-                <ConsentReviewCard
-                  section={consentSections[0]}
-                  isExpanded={reviewExpandedSections.privacy}
-                  version={user.required_policy_versions.privacy_policy}
-                  onToggle={() =>
-                    setReviewExpandedSections((current) => ({
-                      ...current,
-                      privacy: !current.privacy,
-                    }))
-                  }
-                />
-                <ConsentReviewCard
-                  section={consentSections[1]}
-                  isExpanded={reviewExpandedSections["non-medical"]}
-                  version={user.required_policy_versions.non_medical_disclosure}
-                  onToggle={() =>
-                    setReviewExpandedSections((current) => ({
-                      ...current,
-                      "non-medical": !current["non-medical"],
-                    }))
-                  }
-                />
-              </div>
-            </section>
-          </>
+          <LegalFooter onOpenReview={setActiveLegalReview} />
+        ) : null}
+        {consentCompleted && activeLegalSection ? (
+          <LegalReviewDialog
+            section={activeLegalSection}
+            version={resolveConsentSectionVersion(activeLegalSection.id, user)}
+            onClose={() => setActiveLegalReview(null)}
+          />
         ) : null}
       </section>
     </main>

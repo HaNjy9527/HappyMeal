@@ -29,7 +29,7 @@
 1. 首次同意主鏈需維持清楚、可理解、可完成，並避免被一般頁尾回看入口取代
 2. 日常頁面不應常駐大段隱私與聲明內容，應改為頁面最下方的輕量文字連結
 3. Analysis Result、History Detail 等建議相關畫面仍需保留短版非醫療提醒，但不需要佔用大面積卡片
-4. 未同意前的 analysis 與 guidance 相關 guard 已補上 current consent 保護，後續重點轉為頁尾回看入口與短版提醒呈現
+4. 未同意前的 analysis 與 guidance 相關 guard 已補上 current consent 保護，日常頁面也已改為頁尾輕量回看入口；後續重點轉為短版提醒呈現
 
 ---
 
@@ -42,13 +42,13 @@
 3. consent 相關文案已有草稿與獨立文件，可作為前端導入基礎
 4. 系統邏輯上已經把 consent 視為正式資料，而不是一次性的靜態頁面
 5. Analysis 建立、confirm、re-estimate、History List 與 History Detail 已套用最新版必要同意保護
+6. 完成同意後，會員主要頁面底部已提供「隱私政策」與「非醫療用途聲明」文字連結，並以輕量 dialog 回看內容
 
 目前仍未完成的重點：
 
 1. Consent Intro 與登入後導入仍偏最小實作，需要確認首次登入時的引導是否穩定
-2. 日常頁面底部的「隱私政策」與「非醫療用途聲明」文字連結尚未整理成一致規格
-3. Analysis Result、History Detail 與 recommendation 區塊應改為短版提醒，而不是常駐大段聲明內容
-4. Analysis Result、History Detail 與 recommendation 區塊的短版提醒 UI 尚未收斂完成
+2. Analysis Result、History Detail 與 recommendation 區塊應改為短版提醒，而不是常駐大段聲明內容
+3. Analysis Result、History Detail 與 recommendation 區塊的短版提醒 UI 尚未收斂完成
 
 ---
 
@@ -110,6 +110,8 @@
 
 ### P1-05 全站頁尾回看入口
 
+狀態：已完成最小版。
+
 目標：讓使用者在完成同意後，能隨時從頁面最下方回看隱私與聲明內容。
 
 包含：
@@ -118,6 +120,8 @@
 2. 連結可導向同頁的輕量 review 區塊、獨立 review view，或後續正式 policy page
 3. 頁尾入口只作為日常回看，不取代首次必要同意與 checkbox
 4. 頁尾不常駐完整聲明段落，避免壓縮 Analysis、History、Profile 等主要任務空間
+
+目前實作：登入後主畫面底部顯示兩個文字連結，點擊後以同頁輕量 dialog 顯示對應版本內容；此入口只提供日常回看，不影響首次必要同意流程。
 
 ---
 
