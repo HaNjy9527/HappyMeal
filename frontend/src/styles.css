@@ -931,6 +931,15 @@ select {
   );
 }
 
+.candidate-card.is-low-confidence {
+  border-color: rgba(221, 122, 41, 0.35);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 1),
+    rgba(255, 243, 225, 0.65)
+  );
+}
+
 .candidate-head {
   display: flex;
   justify-content: space-between;

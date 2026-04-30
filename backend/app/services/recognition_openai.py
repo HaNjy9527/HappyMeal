@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
+import time
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
@@ -11,6 +13,8 @@ from openai import APIConnectionError, APITimeoutError, BadRequestError, OpenAI,
 from app.core.config import get_settings
 from app.services.recognition_provider import ProviderCandidate
 
+
+logger = logging.getLogger("app.analysis")
 
 MOCK_CANDIDATE_PRESETS = {
     "salad": [
@@ -195,6 +199,7 @@ def parse_openai_response(output_text: str) -> list[ProviderCandidate]:
 def request_openai_candidates(*, image_path: Path) -> list[ProviderCandidate]:
     settings = get_settings()
     client = create_openai_client()
+    t0 = time.perf_counter()
     try:
         response = client.responses.create(
             model=settings.ai_food_model,
@@ -216,27 +221,54 @@ def request_openai_candidates(*, image_path: Path) -> list[ProviderCandidate]:
             max_output_tokens=400,
         )
     except RateLimitError as error:
+        logger.warning(
+            "OpenAI recognition quota exceeded",
+            extra={"event": "openai_recognition", "outcome": "failure", "reason": "quota_exceeded"},
+        )
         raise RecognitionProviderFailure(
             reason="quota_exceeded",
             message="AI 服務目前額度不足，請重拍、換圖或稍後再試。",
         ) from error
     except BadRequestError as error:
+        logger.warning(
+            "OpenAI recognition invalid image",
+            extra={"event": "openai_recognition", "outcome": "failure", "reason": "invalid_image"},
+        )
         raise RecognitionProviderFailure(
             reason="invalid_image",
             message="這張圖片目前無法穩定分析，請重拍或改用其他圖片。",
         ) from error
     except APITimeoutError as error:
+        logger.warning(
+            "OpenAI recognition timeout",
+            extra={"event": "openai_recognition", "outcome": "failure", "reason": "provider_timeout"},
+        )
         raise RecognitionProviderFailure(
             reason="provider_timeout",
             message="AI 分析逾時，請重拍、換圖或稍後再試。",
         ) from error
     except APIConnectionError as error:
+        logger.warning(
+            "OpenAI recognition connection error",
+            extra={"event": "openai_recognition", "outcome": "failure", "reason": "provider_unavailable"},
+        )
         raise RecognitionProviderFailure(
             reason="provider_unavailable",
             message="AI 服務目前無法連線，請重拍、換圖或稍後再試。",
         ) from error
 
-    return parse_openai_response(response.output_text)
+    latency_ms = round((time.perf_counter() - t0) * 1000)
+    candidates = parse_openai_response(response.output_text)
+    logger.info(
+        "OpenAI recognition complete",
+        extra={
+            "event": "openai_recognition",
+            "outcome": "success",
+            "candidate_count": len(candidates),
+            "latency_ms": latency_ms,
+        },
+    )
+    return candidates
 
 
 def request_openai_reestimate_candidates(
@@ -251,6 +283,7 @@ def request_openai_reestimate_candidates(
         "user_instruction": user_instruction or "",
     }
 
+    t0 = time.perf_counter()
     try:
         response = client.responses.create(
             model=settings.ai_food_model,
@@ -270,22 +303,45 @@ def request_openai_reestimate_candidates(
             max_output_tokens=400,
         )
     except RateLimitError as error:
+        logger.warning(
+            "OpenAI reestimate quota exceeded",
+            extra={"event": "openai_reestimate", "outcome": "failure", "reason": "quota_exceeded"},
+        )
         raise RecognitionProviderFailure(
             reason="quota_exceeded",
             message="AI 服務目前額度不足，暫時無法重新估算，請稍後再試。",
         ) from error
     except APITimeoutError as error:
+        logger.warning(
+            "OpenAI reestimate timeout",
+            extra={"event": "openai_reestimate", "outcome": "failure", "reason": "provider_timeout"},
+        )
         raise RecognitionProviderFailure(
             reason="provider_timeout",
             message="AI 重新估算逾時，請稍後再試。",
         ) from error
     except APIConnectionError as error:
+        logger.warning(
+            "OpenAI reestimate connection error",
+            extra={"event": "openai_reestimate", "outcome": "failure", "reason": "provider_unavailable"},
+        )
         raise RecognitionProviderFailure(
             reason="provider_unavailable",
             message="AI 服務目前無法連線，暫時無法重新估算。",
         ) from error
 
-    return parse_openai_response(response.output_text)
+    latency_ms = round((time.perf_counter() - t0) * 1000)
+    candidates = parse_openai_response(response.output_text)
+    logger.info(
+        "OpenAI reestimate complete",
+        extra={
+            "event": "openai_reestimate",
+            "outcome": "success",
+            "candidate_count": len(candidates),
+            "latency_ms": latency_ms,
+        },
+    )
+    return candidates
 
 
 def recognize_meal_image_with_openai(*, filename: str | None, image_path: Path) -> list[ProviderCandidate]:

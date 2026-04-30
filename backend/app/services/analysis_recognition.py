@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
@@ -10,6 +11,8 @@ from app.services.recognition_openai import RecognitionProviderFailure, recogniz
 
 
 PARTIAL_CONFIDENCE_THRESHOLD = Decimal("0.6")
+
+logger = logging.getLogger("app.analysis")
 
 
 @dataclass(slots=True)
@@ -25,6 +28,10 @@ def recognize_analysis_image(*, filename: str | None, image_path: Path) -> Analy
     try:
         provider_candidates = recognize_meal_image_with_openai(filename=filename, image_path=image_path)
     except RecognitionProviderFailure as error:
+        logger.warning(
+            "Recognition complete_failure from provider",
+            extra={"event": "recognition_result", "outcome": "complete_failure", "reason": error.reason},
+        )
         return AnalysisRecognitionResult(
             recognition_status=RecognitionStatus.COMPLETE_FAILURE,
             candidates=[],
@@ -37,17 +44,29 @@ def recognize_analysis_image(*, filename: str | None, image_path: Path) -> Analy
     if candidates:
         has_low_confidence = any(c.confidence_score < PARTIAL_CONFIDENCE_THRESHOLD for c in candidates)
         if has_low_confidence:
+            logger.info(
+                "Recognition partial",
+                extra={"event": "recognition_result", "outcome": "partial", "candidate_count": len(candidates)},
+            )
             return AnalysisRecognitionResult(
                 recognition_status=RecognitionStatus.PARTIAL,
                 candidates=candidates,
                 manual_review_required=True,
                 message="AI 對部分食物辨識信心不足，請確認或修正後再送出。",
             )
+        logger.info(
+            "Recognition success",
+            extra={"event": "recognition_result", "outcome": "success", "candidate_count": len(candidates)},
+        )
         return AnalysisRecognitionResult(
             recognition_status=RecognitionStatus.SUCCESS,
             candidates=candidates,
         )
 
+    logger.warning(
+        "Recognition complete_failure no reliable candidates",
+        extra={"event": "recognition_result", "outcome": "complete_failure", "reason": "no_reliable_candidates"},
+    )
     return AnalysisRecognitionResult(
         recognition_status=RecognitionStatus.COMPLETE_FAILURE,
         candidates=[],
