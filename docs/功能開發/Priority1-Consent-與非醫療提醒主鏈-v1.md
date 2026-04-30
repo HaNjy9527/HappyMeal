@@ -29,7 +29,7 @@
 1. 首次同意主鏈需維持清楚、可理解、可完成，並避免被一般頁尾回看入口取代
 2. 日常頁面不應常駐大段隱私與聲明內容，應改為頁面最下方的輕量文字連結
 3. Analysis Result、History Detail 等建議相關畫面仍需保留短版非醫療提醒，但不需要佔用大面積卡片
-4. 未同意前的 analysis 與 guidance 相關 guard 已補上 current consent 保護，日常頁面也已改為頁尾輕量回看入口；後續重點轉為短版提醒呈現
+4. 未同意前的 analysis 與 guidance 相關 guard 已補上 current consent 保護，日常頁面也已改為頁尾輕量回看入口；Analysis Result 與 History Detail 已改為 recommendation 區塊附近的短版提醒
 
 ---
 
@@ -43,12 +43,12 @@
 4. 系統邏輯上已經把 consent 視為正式資料，而不是一次性的靜態頁面
 5. Analysis 建立、confirm、re-estimate、History List 與 History Detail 已套用最新版必要同意保護
 6. 完成同意後，會員主要頁面底部已提供「隱私政策」與「非醫療用途聲明」文字連結，並以輕量 dialog 回看內容
+7. Analysis Result 與 History Detail 已移除大型 DisclaimerCard，改在 recommendation 區塊附近顯示短版非醫療提醒
 
 目前仍未完成的重點：
 
 1. Consent Intro 與登入後導入仍偏最小實作，需要確認首次登入時的引導是否穩定
-2. Analysis Result、History Detail 與 recommendation 區塊應改為短版提醒，而不是常駐大段聲明內容
-3. Analysis Result、History Detail 與 recommendation 區塊的短版提醒 UI 尚未收斂完成
+2. Consent Intro、頁尾回看入口與短版提醒雖已完成最小版，但手機閱讀、細節視覺與手動驗收紀錄仍可再精修
 
 ---
 
@@ -99,6 +99,8 @@
 
 ### P1-04 非醫療提醒覆蓋
 
+狀態：已完成最小版。
+
 目標：在結果與歷史相關頁面補齊短版提醒，並避免大面積聲明卡片干擾主要任務。
 
 包含：
@@ -107,6 +109,8 @@
 2. History Detail 在建議快照附近顯示短版非醫療提醒
 3. 相關建議區塊保留 wellness guidance 語氣
 4. 不要求在每個建議畫面顯示完整聲明段落或大型 legal card
+
+目前實作：Analysis Result 的「每日目標與推薦運動」與 History Detail 的「當次建議快照」已改用 inline note 顯示非醫療提醒，不再於結果頂部或 snapshot 後常駐大型聲明卡片。
 
 ### P1-05 全站頁尾回看入口
 

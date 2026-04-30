@@ -170,25 +170,8 @@ function hasRequiredConsents(user: AuthMeResponse) {
   return user.consent_status.can_start_analysis;
 }
 
-function DisclaimerCard({
-  kicker,
-  title,
-  body,
-  policyVersion,
-}: {
-  kicker: string;
-  title: string;
-  body: string;
-  policyVersion: string;
-}) {
-  return (
-    <article className="panel-card disclaimer-card">
-      <p className="panel-kicker">{kicker}</p>
-      <h3>{title}</h3>
-      <p>{body}</p>
-      <p className="disclaimer-meta">適用版本 {policyVersion}</p>
-    </article>
-  );
+function InlineDisclaimerNote({ body }: { body: string }) {
+  return <p className="inline-disclaimer-note">{body}</p>;
 }
 
 function resolveDisclaimerCopy(
@@ -1326,14 +1309,6 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
             {analysisStage === "result" ? (
               analysisResult ? (
                 <div className="content-stack">
-                  {analysisDisclaimerCopy ? (
-                    <DisclaimerCard
-                      kicker={analysisDisclaimerCopy.kicker}
-                      title={analysisDisclaimerCopy.title}
-                      body={analysisDisclaimerCopy.body}
-                      policyVersion={analysisResult.disclaimer.policy_version}
-                    />
-                  ) : null}
                   <div className="metric-grid">
                     <article className="metric-card">
                       <span>總熱量</span>
@@ -1382,6 +1357,11 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                     <article className="panel-card">
                       <p className="panel-kicker">Recommendation</p>
                       <h3>每日目標與推薦運動</h3>
+                      {analysisDisclaimerCopy ? (
+                        <InlineDisclaimerNote
+                          body={analysisDisclaimerCopy.body}
+                        />
+                      ) : null}
                       <div className="target-grid">
                         <div>
                           <span>Target kcal</span>
@@ -1521,15 +1501,6 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                   <p>{formatDateLabel(selectedHistory.analyzed_at)}</p>
                 </article>
 
-                {historyDisclaimerCopy ? (
-                  <DisclaimerCard
-                    kicker={historyDisclaimerCopy.kicker}
-                    title={historyDisclaimerCopy.title}
-                    body={historyDisclaimerCopy.body}
-                    policyVersion={selectedHistory.disclaimer.policy_version}
-                  />
-                ) : null}
-
                 <div className="metric-grid">
                   <article className="metric-card">
                     <span>總熱量</span>
@@ -1578,6 +1549,9 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                   <article className="panel-card">
                     <p className="panel-kicker">Recommendation Snapshot</p>
                     <h3>當次建議快照</h3>
+                    {historyDisclaimerCopy ? (
+                      <InlineDisclaimerNote body={historyDisclaimerCopy.body} />
+                    ) : null}
                     <div className="result-list">
                       {selectedHistory.recommendation.recommended_exercises.map(
                         (exercise) => (

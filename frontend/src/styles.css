@@ -446,17 +446,15 @@ select:focus-visible {
   border-color: rgba(91, 142, 214, 0.2);
 }
 
-.disclaimer-card {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 248, 236, 0.98),
-    rgba(255, 253, 248, 0.94)
-  );
-}
-
-.disclaimer-meta {
-  font-size: 0.85rem;
-  color: var(--text-muted);
+.inline-disclaimer-note {
+  margin: 2px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  background: var(--surface-soft);
+  font-size: 0.92rem;
+  line-height: 1.65;
 }
 
 .consent-card {
