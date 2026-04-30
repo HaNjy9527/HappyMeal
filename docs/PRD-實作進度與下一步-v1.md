@@ -94,7 +94,7 @@
 | FR-01    | LINE Login 註冊與登入 | 已完成   | 後端已具備 LINE OAuth、callback、signed token exchange、session、`/auth/me`、logout；前端也已串登入頁與受保護頁流程 | 目前可視為已完成                                                 |
 | FR-02    | 個人資料管理          | 已完成   | 已支援 profile 讀取與更新，包含 age、height、weight、activity、goal、goal weight                                    | 已能支撐 recommendation                                          |
 | FR-03    | 拍照與圖片上傳        | 部分完成 | 已支援 JPG、PNG 上傳與大小限制，並在完成後刪除暫存圖片                                                              | 手機相機體驗與前端流程仍屬最小版                                 |
-| FR-04    | 食物辨識              | 部分完成 | GPT / OpenAI provider 已接上，且真實圖片辨識主鏈已可手動驗證；目前仍需補 partial 判定、穩定性驗收與最小觀測性       | 已不是單純 mock；正式完成前需收斂辨識分流與量測                  |
+| FR-04    | 食物辨識              | 部分完成 | GPT / OpenAI provider 已接上；`success`、`partial`（`confidence_score < 0.6`）、`complete_failure` 三種狀態均已落地並可由前端分流；仍需補最小觀測性與手機驗測 | 辨識分流已完成；正式完成前仍需觀測性與實機驗收 |
 | FR-05    | 手動修正與份量確認    | 已完成   | 前端可修改 food name 與 portion，後端可接收 confirm 結果並寫入 item                                                 | 已可完成候選確認                                                 |
 | FR-06    | 營養估算              | 部分完成 | 可計算 kcal、protein、fat、carb 並回傳總和與明細，但目前來自 preset mapping，不是正式 nutrition source              | 能展示結果，但資料來源仍需升級                                   |
 | FR-07    | 增肌／減脂建議        | 已完成   | 已依 profile 與 goal 產生 target calories、macro 與推薦運動，語氣仍維持 wellness guidance                           | 已能形成 MVP 第一層建議                                          |
@@ -128,7 +128,7 @@
 
 最重要的落差如下：
 
-1. GPT / OpenAI 食物辨識已接上，但 partial 判定、穩定性驗收與最小觀測性仍需補齊
+1. GPT / OpenAI 食物辨識已接上，`partial` 判定已落地，但最小觀測性與手機實機驗測仍需補齊
 2. preset nutrition 尚未替換成正式營養資料來源
 3. Consent Intro 已完成最小版；Landing / Home / Theme 等 IA 頁面仍偏最小版
 4. 手機優先體驗雖可用，但仍未精修成 PRD 描述的產品感受
