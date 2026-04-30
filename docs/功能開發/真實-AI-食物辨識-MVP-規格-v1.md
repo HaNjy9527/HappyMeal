@@ -5,7 +5,7 @@
 - 文件名稱：HappyMeal 真實 AI 食物辨識 MVP 規格
 - 版本：v1
 - 日期：2026-04-22
-- 狀態：Draft
+- 狀態：V1.X 收斂中，GPT 辨識最小主鏈已接上
 - 文件類型：參考文件 Reference + 說明文件 Explanation
 - 用途：定義 HappyMeal 第一版真實 AI 食物辨識的產品決策、OpenAI 成本試算邏輯、後端切層、API 規格、錯誤處理、fallback、資料流、驗收標準，以及 Candidate Confirmation 前端 UX 規格。
 
@@ -15,7 +15,7 @@
 
 本文件不取代 [PRD-v1.md](../PRD-v1.md)、[System-Architecture-v1.md](../System-Architecture-v1.md) 與 [IA-User-Flows-v1.md](../IA-User-Flows-v1.md)。
 
-本文件的角色是把「Priority 2｜真實 AI 食物辨識 provider 接入」收斂成可落地的 MVP 規格。
+本文件的角色是把「Priority 2｜真實 AI 食物辨識 provider 接入與穩定化」收斂成可落地的 MVP 規格。
 
 本文件回答的問題是：
 
@@ -72,6 +72,8 @@
 ### 4.1 目標
 
 在不改變 HappyMeal 現有主鏈的前提下，把 mock candidate 替換成真實 AI 食物辨識，並保留手動修正、營養映射與歷史保存流程。
+
+目前進度補充：GPT / OpenAI provider 最小主鏈已接上，並已可用真實圖片手動驗證食物候選辨識。本文件後續重點不再是「是否接上 provider」，而是把辨識結果分流、candidate correction、`re-estimate` 與觀測性收斂成可驗收的 V1.0 Release 能力。
 
 ### 4.2 MVP 範圍
 
@@ -782,11 +784,11 @@ class RecognitionProvider(Protocol):
 
 ## 9. 建議後續實作順序
 
-1. 先抽出 recognition provider 邊界與 internal schema。
-2. 接入 GPT-5.4 mini，讓 `/analyses/{id}/image` 不再回 mock candidate。
-3. 補 recognition status、message 與 complete failure / partial 分流。
-4. 補 Candidate Confirmation 的新增、刪除、快速調整份量 UX。
-5. 補 `re-estimate` API 與 Candidate Confirmation 的 `再次請 AI 估算` 互動，但要以前端保留使用者當前輸入為前提。
+1. recognition provider 邊界與 internal schema 已建立，後續維持單一 provider 邊界。
+2. GPT / OpenAI provider 已接上，`/analyses/{id}/image` 已可走真實辨識最小主鏈。
+3. 持續收斂 recognition status、message 與 complete failure / partial 分流，尤其是 `partial` 判定規則。
+4. 持續驗收 Candidate Confirmation 的新增、刪除、快速調整份量 UX。
+5. 收斂 `re-estimate` API 與 Candidate Confirmation 的 `再次請 AI 估算` 互動，但要以前端保留使用者當前輸入為前提。
 6. 補最小觀測性與成本回填欄位。
 7. 真實流量與 correction rate、re-estimation 採用率出來後，再決定是否要換模型或改供應商。
 

@@ -3,8 +3,8 @@
 - 文件名稱：Priority 2｜真實 AI 食物辨識與候選修正
 - 版本：v1
 - 日期：2026-04-26
-- 狀態：Draft
-- 用途：把真實 AI 辨識主鏈、candidate confirmation 與 fallback 補成可追蹤的開發主題
+- 狀態：V1.X 收斂中，GPT 辨識最小主鏈已接上
+- 用途：把真實 AI 辨識主鏈、candidate confirmation、fallback 與穩定化驗收補成可追蹤的開發主題
 
 ---
 
@@ -20,7 +20,7 @@
 
 Priority 2 同時牽涉：
 
-1. AI provider 接入
+1. AI provider 接入與穩定化
 2. 後端辨識邊界與 fallback
 3. 候選修正 UI
 4. confirm 與 nutrition estimate 的契約
@@ -38,8 +38,8 @@ Priority 2 同時牽涉：
 
 目前可視為已知進度如下：
 
-1. analysis upload -> recognition provider -> normalization 的後端邊界已開始形成
-2. OpenAI 單一 provider 路徑已接入
+1. analysis upload -> recognition provider -> normalization 的後端邊界已形成
+2. GPT / OpenAI 單一 provider 路徑已接入，並已可用真實圖片手動驗證食物候選辨識
 3. confirm 已從「不在白名單就 400」改成較可完成的 fallback 路徑
 4. candidate review UI 已開始補可改單位、刪除誤判、手動新增食物
 5. 圖片上傳後的辨識流程，已開始把「AI 可恢復失敗」和「真正請求錯誤」分開處理，並已補出正式 `recognition_status` 回應欄位；目前 `success` 與 `complete_failure` 已可由 API 與前端分流，`partial` 的判定規則仍需補齊
@@ -48,10 +48,12 @@ Priority 2 同時牽涉：
 
 目前仍未完成的重點：
 
-1. 真實圖片辨識的失敗收尾雖然已開始收斂，但 `partial` 的判定規則還沒真正落地。目前已能把 `complete_failure` 留在重拍流程，但仍需要補出「有候選但需要再確認」的穩定判斷標準，例如低信心、份量不穩或格式不完整。這一段還要補，是為了讓 candidate review 真正只承接部分成功，而不是混合過多例外情境。
+1. GPT / OpenAI 真實圖片辨識已接上，但 `partial` 的判定規則還沒真正落地。目前已能把 `success` 與 `complete_failure` 分流，但仍需要補出「有候選但需要再確認」的穩定判斷標準，例如低信心、份量不穩或格式不完整。這一段要補，是為了讓 candidate review 真正承接部分成功，而不是混合過多例外情境。
 2. candidate review 還需要完整手動驗證。雖然目前已可承接 AI 候選、手動新增與 AI 新建議套用，但仍需要實際驗證手機操作是否順手，以及建議套用是否會造成使用者混淆。這一段要補，是為了確認使用者只需要做少量修正，而不是被迫重建整份餐點。
 3. `re-estimate` 目前是第一版能力，已能吃到目前表單內容與備註，但還沒補到更細的建議對位規則，例如逐項套用、差異標示、名稱校正與份量校正的更細分類。這一段要補，是為了把 AI 校正從可用版本收斂成穩定體驗。
 4. 最小觀測性還沒補齊，因為現在多半還是靠人工看 log 才知道 provider 是 timeout、配額不足、圖片資料錯誤，還是單純沒有可靠候選。這一段要補，是為了讓後續能判斷完全失敗率、部分成功率與 `re-estimate` 採用率，而不是每次都靠猜。
+
+目前進度判定：Priority 2 不是「尚未接真實 AI」，而是「GPT / OpenAI 辨識已接上，正在從可用最小版收斂成可驗收的 V1.0 Release 能力」。
 
 ---
 
@@ -69,6 +71,8 @@ Priority 2 同時牽涉：
 
 ### P2-01 辨識邊界與單一 provider
 
+狀態：已完成最小版，後續以穩定性驗收為主。
+
 目標：先把真實圖片主鏈打通，而不是一開始追求多 provider。
 
 包含：
@@ -80,6 +84,8 @@ Priority 2 同時牽涉：
 
 ### P2-02 辨識失敗分流策略
 
+狀態：部分完成，`success` 與 `complete_failure` 已可分流，`partial` 判定仍需補齊。
+
 目標：讓 AI 結果依可用程度進入不同處理路徑，而不是所有失敗都導向人工補填。
 
 包含：
@@ -90,6 +96,8 @@ Priority 2 同時牽涉：
 4. 不讓可恢復失敗直接變成系統中止
 
 ### P2-03 Candidate Confirmation 修正體驗
+
+狀態：已完成可用版，仍需手機手動驗收與 re-estimate 套用體驗收斂。
 
 目標：把 candidate review 定位成「部分成功時的輕量修正工具」。
 

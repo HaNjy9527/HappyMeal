@@ -53,8 +53,10 @@
 
 1. 若以 Step 2 核心開發為標準，主要工作已大致完成
 2. 若以 PRD v1 完整 MVP 體驗為標準，整體約落在「主鏈已通，但仍需補齊正式能力與使用者可見流程」的階段
-3. 目前最明確已完成的項目是 LINE Login、Profile、Theme、Consent API、最小版 Consent Intro、Analysis 主鏈、History 主鏈與後端測試骨架
-4. 目前最明確未做滿的項目是真實 AI 食物辨識、正式營養資料來源，以及 IA 中較完整的頁面體驗
+3. 目前最明確已完成的項目是 LINE Login、Profile、Theme、Consent API、最小版 Consent Intro、Analysis 主鏈、History 主鏈、GPT / OpenAI 食物辨識最小路徑與後端測試骨架
+4. 目前最明確未做滿的項目是 AI 辨識穩定性與分流驗收、正式營養資料來源，以及 IA 中較完整的頁面體驗
+
+版本判讀上，建議把目前狀態視為 `V1 MVP / Beta`：核心單次餐點分析主鏈已可驗證。接下來的 `V1.X` 是把 PRD v1 尚未補齊的缺口收斂到 `V1.0 Release`，不是 PRD v2。
 
 另外，文件閱讀上需要先分清楚兩件事：
 
@@ -92,7 +94,7 @@
 | FR-01    | LINE Login 註冊與登入 | 已完成   | 後端已具備 LINE OAuth、callback、signed token exchange、session、`/auth/me`、logout；前端也已串登入頁與受保護頁流程 | 目前可視為已完成                                                 |
 | FR-02    | 個人資料管理          | 已完成   | 已支援 profile 讀取與更新，包含 age、height、weight、activity、goal、goal weight                                    | 已能支撐 recommendation                                          |
 | FR-03    | 拍照與圖片上傳        | 部分完成 | 已支援 JPG、PNG 上傳與大小限制，並在完成後刪除暫存圖片                                                              | 手機相機體驗與前端流程仍屬最小版                                 |
-| FR-04    | 食物辨識              | 部分完成 | 候選結果流程已存在，但目前仍是 mock candidate preset，不是真實 AI provider                                          | 主鏈可驗證，但不算正式完成                                       |
+| FR-04    | 食物辨識              | 部分完成 | GPT / OpenAI provider 已接上，且真實圖片辨識主鏈已可手動驗證；目前仍需補 partial 判定、穩定性驗收與最小觀測性       | 已不是單純 mock；正式完成前需收斂辨識分流與量測                  |
 | FR-05    | 手動修正與份量確認    | 已完成   | 前端可修改 food name 與 portion，後端可接收 confirm 結果並寫入 item                                                 | 已可完成候選確認                                                 |
 | FR-06    | 營養估算              | 部分完成 | 可計算 kcal、protein、fat、carb 並回傳總和與明細，但目前來自 preset mapping，不是正式 nutrition source              | 能展示結果，但資料來源仍需升級                                   |
 | FR-07    | 增肌／減脂建議        | 已完成   | 已依 profile 與 goal 產生 target calories、macro 與推薦運動，語氣仍維持 wellness guidance                           | 已能形成 MVP 第一層建議                                          |
@@ -108,7 +110,7 @@
 | 驗收條件                                         | 目前狀態 | 判讀                                                                                                 |
 | ------------------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------- |
 | 使用者可在手機完成登入、建檔、拍照分析與查看建議 | 部分完成 | 主鏈與 Priority 1 手機實機驗收已完成最小版，但完整 Home / IA 體驗仍需精修                            |
-| AI 辨識失準時，使用者可手動修正後完成流程        | 已完成   | 雖然辨識來源仍是 mock，但手動修正與 confirm 主鏈已可操作                                             |
+| AI 辨識失準時，使用者可手動修正後完成流程        | 已完成   | GPT / OpenAI 候選可進入 candidate review，手動修正與 confirm 主鏈已可操作                            |
 | 歷史紀錄可查看過去分析摘要與建議快照             | 已完成   | history list 與 detail 已具備                                                                        |
 | 系統不長期保存原始圖片                           | 已完成   | analysis 完成後會刪除暫存圖片                                                                        |
 | 主題切換後重新登入仍保留偏好                     | 部分完成 | 偏好保存已完成，但仍建議補實際跨裝置手動驗收紀錄                                                     |
@@ -126,9 +128,9 @@
 
 最重要的落差如下：
 
-1. mock candidate 尚未替換成真實 AI 食物辨識
+1. GPT / OpenAI 食物辨識已接上，但 partial 判定、穩定性驗收與最小觀測性仍需補齊
 2. preset nutrition 尚未替換成正式營養資料來源
-3. Consent Intro、Landing / Home / Theme 等 IA 頁面仍偏最小版
+3. Consent Intro 已完成最小版；Landing / Home / Theme 等 IA 頁面仍偏最小版
 4. 手機優先體驗雖可用，但仍未精修成 PRD 描述的產品感受
 
 ---
@@ -141,28 +143,28 @@
 
 ### 7.1 Priority 總覽表
 
-| Priority   | 主題                       | 目標                     | 詳細文件                                                                                                                                                                                                |
-| ---------- | -------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Priority 1 | Consent 與非醫療提醒主鏈   | 補齊合規與使用者可見流程 | [功能開發/Priority1-Consent-與非醫療提醒主鏈-v1.md](./功能開發/Priority1-Consent-%E8%88%87%E9%9D%9E%E9%86%AB%E7%99%82%E6%8F%90%E9%86%92%E4%B8%BB%E9%8F%88-v1.md)                                        |
-| Priority 2 | 真實 AI 食物辨識與候選修正 | 補齊核心產品價值主鏈     | [功能開發/Priority2-真實-AI-食物辨識與候選修正-v1.md](./功能開發/Priority2-%E7%9C%9F%E5%AF%A6-AI-%E9%A3%9F%E7%89%A9%E8%BE%A8%E8%AD%98%E8%88%87%E5%80%99%E9%81%B8%E4%BF%AE%E6%AD%A3-v1.md)               |
-| Priority 3 | 正式營養資料來源與估算策略 | 讓營養結果可持續使用     | [功能開發/Priority3-正式營養資料來源與估算策略-v1.md](./功能開發/Priority3-%E6%AD%A3%E5%BC%8F%E7%87%9F%E9%A4%8A%E8%B3%87%E6%96%99%E4%BE%86%E6%BA%90%E8%88%87%E4%BC%B0%E7%AE%97%E7%AD%96%E7%95%A5-v1.md) |
-| Priority 4 | 前端 IA 與手機體驗補齊     | 讓 MVP 更接近 PRD 體驗   | [功能開發/Priority4-前端IA與手機體驗補齊-v1.md](./功能開發/Priority4-%E5%89%8D%E7%AB%AFIA%E8%88%87%E6%89%8B%E6%A9%9F%E9%AB%94%E9%A9%97%E8%A3%9C%E9%BD%8A-v1.md)                                         |
-| Priority 5 | 觀測性與效能基線           | 讓 AI 與部署驗收更可量測 | [功能開發/Priority5-觀測性與效能基線-v1.md](./功能開發/Priority5-%E8%A7%80%E6%B8%AC%E6%80%A7%E8%88%87%E6%95%88%E8%83%BD%E5%9F%BA%E7%B7%9A-v1.md)                                                        |
+| Priority   | 主題                       | 目標                                                      | 詳細文件                                                                                                                                                                                                |
+| ---------- | -------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Priority 1 | Consent 與非醫療提醒主鏈   | 已完成 V1 最小版，後續精修移交 Priority 4                 | [功能開發/Priority1-Consent-與非醫療提醒主鏈-v1.md](./功能開發/Priority1-Consent-%E8%88%87%E9%9D%9E%E9%86%AB%E7%99%82%E6%8F%90%E9%86%92%E4%B8%BB%E9%8F%88-v1.md)                                        |
+| Priority 2 | 真實 AI 食物辨識與候選修正 | V1.X：GPT 辨識已接上，補齊分流、修正體驗與穩定驗收        | [功能開發/Priority2-真實-AI-食物辨識與候選修正-v1.md](./功能開發/Priority2-%E7%9C%9F%E5%AF%A6-AI-%E9%A3%9F%E7%89%A9%E8%BE%A8%E8%AD%98%E8%88%87%E5%80%99%E9%81%B8%E4%BF%AE%E6%AD%A3-v1.md)               |
+| Priority 3 | 正式營養資料來源與估算策略 | V1.X：補齊 nutrition source 與可信估算策略                | [功能開發/Priority3-正式營養資料來源與估算策略-v1.md](./功能開發/Priority3-%E6%AD%A3%E5%BC%8F%E7%87%9F%E9%A4%8A%E8%B3%87%E6%96%99%E4%BE%86%E6%BA%90%E8%88%87%E4%BC%B0%E7%AE%97%E7%AD%96%E7%95%A5-v1.md) |
+| Priority 4 | 前端 IA 與手機體驗補齊     | V1.X：收斂 Home / Analysis / History / Profile 的手機體驗 | [功能開發/Priority4-前端IA與手機體驗補齊-v1.md](./功能開發/Priority4-%E5%89%8D%E7%AB%AFIA%E8%88%87%E6%89%8B%E6%A9%9F%E9%AB%94%E9%A9%97%E8%A3%9C%E9%BD%8A-v1.md)                                         |
+| Priority 5 | 觀測性與效能基線           | V1.X：補部署後驗收、AI provider 錯誤、效能與成本量測      | [功能開發/Priority5-觀測性與效能基線-v1.md](./功能開發/Priority5-%E8%A7%80%E6%B8%AC%E6%80%A7%E8%88%87%E6%95%88%E8%83%BD%E5%9F%BA%E7%B7%9A-v1.md)                                                        |
 
 ### 7.2 Priority 閱讀順序
 
 若你目前最擔心的是「是否往自己不確定的方向前進」，建議閱讀順序如下：
 
-1. 先看 Priority 2 詳細文件，因為目前核心不確定性主要集中在 AI 辨識、candidate review 與 fallback 主鏈
+1. 先看 Priority 2 詳細文件，因為 GPT 辨識已接上，下一步核心不確定性主要集中在 partial 判定、candidate review、re-estimate 與穩定驗收
 2. 接著看 Priority 3，因為真實辨識接上後，營養資料來源會直接影響結果可信度
-3. 再看 Priority 1 與 Priority 4，確認前端流程、合規與產品體驗如何補齊
+3. 再看 Priority 1 與 Priority 4，確認已完成的合規主鏈，以及後續產品體驗如何補齊
 4. 最後看 Priority 5，作為部署後持續驗證的量測基線
 
 ### Priority 1｜補齊 Consent 與非醫療提醒主鏈
 
 詳見：[功能開發/Priority1-Consent-與非醫療提醒主鏈-v1.md](./功能開發/Priority1-Consent-%E8%88%87%E9%9D%9E%E9%86%AB%E7%99%82%E6%8F%90%E9%86%92%E4%B8%BB%E9%8F%88-v1.md)
 
-### Priority 2｜把 mock 食物辨識替換成真實 AI provider
+### Priority 2｜收斂真實 AI 食物辨識與候選修正
 
 詳見：[功能開發/Priority2-真實-AI-食物辨識與候選修正-v1.md](./功能開發/Priority2-%E7%9C%9F%E5%AF%A6-AI-%E9%A3%9F%E7%89%A9%E8%BE%A8%E8%AD%98%E8%88%87%E5%80%99%E9%81%B8%E4%BF%AE%E6%AD%A3-v1.md)
 
@@ -213,18 +215,18 @@
 
 若下一輪只做一個主題，建議優先選：
 
-1. Consent 與非醫療提醒主鏈補齊
+1. 真實 AI 食物辨識穩定化與 candidate review 驗收
 
 若下一輪要做一個完整技術主題，建議優先選：
 
-1. 真實 AI 食物辨識 provider 接入
+1. GPT / OpenAI 食物辨識的 partial 判定、錯誤分流與最小觀測性
 
 若下一輪要做一個最接近產品價值驗證的組合，建議順序為：
 
-1. Consent 與免責聲明已完成最小版，下一步可聚焦整體手機體驗精修
-2. 真實 AI 食物辨識
-3. 正式營養資料來源
-4. 前端 IA 補完與手機體驗精修
+1. Priority 2：真實 AI 食物辨識穩定化與候選修正驗收
+2. Priority 3：正式營養資料來源與估算策略
+3. Priority 4：前端 IA 補完與手機體驗精修
+4. Priority 5：觀測性與效能基線
 
 ---
 
