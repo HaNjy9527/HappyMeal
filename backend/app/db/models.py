@@ -162,6 +162,7 @@ class RecommendationSnapshot(Base):
         unique=True,
         nullable=False,
     )
+    source: Mapped[str] = mapped_column(String(32), nullable=False, default="personalized")
     target_calories_kcal: Mapped[Decimal] = mapped_column(Numeric(7, 2), nullable=False)
     target_protein_g: Mapped[Decimal] = mapped_column(Numeric(7, 2), nullable=False)
     target_fat_g: Mapped[Decimal] = mapped_column(Numeric(7, 2), nullable=False)

@@ -381,6 +381,8 @@ def test_post_analysis_confirm_persists_totals_snapshot_and_cleans_upload(client
     assert payload["items"][0]["canonical_food_name"] == "chicken_salad"
     assert Decimal(str(payload["items"][0]["resolved_weight_g"])) == Decimal("280.00")
     assert payload["items"][0]["weight_estimation_method"] == "exact_unit_match"
+    assert payload["recommendation"]["source"] == "personalized"
+    assert payload["recommendation"]["guidance_note"] is None
     assert Decimal(str(payload["recommendation"]["target_calories_kcal"])) == Decimal("2950.00")
     assert len(payload["recommendation"]["recommended_exercises"]) == 3
     assert payload["recommendation"]["recommended_exercises"][0]["category"] == "strength"
@@ -389,7 +391,8 @@ def test_post_analysis_confirm_persists_totals_snapshot_and_cleans_upload(client
     assert not (isolated_upload_dir / f"{analysis_id}.jpg").exists()
 
 
-def test_post_analysis_confirm_requires_complete_profile(client, isolated_upload_dir):
+def test_post_analysis_confirm_returns_generic_recommendation_when_profile_incomplete(client, db_session, isolated_upload_dir):
+    seed_exercises(db_session)
     accept_required_consents(client)
     draft_response = client.post("/analyses")
     analysis_id = draft_response.json()["id"]
@@ -415,8 +418,17 @@ def test_post_analysis_confirm_requires_complete_profile(client, isolated_upload
         },
     )
 
-    assert confirm_response.status_code == 409
-    assert confirm_response.json()["detail"] == "Profile is incomplete for recommendation generation"
+    assert confirm_response.status_code == 200
+    payload = confirm_response.json()
+    assert payload["status"] == "completed"
+    assert payload["recommendation"]["source"] == "generic"
+    assert payload["recommendation"]["guidance_note"] == "這是通用版建議，補完個人資料可得到更貼近你的建議。"
+    assert Decimal(str(payload["recommendation"]["target_calories_kcal"])) == Decimal("2000.00")
+    assert Decimal(str(payload["recommendation"]["target_protein_g"])) == Decimal("110.00")
+    assert Decimal(str(payload["recommendation"]["target_fat_g"])) == Decimal("60.00")
+    assert Decimal(str(payload["recommendation"]["target_carb_g"])) == Decimal("255.00")
+    assert len(payload["recommendation"]["recommended_exercises"]) == 3
+    assert payload["recommendation"]["recommended_exercises"][0]["name"] == "Bodyweight Training"
 
 
 def test_post_analysis_confirm_accepts_unknown_foods_and_units_with_fallback_estimates(client, db_session, isolated_upload_dir):
@@ -580,6 +592,8 @@ def test_get_analysis_detail_returns_saved_items_and_snapshot_without_image_fiel
     assert payload["food_summary"] == "Chicken Salad, Boiled Egg"
     assert len(payload["items"]) == 2
     assert payload["items"][0]["food_name"] == "Chicken Salad"
+    assert payload["recommendation"]["source"] == "personalized"
+    assert payload["recommendation"]["guidance_note"] is None
     assert len(payload["recommendation"]["recommended_exercises"]) == 3
     assert payload["disclaimer"]["title"] == "本服務非醫療用途"
     assert payload["disclaimer"]["policy_version"] == CURRENT_NON_MEDICAL_DISCLOSURE_VERSION

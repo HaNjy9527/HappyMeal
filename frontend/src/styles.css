@@ -446,6 +446,44 @@ select:focus-visible {
   border-color: rgba(91, 142, 214, 0.2);
 }
 
+.status-banner.is-warning {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border-color: rgba(180, 86, 24, 0.22);
+}
+
+.status-banner strong,
+.status-banner span {
+  display: block;
+}
+
+.status-banner span + .inline-text-button {
+  margin-top: 8px;
+}
+
+.inline-text-button {
+  display: inline;
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+
+.inline-text-button:hover {
+  opacity: 0.84;
+}
+
+.inline-text-button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
 .inline-disclaimer-note {
   margin: 4px 0 2px;
   padding: 9px 11px;

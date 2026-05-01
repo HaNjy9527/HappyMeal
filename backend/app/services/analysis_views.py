@@ -15,6 +15,7 @@ from app.schemas.analysis import (
 
 
 ZERO_DECIMAL = Decimal("0.00")
+GENERIC_RECOMMENDATION_NOTE = "這是通用版建議，補完個人資料可得到更貼近你的建議。"
 
 
 def build_analysis_result_items(items: list[FoodAnalysisItem]) -> list[AnalysisResultItem]:
@@ -46,6 +47,8 @@ def build_recommendation_response(snapshot: RecommendationSnapshot | None) -> Re
 
     recommended_exercises = [RecommendedExerciseItem.model_validate(item) for item in snapshot.recommended_exercises_json]
     return RecommendationSnapshotResponse(
+        source=snapshot.source,
+        guidance_note=GENERIC_RECOMMENDATION_NOTE if snapshot.source == "generic" else None,
         target_calories_kcal=snapshot.target_calories_kcal,
         target_protein_g=snapshot.target_protein_g,
         target_fat_g=snapshot.target_fat_g,

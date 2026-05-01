@@ -25,6 +25,8 @@ from app.services.analysis_views import build_analysis_result_items, build_recom
 
 TWOPLACES = Decimal("0.01")
 ZERO_DECIMAL = Decimal("0.00")
+PERSONALIZED_RECOMMENDATION_SOURCE = "personalized"
+GENERIC_RECOMMENDATION_SOURCE = "generic"
 ACTIVITY_MULTIPLIERS = {
     "sedentary": Decimal("1.20"),
     "light": Decimal("1.35"),
@@ -49,6 +51,10 @@ PREFERRED_EXERCISE_CATEGORY = {
     GoalType.FAT_LOSS: "cardio",
 }
 EXERCISE_DURATIONS = [20, 30, 40]
+GENERIC_TARGET_CALORIES = Decimal("2000.00")
+GENERIC_TARGET_PROTEIN = Decimal("110.00")
+GENERIC_TARGET_FAT = Decimal("60.00")
+GENERIC_EXERCISE_BURN_ESTIMATES = [Decimal("90.00"), Decimal("140.00"), Decimal("190.00")]
 
 
 @dataclass(frozen=True)
@@ -156,16 +162,12 @@ def quantize_decimal(value: Decimal) -> Decimal:
     return value.quantize(TWOPLACES, rounding=ROUND_HALF_UP)
 
 
-def require_recommendation_profile(db: Session, user: User):
-    profile = get_or_create_profile(db, user)
-
-    if profile.weight_kg is None or profile.activity_level is None or profile.goal_type is None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Profile is incomplete for recommendation generation",
-        )
-
-    return profile
+def has_complete_recommendation_profile(profile) -> bool:
+    return (
+        profile.weight_kg is not None
+        and profile.activity_level is not None
+        and profile.goal_type is not None
+    )
 
 
 def normalize_portion_unit(unit: str) -> str:
@@ -287,6 +289,21 @@ def calculate_targets(weight_kg: Decimal, activity_level: str, goal_type: GoalTy
     return target_calories, target_protein, target_fat, target_carb
 
 
+def build_generic_targets() -> tuple[Decimal, Decimal, Decimal, Decimal]:
+    remaining_calories = (
+        GENERIC_TARGET_CALORIES
+        - (GENERIC_TARGET_PROTEIN * Decimal("4"))
+        - (GENERIC_TARGET_FAT * Decimal("9"))
+    )
+    target_carb = quantize_decimal(max(remaining_calories / Decimal("4"), ZERO_DECIMAL))
+    return (
+        GENERIC_TARGET_CALORIES,
+        GENERIC_TARGET_PROTEIN,
+        GENERIC_TARGET_FAT,
+        target_carb,
+    )
+
+
 def build_recommended_exercises(db: Session, weight_kg: Decimal, goal_type: GoalType) -> list[RecommendedExerciseItem]:
     preferred_category = PREFERRED_EXERCISE_CATEGORY[goal_type]
     exercises = (
@@ -325,6 +342,29 @@ def build_recommended_exercises(db: Session, weight_kg: Decimal, goal_type: Goal
     return recommendations
 
 
+def build_generic_exercises(db: Session) -> list[RecommendedExerciseItem]:
+    exercises = (
+        db.query(ExerciseCatalog)
+        .order_by(ExerciseCatalog.is_popular.desc(), ExerciseCatalog.display_order.asc())
+        .limit(3)
+        .all()
+    )
+
+    recommendations: list[RecommendedExerciseItem] = []
+    for index, exercise in enumerate(exercises):
+        recommendations.append(
+            RecommendedExerciseItem(
+                exercise_id=exercise.id,
+                name=exercise.name,
+                category=exercise.category,
+                duration_minutes=EXERCISE_DURATIONS[index],
+                burn_estimate_kcal=GENERIC_EXERCISE_BURN_ESTIMATES[index],
+            )
+        )
+
+    return recommendations
+
+
 def build_confirm_response(analysis, recommended_exercises: list[RecommendedExerciseItem]) -> AnalysisConfirmResponse:
     recommendation = build_recommendation_response(analysis.recommendation_snapshot)
     recommendation.recommended_exercises = recommended_exercises
@@ -357,7 +397,7 @@ def confirm_analysis(
             detail="Analysis confirmation is only allowed after candidate selection",
         )
 
-    profile = require_recommendation_profile(db, user)
+    profile = get_or_create_profile(db, user)
     analysis.items.clear()
 
     total_kcal = ZERO_DECIMAL
@@ -373,12 +413,18 @@ def confirm_analysis(
         total_fat_g += item.fat_g
         total_carb_g += item.carb_g
 
-    target_calories, target_protein, target_fat, target_carb = calculate_targets(
-        profile.weight_kg,
-        profile.activity_level.value,
-        profile.goal_type,
-    )
-    recommended_exercises = build_recommended_exercises(db, profile.weight_kg, profile.goal_type)
+    if has_complete_recommendation_profile(profile):
+        recommendation_source = PERSONALIZED_RECOMMENDATION_SOURCE
+        target_calories, target_protein, target_fat, target_carb = calculate_targets(
+            profile.weight_kg,
+            profile.activity_level.value,
+            profile.goal_type,
+        )
+        recommended_exercises = build_recommended_exercises(db, profile.weight_kg, profile.goal_type)
+    else:
+        recommendation_source = GENERIC_RECOMMENDATION_SOURCE
+        target_calories, target_protein, target_fat, target_carb = build_generic_targets()
+        recommended_exercises = build_generic_exercises(db)
 
     if analysis.recommendation_snapshot is not None:
         db.delete(analysis.recommendation_snapshot)
@@ -390,6 +436,7 @@ def confirm_analysis(
     analysis.total_carb_g = quantize_decimal(total_carb_g)
     analysis.status = AnalysisStatus.COMPLETED
     analysis.recommendation_snapshot = RecommendationSnapshot(
+        source=recommendation_source,
         target_calories_kcal=target_calories,
         target_protein_g=target_protein,
         target_fat_g=target_fat,

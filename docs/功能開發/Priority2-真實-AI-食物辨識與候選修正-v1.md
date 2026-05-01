@@ -3,7 +3,7 @@
 - 文件名稱：Priority 2｜真實 AI 食物辨識與候選修正
 - 版本：v1
 - 日期：2026-05-01
-- 狀態：V1.X 收斂中，P0/P1 均已完成；剩餘 P2 為手機驗測與 profile 完整性提示
+- 狀態：V1.X 收斂中，P0/P1 與 P2-2 均已完成；剩餘 P2 為手機驗測
 - 用途：把真實 AI 辨識主鏈、candidate confirmation、fallback 與穩定化驗收補成可追蹤的開發主題
 
 ---
@@ -49,13 +49,13 @@ Priority 2 同時牽涉：
 9. `re-estimate` 失敗時的前端提示已補齊：AI 失敗時顯示「AI 重新估算失敗，你目前的修改都已保留，可以繼續手動調整或直接送出確認。」，不再顯示原始 HTTP 錯誤訊息，使用者可確認編輯未消失
 10. 最小觀測性結構化 log 已落地：後端三個服務（`recognition_openai.py`、`analysis_recognition.py`、`analysis_reestimate.py`）均已補入 `app.analysis` logger，記錄 `openai_recognition`、`openai_reestimate`、`recognition_result`、`reestimate_result` 事件，包含 `outcome`、`reason`、`candidate_count`、`latency_ms` 欄位
 11. 低信心候選項視覺提示已落地：前端 candidate review 中 `confidence_score < 0.6` 的卡片加上橙色邊框與淡橙背景（`.is-low-confidence`），並在 support row 顯示「AI 對這項食物信心不足，建議確認名稱與份量。」
+12. confirm 階段已改成 profile 不完整時仍可完成主鏈：後端不再因 `weight_kg`、`activity_level`、`goal_type` 缺漏回 409，而是改回傳 `source="generic"` 的通用建議；前端 confirm 會先提示「這次會先產生通用建議」，result 與 history detail 也會明確標示「通用建議」並提示補完 profile 後可得到更貼近的建議
 
 目前仍未完成的重點：
 
 1. candidate review 還需要完整手機手動驗證（P2-1）。雖然目前已可承接 AI 候選、手動新增與 AI 新建議套用，但仍需要實際驗證手機操作是否順手，以及建議套用是否會造成使用者混淆。
-2. confirm 前個人資料完整性提示尚未補齊（P2-2）。目前若 `weight_kg`、`activity_level`、`goal_type` 未填，使用者要等到按「完成確認」後才收到 409 錯誤，且訊息為英文後端字串，無跳轉引導。
 
-目前進度判定：Priority 2 核心主鏈（辨識分流、candidate review、re-estimate、觀測性、低信心 UI）均已落地，剩餘兩個 P2 項目屬於體驗精修，不影響主鏈通行。
+目前進度判定：Priority 2 核心主鏈（辨識分流、candidate review、re-estimate、觀測性、低信心 UI、generic recommendation fallback）均已落地，剩餘 P2 項目為手機驗測，不影響主鏈通行。
 
 ---
 
@@ -156,13 +156,14 @@ Priority 2 同時牽涉：
 3. 接著讓圖片上傳回應能直接帶出狀態與提示訊息，避免前端只能靠候選是否為空來猜目前發生了什麼事 ✅ 已完成
 4. 最後由前端承接這些狀態：部分成功時進入 candidate review；完全失敗時直接顯示辨識失敗並引導重拍或換圖 ✅ 已完成
 
-目前 4 層均已落地，P1（觀測性 log + 低信心 UI）亦已完成。剩餘工作為：手機手動驗測（P2-1）、confirm 前 profile 完整性提示（P2-2）。
+目前 4 層均已落地，P1（觀測性 log + 低信心 UI）與 P2-2（generic recommendation fallback + 通用建議標示）亦已完成。剩餘工作為：手機手動驗測（P2-1）。
 
 ### P2-1：手機 UX 實際驗測
 
 性質：手動驗測任務，無法自動化。
 
 驗測流程：
+
 1. LINE 登入（確認 mobile token exchange 成功）
 2. 上傳圖片，等待辨識（success / partial / complete_failure 各測一次）
 3. candidate review：刪除、編輯名稱、改份量、改單位
@@ -170,34 +171,39 @@ Priority 2 同時牽涉：
 5. 完成確認，確認 result 頁面數字正確
 
 重點關注：
+
 - 刪除與確認按鈕觸控區大小（建議 min 44px）
 - re-estimate 備註輸入框在鍵盤彈出時是否被遮擋
 - low-confidence 橙色卡片在手機螢幕上是否顯眼
 - footer-actions 按鈕是否被 iOS Safari 底部 home indicator 覆蓋
 
-### P2-2：confirm 前個人資料完整性提示
+### P2-2：profile 不完整時改走通用建議
 
-根本問題：後端 `require_recommendation_profile()`（`analysis_confirm.py:159`）要求 `weight_kg`、`activity_level`、`goal_type` 均不為 null，否則回 409。目前前端只在送出後才看到英文後端錯誤，且無跳轉引導。
+狀態：已完成。
 
-改動：
+根本問題：原本後端 `require_recommendation_profile()` 會要求 `weight_kg`、`activity_level`、`goal_type` 三者都存在，否則 confirm 直接回 409。這會讓使用者走到最後一步才被擋住，也看不出系統到底是失敗、還是只是缺少個人化條件。
 
-1. `frontend/src/App.tsx`：在 confirm stage 的 `footer-actions` 前插入 derived value 判斷：
-   ```tsx
-   const isProfileIncomplete =
-     profile === null ||
-     profile.profile.weight_kg === null ||
-     profile.profile.activity_level === null ||
-     profile.profile.goal_type === null;
-   ```
-   若為 true，顯示橙色 warning banner 與「前往填寫」按鈕（`setScreen("profile")`）；不 disable 送出按鈕。
+目前方向：
 
-2. `frontend/src/styles.css`：新增 `.status-banner.is-warning`（`--accent-strong` 橙色系）與 `.inline-text-button`（無邊框、下底線文字按鈕）。
+1. profile 完整時，照常產生 `personalized` recommendation
+2. profile 不完整時，不阻擋 confirm，改產生 `generic` recommendation
+3. generic recommendation 採固定一組比較中性的通用目標與活動建議，並明講這只是暫時參考
+4. result 頁面與 history detail 頁面都必須明確標示「通用建議」
+5. history list 第一版先不額外加標記，避免擴大 UI 變更範圍
+
+本次改動：
+
+1. `backend/app/services/analysis_confirm.py`：將 confirm 流程從「profile 不完整就 409」改成雙路徑。完整 profile 走既有個人化計算；不完整 profile 改走 generic target / generic exercises builder，並在 snapshot 寫入 `source`
+2. `backend/app/db/models.py`、`backend/app/schemas/analysis.py`、`backend/app/services/analysis_views.py`：替 recommendation snapshot / response 補上 `source: personalized | generic` 與 generic guidance note
+3. `frontend/src/App.tsx`：confirm stage 在送出前顯示 warning banner，告知本次會先產生通用建議；result 與 history detail 根據 `source === "generic"` 顯示「通用建議」與補完 profile 提示
+4. `frontend/src/styles.css`：新增 `.status-banner.is-warning` 與 `.inline-text-button`，讓 generic 提示以提醒樣式呈現，而不是錯誤樣式
 
 驗測步驟：
-1. 不填個人資料，進 analysis → confirm stage → 確認出現橙色 warning 與「前往填寫」按鈕
-2. 點「前往填寫」→ 確認切換到 profile screen
-3. 填完三個必填欄位後回 confirm → 確認 warning 消失
-4. 點「完成確認」→ 成功，不再出現 409 錯誤
+
+1. 不填個人資料，進 analysis → confirm stage → 確認出現橙色提示與「前往填寫 profile」按鈕
+2. 直接點「完成確認」→ 成功進入 result，且 recommendation 區塊顯示「通用建議」與補完提示
+3. 進 history detail → 確認同一筆 analysis 仍顯示「通用建議」標記
+4. 補完三個欄位後重新分析 → 確認 result 不再顯示 generic 提示，而改為 personalized recommendation
 
 ### 完成後如何更新文件
 

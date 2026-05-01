@@ -131,7 +131,11 @@ export type RecommendedExerciseItem = {
   burn_estimate_kcal: string;
 };
 
+export type RecommendationSource = "personalized" | "generic";
+
 export type RecommendationSnapshotResponse = {
+  source: RecommendationSource;
+  guidance_note: string | null;
   target_calories_kcal: string;
   target_protein_g: string;
   target_fat_g: string;

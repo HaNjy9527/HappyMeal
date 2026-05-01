@@ -854,6 +854,11 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   const consentCompleted = hasRequiredConsents(user);
   const themeMode = profile?.theme_preference ?? "female_default";
   const validationMessage = buildValidationMessage(profileForm);
+  const isRecommendationProfileIncomplete =
+    profile === null ||
+    profile.profile.weight_kg === null ||
+    profile.profile.activity_level === null ||
+    profile.profile.goal_type === null;
   const analysisDisclaimerCopy = analysisResult
     ? resolveDisclaimerCopy(analysisResult.disclaimer)
     : null;
@@ -1393,6 +1398,24 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                   </article>
                 ) : null}
 
+                {isRecommendationProfileIncomplete ? (
+                  <div className="status-banner is-warning">
+                    <strong>這次會先產生通用建議</strong>
+                    <span>
+                      補完個人資料後，系統可以提供更貼近你的每日目標與活動建議。
+                    </span>
+                    <button
+                      className="inline-text-button"
+                      type="button"
+                      onClick={() =>
+                        startTransition(() => setScreen("profile"))
+                      }
+                    >
+                      前往填寫 profile
+                    </button>
+                  </div>
+                ) : null}
+
                 <div className="footer-actions">
                   <button
                     className="secondary-button"
@@ -1464,6 +1487,14 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                     <article className="panel-card recommendation-panel">
                       <p className="panel-kicker">Recommendation</p>
                       <h3>每日目標與推薦運動</h3>
+                      {analysisResult.recommendation.source === "generic" ? (
+                        <div className="status-banner is-warning">
+                          <strong>通用建議</strong>
+                          <span>
+                            {analysisResult.recommendation.guidance_note}
+                          </span>
+                        </div>
+                      ) : null}
                       {analysisDisclaimerCopy ? (
                         <InlineDisclaimerNote
                           body={analysisDisclaimerCopy.inlineBody}
@@ -1656,6 +1687,14 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                   <article className="panel-card recommendation-panel">
                     <p className="panel-kicker">Recommendation Snapshot</p>
                     <h3>當次建議快照</h3>
+                    {selectedHistory.recommendation.source === "generic" ? (
+                      <div className="status-banner is-warning">
+                        <strong>通用建議</strong>
+                        <span>
+                          {selectedHistory.recommendation.guidance_note}
+                        </span>
+                      </div>
+                    ) : null}
                     {historyDisclaimerCopy ? (
                       <InlineDisclaimerNote
                         body={historyDisclaimerCopy.inlineBody}

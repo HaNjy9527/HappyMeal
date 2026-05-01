@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -97,6 +98,8 @@ class RecommendedExerciseItem(BaseModel):
 
 
 class RecommendationSnapshotResponse(BaseModel):
+    source: Literal["personalized", "generic"]
+    guidance_note: str | None = None
     target_calories_kcal: Decimal
     target_protein_g: Decimal
     target_fat_g: Decimal
