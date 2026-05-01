@@ -2,8 +2,8 @@
 
 - 文件名稱：Priority 2｜真實 AI 食物辨識與候選修正
 - 版本：v1
-- 日期：2026-04-30
-- 狀態：V1.X 收斂中，P0 辨識分流與 re-estimate 失敗提示已完成
+- 日期：2026-05-01
+- 狀態：V1.X 收斂中，P0/P1 均已完成；剩餘 P2 為手機驗測與 profile 完整性提示
 - 用途：把真實 AI 辨識主鏈、candidate confirmation、fallback 與穩定化驗收補成可追蹤的開發主題
 
 ---
@@ -47,14 +47,15 @@ Priority 2 同時牽涉：
 7. `complete_failure` 情境已不再直接送進 confirm；目前前端會留在 start 階段並顯示重拍 / 換圖提示，analysis 狀態也會保留在 `draft` 以支援重新上傳
 8. `re-estimate` 第一版 API 與前端互動已落地，使用者可在 Candidate Confirmation 補充備註，例如「我只吃半份」或「這不是甜不辣，是炸雞」，再取得一版 AI 新建議並選擇是否套用
 9. `re-estimate` 失敗時的前端提示已補齊：AI 失敗時顯示「AI 重新估算失敗，你目前的修改都已保留，可以繼續手動調整或直接送出確認。」，不再顯示原始 HTTP 錯誤訊息，使用者可確認編輯未消失
+10. 最小觀測性結構化 log 已落地：後端三個服務（`recognition_openai.py`、`analysis_recognition.py`、`analysis_reestimate.py`）均已補入 `app.analysis` logger，記錄 `openai_recognition`、`openai_reestimate`、`recognition_result`、`reestimate_result` 事件，包含 `outcome`、`reason`、`candidate_count`、`latency_ms` 欄位
+11. 低信心候選項視覺提示已落地：前端 candidate review 中 `confidence_score < 0.6` 的卡片加上橙色邊框與淡橙背景（`.is-low-confidence`），並在 support row 顯示「AI 對這項食物信心不足，建議確認名稱與份量。」
 
 目前仍未完成的重點：
 
-1. candidate review 還需要完整手機手動驗證。雖然目前已可承接 AI 候選、手動新增與 AI 新建議套用，但仍需要實際驗證手機操作是否順手，以及建議套用是否會造成使用者混淆。這一段要補，是為了確認使用者只需要做少量修正，而不是被迫重建整份餐點。
-2. `re-estimate` 目前是第一版能力，已能吃到目前表單內容與備註，但還沒補到更細的建議對位規則，例如逐項套用、差異標示、名稱校正與份量校正的更細分類。這一段要補，是為了把 AI 校正從可用版本收斂成穩定體驗。
-3. 最小觀測性還沒補齊，因為現在多半還是靠人工看 log 才知道 provider 是 timeout、配額不足、圖片資料錯誤，還是單純沒有可靠候選。這一段要補，是為了讓後續能判斷完全失敗率、部分成功率與 `re-estimate` 採用率，而不是每次都靠猜。
+1. candidate review 還需要完整手機手動驗證（P2-1）。雖然目前已可承接 AI 候選、手動新增與 AI 新建議套用，但仍需要實際驗證手機操作是否順手，以及建議套用是否會造成使用者混淆。
+2. confirm 前個人資料完整性提示尚未補齊（P2-2）。目前若 `weight_kg`、`activity_level`、`goal_type` 未填，使用者要等到按「完成確認」後才收到 409 錯誤，且訊息為英文後端字串，無跳轉引導。
 
-目前進度判定：Priority 2 不是「尚未接真實 AI」，而是「GPT / OpenAI 辨識已接上，正在從可用最小版收斂成可驗收的 V1.0 Release 能力」。
+目前進度判定：Priority 2 核心主鏈（辨識分流、candidate review、re-estimate、觀測性、低信心 UI）均已落地，剩餘兩個 P2 項目屬於體驗精修，不影響主鏈通行。
 
 ---
 
@@ -133,16 +134,18 @@ Priority 2 同時牽涉：
 
 ### P2-06 最小觀測性
 
+狀態：已完成。`app.analysis` logger 已落地，涵蓋 provider latency、error type、recognition status、re-estimate outcome。
+
 目標：讓後續調 prompt、模型與 provider 時有可讀依據。
 
 包含：
 
-1. latency
-2. timeout
-3. error rate
-4. complete failure rate
-5. correction rate
-6. re-estimation usage rate
+1. latency ✅
+2. timeout ✅（以 `reason: provider_timeout` 記錄）
+3. error rate ✅（quota_exceeded / invalid_image / provider_unavailable）
+4. complete failure rate ✅（`recognition_result` outcome=complete_failure）
+5. partial rate ✅（`recognition_result` outcome=partial）
+6. re-estimation outcome ✅（`reestimate_result` outcome=success/failure/fallback）
 
 ### 目前程式實作規劃
 
@@ -153,7 +156,48 @@ Priority 2 同時牽涉：
 3. 接著讓圖片上傳回應能直接帶出狀態與提示訊息，避免前端只能靠候選是否為空來猜目前發生了什麼事 ✅ 已完成
 4. 最後由前端承接這些狀態：部分成功時進入 candidate review；完全失敗時直接顯示辨識失敗並引導重拍或換圖 ✅ 已完成
 
-目前 4 層均已落地。剩餘工作為：手機手動驗收（P2-03）、re-estimate 建議對位精修（P2-05）、最小觀測性（P2-06）。
+目前 4 層均已落地，P1（觀測性 log + 低信心 UI）亦已完成。剩餘工作為：手機手動驗測（P2-1）、confirm 前 profile 完整性提示（P2-2）。
+
+### P2-1：手機 UX 實際驗測
+
+性質：手動驗測任務，無法自動化。
+
+驗測流程：
+1. LINE 登入（確認 mobile token exchange 成功）
+2. 上傳圖片，等待辨識（success / partial / complete_failure 各測一次）
+3. candidate review：刪除、編輯名稱、改份量、改單位
+4. re-estimate：輸入備註，確認 AI 建議面板出現
+5. 完成確認，確認 result 頁面數字正確
+
+重點關注：
+- 刪除與確認按鈕觸控區大小（建議 min 44px）
+- re-estimate 備註輸入框在鍵盤彈出時是否被遮擋
+- low-confidence 橙色卡片在手機螢幕上是否顯眼
+- footer-actions 按鈕是否被 iOS Safari 底部 home indicator 覆蓋
+
+### P2-2：confirm 前個人資料完整性提示
+
+根本問題：後端 `require_recommendation_profile()`（`analysis_confirm.py:159`）要求 `weight_kg`、`activity_level`、`goal_type` 均不為 null，否則回 409。目前前端只在送出後才看到英文後端錯誤，且無跳轉引導。
+
+改動：
+
+1. `frontend/src/App.tsx`：在 confirm stage 的 `footer-actions` 前插入 derived value 判斷：
+   ```tsx
+   const isProfileIncomplete =
+     profile === null ||
+     profile.profile.weight_kg === null ||
+     profile.profile.activity_level === null ||
+     profile.profile.goal_type === null;
+   ```
+   若為 true，顯示橙色 warning banner 與「前往填寫」按鈕（`setScreen("profile")`）；不 disable 送出按鈕。
+
+2. `frontend/src/styles.css`：新增 `.status-banner.is-warning`（`--accent-strong` 橙色系）與 `.inline-text-button`（無邊框、下底線文字按鈕）。
+
+驗測步驟：
+1. 不填個人資料，進 analysis → confirm stage → 確認出現橙色 warning 與「前往填寫」按鈕
+2. 點「前往填寫」→ 確認切換到 profile screen
+3. 填完三個必填欄位後回 confirm → 確認 warning 消失
+4. 點「完成確認」→ 成功，不再出現 409 錯誤
 
 ### 完成後如何更新文件
 
@@ -202,7 +246,7 @@ Priority 2 同時牽涉：
 3. AI 部分成功時，使用者可透過 candidate review 完成少量修正
 4. candidate review 至少支援編輯名稱、份量、單位、刪除與新增項目
 5. confirm 不會再因 rigid whitelist 或 rigid unit contract 導致主鏈中斷
-6. 至少有最小量測可觀察 timeout、error、完全失敗率與部分成功率
+6. 至少有最小量測可觀察 timeout、error、完全失敗率與部分成功率 ✅ 已完成
 
 ---
 
