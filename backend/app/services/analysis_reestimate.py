@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from decimal import Decimal
 
 from fastapi import HTTPException, status
@@ -19,6 +20,9 @@ from app.services.recognition_openai import (
     reestimate_meal_items_with_openai,
 )
 from app.services.recognition_provider import ProviderCandidate
+
+
+logger = logging.getLogger("app.analysis")
 
 
 def build_items_payload(payload: AnalysisReestimateRequest) -> list[dict[str, object]]:
@@ -70,12 +74,26 @@ def reestimate_analysis(
             user_instruction=payload.user_instruction,
         )
     except RecognitionProviderFailure as error:
+        logger.warning(
+            "Re-estimate provider failure",
+            extra={"event": "reestimate_result", "outcome": "failure", "reason": error.reason},
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=error.message,
         ) from error
 
+    used_fallback = not bool(provider_candidates)
     if not provider_candidates:
+        logger.info(
+            "Re-estimate used fallback",
+            extra={
+                "event": "reestimate_result",
+                "outcome": "fallback",
+                "has_instruction": bool(payload.user_instruction),
+                "item_count": len(payload.items),
+            },
+        )
         provider_candidates = build_fallback_candidates(payload)
 
     candidates = normalize_provider_candidates(provider_candidates)
@@ -84,6 +102,16 @@ def reestimate_analysis(
     if payload.user_instruction:
         message = "AI 已根據你的備註重新估算，請再次確認名稱和份量。"
 
+    logger.info(
+        "Re-estimate success",
+        extra={
+            "event": "reestimate_result",
+            "outcome": "success",
+            "candidate_count": len(candidates),
+            "has_instruction": bool(payload.user_instruction),
+            "used_fallback": used_fallback,
+        },
+    )
     return AnalysisReestimateResponse(
         analysis_id=analysis.id,
         recognition_status=recognition_status,

@@ -162,3 +162,63 @@ def test_recognize_meal_image_with_openai_keeps_mock_fallback_without_key(monkey
 
     assert len(candidates) == 2
     assert candidates[0].food_name == "Chicken Salad"
+
+
+def test_recognize_analysis_image_returns_partial_when_any_candidate_has_low_confidence(monkeypatch):
+    provider_candidates = [
+        ProviderCandidate(
+            food_name="Rice",
+            normalized_food_name="rice",
+            confidence_score=Decimal("0.85"),
+            portion_default=Decimal("1.00"),
+            portion_unit="bowl",
+        ),
+        ProviderCandidate(
+            food_name="Mystery Sauce",
+            normalized_food_name="mystery_sauce",
+            confidence_score=Decimal("0.45"),  # below threshold → triggers PARTIAL
+            portion_default=Decimal("1.00"),
+            portion_unit="serving",
+        ),
+    ]
+
+    monkeypatch.setattr(
+        "app.services.analysis_recognition.recognize_meal_image_with_openai",
+        lambda **_: provider_candidates,
+    )
+
+    result = recognize_analysis_image(filename="meal.jpg", image_path=Path("tmp/meal.jpg"))
+
+    assert result.recognition_status == RecognitionStatus.PARTIAL
+    assert result.manual_review_required is True
+    assert len(result.candidates) == 2
+    assert result.message is not None
+
+
+def test_recognize_analysis_image_returns_success_when_all_candidates_have_high_confidence(monkeypatch):
+    provider_candidates = [
+        ProviderCandidate(
+            food_name="Chicken Salad",
+            normalized_food_name="chicken_salad",
+            confidence_score=Decimal("0.90"),
+            portion_default=Decimal("1.00"),
+            portion_unit="bowl",
+        ),
+        ProviderCandidate(
+            food_name="Green Tea",
+            normalized_food_name="green_tea",
+            confidence_score=Decimal("0.75"),  # above threshold → SUCCESS
+            portion_default=Decimal("1.00"),
+            portion_unit="cup",
+        ),
+    ]
+
+    monkeypatch.setattr(
+        "app.services.analysis_recognition.recognize_meal_image_with_openai",
+        lambda **_: provider_candidates,
+    )
+
+    result = recognize_analysis_image(filename="meal.jpg", image_path=Path("tmp/meal.jpg"))
+
+    assert result.recognition_status == RecognitionStatus.SUCCESS
+    assert result.manual_review_required is False

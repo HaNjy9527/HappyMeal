@@ -769,9 +769,9 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
       setAnalysisNotice(
         response.message ?? "AI 已根據你目前的修正重新估算，請再次確認。",
       );
-    } catch (error) {
+    } catch {
       setAnalysisError(
-        error instanceof Error ? error.message : "再次請 AI 估算失敗",
+        "AI 重新估算失敗，你目前的修改都已保留，可以繼續手動調整或直接送出確認。",
       );
     } finally {
       setReestimateLoading(false);
@@ -1209,11 +1209,18 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                 <div className="candidate-stack">
                   {candidateItems.map((item) => (
                     <article
-                      className={
-                        item.is_manual
-                          ? "candidate-card candidate-card-manual"
-                          : "candidate-card"
-                      }
+                      className={[
+                        "candidate-card",
+                        item.is_manual ? "candidate-card-manual" : "",
+                        !item.is_manual &&
+                        item.confidence_score !== null &&
+                        item.confidence_score !== undefined &&
+                        Number(item.confidence_score) < 0.6
+                          ? "is-low-confidence"
+                          : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
                       key={item.id}
                     >
                       <div className="candidate-head">
@@ -1294,7 +1301,9 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                         </span>
                         {item.confidence_score ? (
                           <span className="candidate-support-copy candidate-support-copy-muted">
-                            AI 已先給一版候選，你可以直接覆蓋。
+                            {Number(item.confidence_score) < 0.6
+                              ? "AI 對這項食物信心不足，建議確認名稱與份量。"
+                              : "AI 已先給一版候選，你可以直接覆蓋。"}
                           </span>
                         ) : (
                           <span className="candidate-support-copy candidate-support-copy-muted">
