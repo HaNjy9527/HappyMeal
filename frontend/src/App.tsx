@@ -48,6 +48,13 @@ import "./styles.css";
 
 type MainScreen = "analysis" | "history" | "profile" | "consent";
 type AnalysisStage = "start" | "confirm" | "result";
+type AnalysisLoadingPhase = "idle" | "preparing" | "recognizing";
+type AnalysisLoadingSource = "mock" | "upload";
+
+type AnalysisLoadingContext = {
+  source: AnalysisLoadingSource;
+  label: string;
+};
 
 type ProfileFormState = {
   age: string;
@@ -172,6 +179,133 @@ function hasRequiredConsents(user: AuthMeResponse) {
 
 function InlineDisclaimerNote({ body }: { body: string }) {
   return <p className="inline-disclaimer-note">{body}</p>;
+}
+
+function formatLoadingLabel(value: string) {
+  return value.length > 26 ? `${value.slice(0, 26)}...` : value;
+}
+
+function AnalysisLoadingState({
+  phase,
+  context,
+}: {
+  phase: Exclude<AnalysisLoadingPhase, "idle">;
+  context: AnalysisLoadingContext;
+}) {
+  const stepIndex = phase === "preparing" ? 1 : 2;
+  const steps = ["收到圖片", "AI 辨識", "準備候選"];
+  const heading =
+    phase === "preparing"
+      ? "照片已收到，準備開始分析"
+      : "AI 正在讀取這張餐點照片";
+  const body =
+    phase === "preparing"
+      ? "先幫你建立這次分析，接著會把圖片送進辨識流程。整段通常只需要幾秒鐘。"
+      : "我們正在整理可能的食物候選。完成後會直接帶你進入候選確認，你仍可以手動修正名稱與份量。";
+  const detail =
+    context.source === "upload"
+      ? "原始照片只會暫存處理，不會長期保存。"
+      : "這次使用的是示範圖片，流程與正式分析相同。";
+
+  return (
+    <div className="analysis-loading-shell" aria-live="polite" aria-busy="true">
+      <article className="panel-card analysis-loading-hero">
+        <div className="analysis-loading-header-row">
+          <span className="analysis-loading-badge">
+            {context.source === "upload" ? "照片辨識中" : "示範流程執行中"}
+          </span>
+          <span className="analysis-loading-status-dot" aria-hidden="true" />
+        </div>
+
+        <div className="analysis-loading-hero-copy">
+          <p className="panel-kicker">AI Meal Recognition</p>
+          <h3>{heading}</h3>
+          <p className="analysis-loading-copy">{body}</p>
+        </div>
+
+        <div className="analysis-loading-step-row" aria-label="分析進度">
+          {steps.map((step, index) => {
+            const isCompleted = index < stepIndex;
+            const isCurrent = index === stepIndex;
+
+            return (
+              <div
+                className={[
+                  "analysis-loading-step",
+                  isCompleted ? "is-completed" : "",
+                  isCurrent ? "is-current" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                key={step}
+              >
+                <span className="analysis-loading-step-index">{index + 1}</span>
+                <span className="analysis-loading-step-label">{step}</span>
+              </div>
+            );
+          })}
+        </div>
+      </article>
+
+      <div className="analysis-loading-support-grid">
+        <article className="panel-card analysis-loading-context-card">
+          <p className="panel-kicker">This Round</p>
+          <div className="analysis-loading-context-row">
+            <div>
+              <h3>{formatLoadingLabel(context.label)}</h3>
+              <p className="analysis-loading-detail">{detail}</p>
+            </div>
+            <span className="analysis-loading-context-chip">
+              {phase === "preparing" ? "準備中" : "辨識中"}
+            </span>
+          </div>
+        </article>
+
+        <article className="panel-card analysis-loading-skeleton-panel">
+          <div className="analysis-loading-skeleton-head">
+            <div>
+              <p className="panel-kicker">Coming Next</p>
+              <h3>接下來會先看到候選清單</h3>
+            </div>
+            <p>你可以在下一步確認名稱、份量與單位。</p>
+          </div>
+
+          <div className="candidate-stack candidate-stack-skeleton">
+            {Array.from({ length: 3 }, (_, index) => (
+              <article
+                className="candidate-card candidate-card-skeleton"
+                key={`analysis-loading-card-${index}`}
+                aria-hidden="true"
+              >
+                <div className="candidate-head">
+                  <div className="candidate-skeleton-copy">
+                    <span className="skeleton-block skeleton-pill" />
+                    <span className="skeleton-block skeleton-title" />
+                  </div>
+                  <span className="skeleton-block skeleton-button" />
+                </div>
+
+                <div className="candidate-input-grid candidate-input-grid-skeleton">
+                  <div className="candidate-field candidate-field-skeleton">
+                    <span className="skeleton-block skeleton-label" />
+                    <span className="skeleton-block skeleton-input" />
+                  </div>
+                  <div className="candidate-field candidate-field-skeleton">
+                    <span className="skeleton-block skeleton-label" />
+                    <span className="skeleton-block skeleton-input" />
+                  </div>
+                  <div className="candidate-field candidate-field-skeleton">
+                    <span className="skeleton-block skeleton-label" />
+                    <span className="skeleton-block skeleton-input" />
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </article>
+      </div>
+    </div>
+  );
 }
 
 function resolveDisclaimerCopy(
@@ -457,6 +591,13 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   const [analysisResult, setAnalysisResult] =
     useState<AnalysisResultResponse | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisLoadingPhase, setAnalysisLoadingPhase] =
+    useState<AnalysisLoadingPhase>("idle");
+  const [analysisLoadingContext, setAnalysisLoadingContext] =
+    useState<AnalysisLoadingContext>({
+      source: "upload",
+      label: "這次的照片",
+    });
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [analysisNotice, setAnalysisNotice] = useState<string | null>(null);
   const [reestimateNote, setReestimateNote] = useState("");
@@ -625,7 +766,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     }
   }
 
-  async function beginAnalysis(file: File) {
+  async function beginAnalysis(file: File, context?: AnalysisLoadingContext) {
     if (!user.consent_status.can_start_analysis) {
       setAnalysisError(consentUiCopy.message.analysisRequired);
       setConsentError(consentUiCopy.message.flowRequired);
@@ -634,6 +775,13 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     }
 
     setAnalysisLoading(true);
+    setAnalysisLoadingPhase("preparing");
+    setAnalysisLoadingContext(
+      context ?? {
+        source: "upload",
+        label: file.name || "這次的照片",
+      },
+    );
     setAnalysisError(null);
     setAnalysisNotice(null);
     setReestimateSuggestions([]);
@@ -641,6 +789,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
     try {
       const draft = await createAnalysisDraft();
+      setAnalysisLoadingPhase("recognizing");
       const candidateResponse = await uploadAnalysisImage(draft.id, file);
 
       setAnalysisId(candidateResponse.analysis_id);
@@ -672,6 +821,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
       setAnalysisError(error instanceof Error ? error.message : "分析建立失敗");
     } finally {
       setAnalysisLoading(false);
+      setAnalysisLoadingPhase("idle");
     }
   }
 
@@ -1097,92 +1247,114 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
             ) : null}
 
             {analysisStage === "start" ? (
-              <div className="panel-grid">
-                <article className="panel-card">
-                  <p className="panel-kicker">Quick Start</p>
-                  <h3>用 mock 圖片快速跑一次主流程</h3>
-                  <p>
-                    為了驗證 MVP，這裡保留三種示範場景，會直接打到同一組 backend
-                    API。
-                  </p>
-                  <div className="quick-actions">
-                    <button
-                      className="primary-button"
-                      disabled={analysisLoading || analysisAccessLocked}
-                      onClick={() =>
-                        void beginAnalysis(createMockImageFile("salad"))
-                      }
-                    >
-                      上傳沙拉範例
-                    </button>
-                    <button
-                      className="secondary-button"
-                      disabled={analysisLoading || analysisAccessLocked}
-                      onClick={() =>
-                        void beginAnalysis(createMockImageFile("rice"))
-                      }
-                    >
-                      上傳飯類範例
-                    </button>
-                    <button
-                      className="secondary-button"
-                      disabled={analysisLoading || analysisAccessLocked}
-                      onClick={() =>
-                        void beginAnalysis(createMockImageFile("salmon"))
-                      }
-                    >
-                      上傳魚排範例
-                    </button>
-                  </div>
-                </article>
+              analysisLoading ? (
+                <AnalysisLoadingState
+                  phase={
+                    analysisLoadingPhase === "idle"
+                      ? "preparing"
+                      : analysisLoadingPhase
+                  }
+                  context={analysisLoadingContext}
+                />
+              ) : (
+                <div className="panel-grid">
+                  <article className="panel-card">
+                    <p className="panel-kicker">Quick Start</p>
+                    <h3>用 mock 圖片快速跑一次主流程</h3>
+                    <p>
+                      為了驗證 MVP，這裡保留三種示範場景，會直接打到同一組
+                      backend API。
+                    </p>
+                    <div className="quick-actions">
+                      <button
+                        className="primary-button"
+                        disabled={analysisLoading || analysisAccessLocked}
+                        onClick={() =>
+                          void beginAnalysis(createMockImageFile("salad"), {
+                            source: "mock",
+                            label: "沙拉示範圖片",
+                          })
+                        }
+                      >
+                        上傳沙拉範例
+                      </button>
+                      <button
+                        className="secondary-button"
+                        disabled={analysisLoading || analysisAccessLocked}
+                        onClick={() =>
+                          void beginAnalysis(createMockImageFile("rice"), {
+                            source: "mock",
+                            label: "飯類示範圖片",
+                          })
+                        }
+                      >
+                        上傳飯類範例
+                      </button>
+                      <button
+                        className="secondary-button"
+                        disabled={analysisLoading || analysisAccessLocked}
+                        onClick={() =>
+                          void beginAnalysis(createMockImageFile("salmon"), {
+                            source: "mock",
+                            label: "魚排示範圖片",
+                          })
+                        }
+                      >
+                        上傳魚排範例
+                      </button>
+                    </div>
+                  </article>
 
-                <article className="panel-card">
-                  <p className="panel-kicker">Upload</p>
-                  <h3>改用本機圖片測試</h3>
-                  <label className="upload-dropzone">
-                    <span>支援 JPG / PNG，分析完成後原始圖片不長期保存。</span>
-                    <input
-                      type="file"
-                      name="analysis-image"
-                      accept="image/png,image/jpeg"
-                      disabled={analysisAccessLocked}
-                      onChange={(event) => {
-                        void handleFileInput(event.currentTarget.files);
-                        event.currentTarget.value = "";
-                      }}
-                    />
-                  </label>
-                </article>
+                  <article className="panel-card">
+                    <p className="panel-kicker">Upload</p>
+                    <h3>改用本機圖片測試</h3>
+                    <label className="upload-dropzone">
+                      <span>
+                        支援 JPG / PNG，分析完成後原始圖片不長期保存。
+                      </span>
+                      <input
+                        type="file"
+                        name="analysis-image"
+                        accept="image/png,image/jpeg"
+                        disabled={analysisLoading || analysisAccessLocked}
+                        onChange={(event) => {
+                          void handleFileInput(event.currentTarget.files);
+                          event.currentTarget.value = "";
+                        }}
+                      />
+                    </label>
+                  </article>
 
-                <article className="panel-card">
-                  <p className="panel-kicker">State</p>
-                  <h3>分析前檢查</h3>
-                  <ul className="compact-list">
-                    <li>
-                      {validationMessage || "Profile 已具備最小分析條件。"}
-                    </li>
-                    <li>
-                      {analysisLoading
-                        ? "正在建立 draft 並上傳圖片。"
-                        : "尚未開始新的分析。"}
-                    </li>
-                    <li>
-                      {analysisAccessLocked
-                        ? consentUiCopy.message.lockedSummary
-                        : consentUiCopy.message.unlockedSummary}
-                    </li>
-                    <li>本階段只做單次分析，不做每日累積。</li>
-                  </ul>
-                  {analysisAccessLocked ? (
-                    <button
-                      className="secondary-button"
-                      onClick={() => handleMainScreenChange("consent")}
-                    >
-                      {consentUiCopy.action.goToConsent}
-                    </button>
-                  ) : null}
-                </article>
-              </div>
+                  <article className="panel-card">
+                    <p className="panel-kicker">State</p>
+                    <h3>分析前檢查</h3>
+                    <ul className="compact-list">
+                      <li>
+                        {validationMessage || "Profile 已具備最小分析條件。"}
+                      </li>
+                      <li>
+                        {analysisLoading
+                          ? "正在建立 draft 並上傳圖片。"
+                          : "尚未開始新的分析。"}
+                      </li>
+                      <li>
+                        {analysisAccessLocked
+                          ? consentUiCopy.message.lockedSummary
+                          : consentUiCopy.message.unlockedSummary}
+                      </li>
+                      <li>本階段只做單次分析，不做每日累積。</li>
+                    </ul>
+                    {analysisAccessLocked ? (
+                      <button
+                        className="secondary-button"
+                        onClick={() => handleMainScreenChange("consent")}
+                      >
+                        {consentUiCopy.action.goToConsent}
+                      </button>
+                    ) : null}
+                  </article>
+                </div>
+              )
             ) : null}
 
             {analysisStage === "confirm" ? (
