@@ -50,12 +50,14 @@ Priority 2 同時牽涉：
 10. 最小觀測性結構化 log 已落地：後端三個服務（`recognition_openai.py`、`analysis_recognition.py`、`analysis_reestimate.py`）均已補入 `app.analysis` logger，記錄 `openai_recognition`、`openai_reestimate`、`recognition_result`、`reestimate_result` 事件，包含 `outcome`、`reason`、`candidate_count`、`latency_ms` 欄位
 11. 低信心候選項視覺提示已落地：前端 candidate review 中 `confidence_score < 0.6` 的卡片加上橙色邊框與淡橙背景（`.is-low-confidence`），並在 support row 顯示「AI 對這項食物信心不足，建議確認名稱與份量。」
 12. confirm 階段已改成 profile 不完整時仍可完成主鏈：後端不再因 `weight_kg`、`activity_level`、`goal_type` 缺漏回 409，而是改回傳 `source="generic"` 的通用建議；前端 confirm 會先提示「這次會先產生通用建議」，result 與 history detail 也會明確標示「通用建議」並提示補完 profile 後可得到更貼近的建議
+13. 2026-05-04 已完成第一輪手機實測：真實圖片主鏈可跑通，塑膠瓶飲料可被辨識為 tea drink / 黑咖啡類候選，故意拍衛生紙時也能正確進入 complete failure 的重拍提示；詳細紀錄見 [Priority2-手機UX實測紀錄-v1.md](./Priority2-%E6%89%8B%E6%A9%9FUX%E5%AF%A6%E6%B8%AC%E7%B4%80%E9%8C%84-v1.md)
 
 目前仍未完成的重點：
 
-1. candidate review 還需要完整手機手動驗證（P2-1）。雖然目前已可承接 AI 候選、手動新增與 AI 新建議套用，但仍需要實際驗證手機操作是否順手，以及建議套用是否會造成使用者混淆。
+1. 第一輪手機手動驗證已完成，但仍有兩個 P2 收尾項目尚未收斂：上傳後缺少明確的辨識中狀態回饋，以及 re-estimate 在手機上的最小互動焦點仍不夠清楚。
+2. 真實案例已驗證營養可信度風險，例如黑咖啡被估成 420 kcal；此問題不再屬於 P2 分流本身，而應移交 Priority 3 處理 nutrition source / estimation strategy。
 
-目前進度判定：Priority 2 核心主鏈（辨識分流、candidate review、re-estimate、觀測性、低信心 UI、generic recommendation fallback）均已落地，剩餘 P2 項目為手機驗測，不影響主鏈通行。
+目前進度判定：Priority 2 核心主鏈（辨識分流、candidate review、re-estimate、觀測性、低信心 UI、generic recommendation fallback）均已落地；P2-1 第一輪手機實測亦已完成，剩餘為兩個直接影響手機理解性的收尾項目，不影響主鏈通行，但建議在關閉 P2 前補齊。
 
 ---
 
@@ -156,19 +158,21 @@ Priority 2 同時牽涉：
 3. 接著讓圖片上傳回應能直接帶出狀態與提示訊息，避免前端只能靠候選是否為空來猜目前發生了什麼事 ✅ 已完成
 4. 最後由前端承接這些狀態：部分成功時進入 candidate review；完全失敗時直接顯示辨識失敗並引導重拍或換圖 ✅ 已完成
 
-目前 4 層均已落地，P1（觀測性 log + 低信心 UI）與 P2-2（generic recommendation fallback + 通用建議標示）亦已完成。剩餘工作為：手機手動驗測（P2-1）。
+目前 4 層均已落地，P1（觀測性 log + 低信心 UI）與 P2-2（generic recommendation fallback + 通用建議標示）亦已完成。P2-1 第一輪手機手動驗測已完成；剩餘工作為 upload / recognition loading state 與 re-estimate 手機互動收斂。
 
 ### P2-1：手機 UX 實際驗測
+
+狀態：第一輪已完成，詳細紀錄見 [Priority2-手機UX實測紀錄-v1.md](./Priority2-%E6%89%8B%E6%A9%9FUX%E5%AF%A6%E6%B8%AC%E7%B4%80%E9%8C%84-v1.md)。
 
 性質：手動驗測任務，無法自動化。
 
 驗測流程：
 
-1. LINE 登入（確認 mobile token exchange 成功）
+1. 以已登入狀態進入 analysis
 2. 上傳圖片，等待辨識（success / partial / complete_failure 各測一次）
 3. candidate review：刪除、編輯名稱、改份量、改單位
-4. re-estimate：輸入備註，確認 AI 建議面板出現
-5. 完成確認，確認 result 頁面數字正確
+4. re-estimate：輸入備註，確認 AI 建議面板出現，並驗證使用者是否能理解目前內容與 AI 新建議的關係
+5. 完成確認，確認 result / history 頁面數字與摘要合理
 
 重點關注：
 
@@ -176,6 +180,14 @@ Priority 2 同時牽涉：
 - re-estimate 備註輸入框在鍵盤彈出時是否被遮擋
 - low-confidence 橙色卡片在手機螢幕上是否顯眼
 - footer-actions 按鈕是否被 iOS Safari 底部 home indicator 覆蓋
+- 圖片上傳後是否有足夠明確的辨識中狀態
+- AI 校正 / 新建議區塊是否會讓使用者在手機上失去焦點
+
+本輪實測後的判讀：
+
+1. success / complete_failure 方向成立，故意拍非食物時也能正確回到重拍提示。
+2. re-estimate 已具備功能可用性，但手機互動結構仍偏像開發驗證頁，而不是收斂後的產品流程。
+3. 若只做最小收尾，Priority 2 應至少補上 loading state 與 re-estimate 焦點收斂；若要做 modal / 分頁式比較體驗，則可移交 Priority 4。
 
 ### P2-2：profile 不完整時改走通用建議
 
@@ -261,3 +273,4 @@ Priority 2 同時牽涉：
 1. 總覽： [../PRD-實作進度與下一步-v1.md](../PRD-%E5%AF%A6%E4%BD%9C%E9%80%B2%E5%BA%A6%E8%88%87%E4%B8%8B%E4%B8%80%E6%AD%A5-v1.md)
 2. 真實 AI 細規格： [真實-AI-食物辨識-MVP-規格-v1.md](./%E7%9C%9F%E5%AF%A6-AI-%E9%A3%9F%E7%89%A9%E8%BE%A8%E8%AD%98-MVP-%E8%A6%8F%E6%A0%BC-v1.md)
 3. Step 2 邊界： [../setup/Step2-核心開發任務清單-v1.md](../setup/Step2-%E6%A0%B8%E5%BF%83%E9%96%8B%E7%99%BC%E4%BB%BB%E5%8B%99%E6%B8%85%E5%96%AE-v1.md)
+4. 第一輪手機驗測紀錄： [Priority2-手機UX實測紀錄-v1.md](./Priority2-%E6%89%8B%E6%A9%9FUX%E5%AF%A6%E6%B8%AC%E7%B4%80%E9%8C%84-v1.md)

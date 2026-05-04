@@ -12,3 +12,5 @@ postgres_data/
 backend/tmp/
 
 docs/dev-log/
+
+test_image/
