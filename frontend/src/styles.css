@@ -1282,10 +1282,99 @@ select {
   gap: 14px;
 }
 
+.reestimate-trigger-card,
+.reestimate-entry-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(247, 249, 250, 0.88)),
+    var(--surface-strong);
+}
+
+.reestimate-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.reestimate-inline-button {
+  min-height: 44px;
+  width: auto;
+  white-space: nowrap;
+}
+
 .reestimate-label {
   display: grid;
   gap: 8px;
   color: var(--text-secondary);
+}
+
+.reestimate-preview-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.reestimate-preview-tab {
+  min-height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(24, 50, 61, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text-secondary);
+}
+
+.reestimate-preview-tab.is-active {
+  border-color: rgba(221, 122, 41, 0.32);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 1),
+    rgba(255, 244, 232, 0.92)
+  );
+  color: var(--text-primary);
+}
+
+.reestimate-preview-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(24, 50, 61, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.reestimate-preview-header {
+  display: grid;
+  gap: 4px;
+}
+
+.reestimate-preview-header strong {
+  font-size: 0.96rem;
+}
+
+.reestimate-preview-header span {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.reestimate-secondary-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.reestimate-action-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 12px;
+  padding: 14px;
+  border-radius: 22px;
+  border: 1px solid rgba(24, 50, 61, 0.08);
+  background: rgba(255, 253, 248, 0.96);
+  box-shadow: 0 -10px 28px rgba(72, 57, 31, 0.08);
+}
+
+.reestimate-action-secondary,
+.reestimate-action-primary {
+  min-height: 52px;
 }
 
 .reestimate-suggestion-row {
@@ -1460,6 +1549,29 @@ select {
 
   .candidate-support-row {
     flex-direction: column;
+  }
+
+  .reestimate-header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .reestimate-inline-button {
+    width: 100%;
+  }
+
+  .reestimate-secondary-actions {
+    justify-content: flex-start;
+  }
+
+  .reestimate-action-bar {
+    position: sticky;
+    bottom: 0;
+    grid-template-columns: 1fr;
+    padding: 12px;
+    border-radius: 20px;
+    background: rgba(255, 252, 246, 0.98);
+    box-shadow: 0 -14px 32px rgba(72, 57, 31, 0.12);
   }
 
   .backend-badge,

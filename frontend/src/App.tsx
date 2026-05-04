@@ -1,3 +1,4 @@
+type ReestimatePreviewVersion = "current" | "suggested";
 import {
   FormEvent,
   startTransition,
@@ -601,6 +602,9 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [analysisNotice, setAnalysisNotice] = useState<string | null>(null);
   const [reestimateNote, setReestimateNote] = useState("");
+  const [reestimateExpanded, setReestimateExpanded] = useState(false);
+  const [reestimatePreviewVersion, setReestimatePreviewVersion] =
+    useState<ReestimatePreviewVersion>("current");
   const [reestimateSuggestions, setReestimateSuggestions] = useState<
     CandidateDraftItem[]
   >([]);
@@ -784,6 +788,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     );
     setAnalysisError(null);
     setAnalysisNotice(null);
+    setReestimateExpanded(false);
     setReestimateSuggestions([]);
     setReestimateNote("");
 
@@ -822,6 +827,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     } finally {
       setAnalysisLoading(false);
       setAnalysisLoadingPhase("idle");
+      setReestimatePreviewVersion("current");
     }
   }
 
@@ -853,6 +859,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     try {
       const response = await confirmAnalysis(analysisId, candidateItems);
       setAnalysisResult(response);
+      setReestimateExpanded(false);
       setReestimateSuggestions([]);
       setReestimateNote("");
       startTransition(() => {
@@ -916,6 +923,8 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
         reestimateNote,
       );
       setReestimateSuggestions(toCandidateDraftItems(response.candidates));
+      setReestimatePreviewVersion("suggested");
+      setReestimateExpanded(false);
       setAnalysisNotice(
         response.message ?? "AI 已根據你目前的修正重新估算，請再次確認。",
       );
@@ -934,12 +943,18 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     }
 
     setCandidateItems(reestimateSuggestions);
+    setReestimatePreviewVersion("current");
+    setReestimateExpanded(false);
     setReestimateSuggestions([]);
+    setReestimateNote("");
     setAnalysisNotice("已套用 AI 新建議，你可以再檢查一次後送出確認。");
   }
 
   function dismissReestimateSuggestions() {
+    setReestimatePreviewVersion("current");
+    setReestimateExpanded(false);
     setReestimateSuggestions([]);
+    setReestimateNote("");
     setAnalysisNotice("已保留你目前的內容，AI 建議未套用。");
   }
 
@@ -1001,6 +1016,16 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   const canContinueConsent = agreePrivacy && agreeNonMedical;
   const showPrivacyConsentError = consentSubmitAttempted && !agreePrivacy;
   const showNonMedicalConsentError = consentSubmitAttempted && !agreeNonMedical;
+  const reestimatePreviewItems =
+    reestimatePreviewVersion === "suggested"
+      ? reestimateSuggestions
+      : candidateItems;
+  const reestimatePreviewTitle =
+    reestimatePreviewVersion === "suggested" ? "AI 新版" : "目前內容";
+  const reestimatePreviewDescription =
+    reestimatePreviewVersion === "suggested"
+      ? "這是 AI 根據你補充描述後重算的一版，你可以先滑看內容，再決定要不要改用它。"
+      : "這是你目前保留的版本。若想回頭看 AI 新版，再切換過去即可。";
   const consentCompleted = hasRequiredConsents(user);
   const themeMode = profile?.theme_preference ?? "female_default";
   const validationMessage = buildValidationMessage(profileForm);
@@ -1502,69 +1527,171 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                   </button>
                 ) : null}
 
-                <article className="panel-card reestimate-panel">
-                  <p className="panel-kicker">AI 校正</p>
-                  <h3>補充給 AI 的說明後重新估算</h3>
-                  <p>
-                    例如：我只吃半份、這不是甜不辣，是炸雞。 AI
-                    只會提供新建議，不會直接覆蓋你目前的內容。
-                  </p>
-                  <label className="reestimate-label">
-                    備註或校正說明
-                    <textarea
-                      name="reestimate-note"
-                      placeholder="例如：主菜其實是炸雞，我只吃半份白飯。"
-                      value={reestimateNote}
-                      onChange={(event) =>
-                        setReestimateNote(event.currentTarget.value)
-                      }
-                      rows={3}
-                    />
-                  </label>
-                  <div className="footer-actions">
-                    <button
-                      className="secondary-button"
-                      type="button"
-                      disabled={
-                        reestimateLoading ||
-                        analysisLoading ||
-                        candidateItems.length === 0
-                      }
-                      onClick={() => void handleReestimateAnalysis()}
-                    >
-                      {reestimateLoading ? "重新估算中..." : "再次請 AI 估算"}
-                    </button>
-                  </div>
-                </article>
+                {reestimateSuggestions.length === 0 && !reestimateExpanded ? (
+                  <article className="panel-card reestimate-trigger-card">
+                    <p className="panel-kicker">Optional AI Review</p>
+                    <h3>需要時再請 AI 幫你重看一次</h3>
+                    <p>
+                      如果你已經直接修正完成，可以略過這一步；若想補充描述，再交給
+                      AI 重新估算一次。
+                    </p>
+                    <div className="footer-actions">
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        disabled={
+                          analysisLoading || candidateItems.length === 0
+                        }
+                        onClick={() => {
+                          setReestimateExpanded(true);
+                          setAnalysisError(null);
+                        }}
+                      >
+                        需要校正 AI 建議嗎？
+                      </button>
+                    </div>
+                  </article>
+                ) : null}
+
+                {reestimateSuggestions.length === 0 && reestimateExpanded ? (
+                  <article className="panel-card reestimate-panel reestimate-entry-card">
+                    <div className="reestimate-header-row">
+                      <div>
+                        <p className="panel-kicker">AI 校正</p>
+                        <h3>補充描述後再請 AI 估一次</h3>
+                      </div>
+                      <button
+                        className="ghost-button reestimate-inline-button"
+                        type="button"
+                        disabled={reestimateLoading}
+                        onClick={() => {
+                          setReestimateExpanded(false);
+                          setAnalysisError(null);
+                        }}
+                      >
+                        先不用
+                      </button>
+                    </div>
+                    <p>
+                      例如：我只吃半份、這不是甜不辣，是炸雞。AI
+                      只會提供一版新建議， 不會直接覆蓋你目前的內容。
+                    </p>
+                    <label className="reestimate-label">
+                      備註或校正說明
+                      <textarea
+                        name="reestimate-note"
+                        placeholder="例如：主菜其實是炸雞，我只吃半份白飯。"
+                        value={reestimateNote}
+                        onChange={(event) =>
+                          setReestimateNote(event.currentTarget.value)
+                        }
+                        rows={3}
+                      />
+                    </label>
+                    <div className="footer-actions">
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        disabled={
+                          reestimateLoading ||
+                          analysisLoading ||
+                          candidateItems.length === 0 ||
+                          !reestimateNote.trim()
+                        }
+                        onClick={() => void handleReestimateAnalysis()}
+                      >
+                        {reestimateLoading ? "重新估算中..." : "再次請 AI 估算"}
+                      </button>
+                    </div>
+                  </article>
+                ) : null}
 
                 {reestimateSuggestions.length > 0 ? (
                   <article className="panel-card reestimate-panel">
                     <p className="panel-kicker">AI 新建議</p>
-                    <h3>選擇是否套用這版建議</h3>
-                    <div className="compact-list">
-                      {reestimateSuggestions.map((item) => (
-                        <p className="reestimate-suggestion-row" key={item.id}>
-                          <strong>{item.food_name}</strong>
-                          <span>
-                            {item.portion_value} {item.portion_unit}
-                          </span>
-                        </p>
-                      ))}
-                    </div>
-                    <div className="footer-actions">
+                    <h3>切換查看你要用哪一個版本</h3>
+                    <p>
+                      目前版本和 AI 新版都還在。手機畫面先一次看一個版本，
+                      你只要切換確認後再決定要不要改用 AI 新版。
+                    </p>
+                    <div
+                      className="reestimate-preview-toggle"
+                      role="tablist"
+                      aria-label="AI 建議版本切換"
+                    >
                       <button
-                        className="secondary-button"
+                        className={`reestimate-preview-tab${
+                          reestimatePreviewVersion === "current"
+                            ? " is-active"
+                            : ""
+                        }`}
+                        type="button"
+                        role="tab"
+                        aria-selected={reestimatePreviewVersion === "current"}
+                        onClick={() => setReestimatePreviewVersion("current")}
+                      >
+                        目前內容
+                      </button>
+                      <button
+                        className={`reestimate-preview-tab${
+                          reestimatePreviewVersion === "suggested"
+                            ? " is-active"
+                            : ""
+                        }`}
+                        type="button"
+                        role="tab"
+                        aria-selected={reestimatePreviewVersion === "suggested"}
+                        onClick={() => setReestimatePreviewVersion("suggested")}
+                      >
+                        AI 新版
+                      </button>
+                    </div>
+                    <div className="reestimate-preview-card">
+                      <div className="reestimate-preview-header">
+                        <strong>{reestimatePreviewTitle}</strong>
+                        <span>{reestimatePreviewDescription}</span>
+                      </div>
+                      <div className="compact-list">
+                        {reestimatePreviewItems.map((item) => (
+                          <p
+                            className="reestimate-suggestion-row"
+                            key={item.id}
+                          >
+                            <strong>{item.food_name}</strong>
+                            <span>
+                              {item.portion_value} {item.portion_unit}
+                            </span>
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="reestimate-secondary-actions">
+                      <button
+                        className="inline-text-button"
+                        type="button"
+                        onClick={() => {
+                          setReestimateSuggestions([]);
+                          setReestimateExpanded(true);
+                          setAnalysisNotice(null);
+                        }}
+                      >
+                        內容還是不對，重新補充描述
+                      </button>
+                    </div>
+                    <div className="reestimate-action-bar">
+                      <button
+                        className="secondary-button reestimate-action-secondary"
                         type="button"
                         onClick={dismissReestimateSuggestions}
                       >
                         保留目前內容
                       </button>
                       <button
-                        className="primary-button"
+                        className="primary-button reestimate-action-primary"
                         type="button"
                         onClick={applyReestimateSuggestions}
                       >
-                        套用 AI 建議
+                        改用 AI 新版
                       </button>
                     </div>
                   </article>
