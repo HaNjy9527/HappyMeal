@@ -1046,6 +1046,14 @@ select:focus-visible {
   grid-column: span 12;
 }
 
+.start-analysis-upload-card {
+  grid-column: span 7;
+}
+
+.start-analysis-state-card {
+  grid-column: span 5;
+}
+
 .panel-card,
 .candidate-card {
   padding: 20px;
@@ -1078,6 +1086,19 @@ select:focus-visible {
     rgba(29, 141, 159, 0.05)
   );
   color: var(--text-secondary);
+}
+
+.upload-dropzone-copy {
+  line-height: 1.6;
+}
+
+.upload-dropzone-cta {
+  width: fit-content;
+  min-width: 148px;
+}
+
+.upload-dropzone-input {
+  display: none;
 }
 
 .upload-dropzone input {
@@ -1501,6 +1522,11 @@ select {
     gap: 12px;
   }
 
+  .start-analysis-upload-card,
+  .start-analysis-state-card {
+    grid-column: span 12;
+  }
+
   .panel-card {
     padding: 16px;
     border-radius: 20px;
@@ -1534,6 +1560,14 @@ select {
 
   .analysis-loading-skeleton-head p {
     max-width: none;
+  }
+
+  .upload-dropzone {
+    padding: 16px;
+  }
+
+  .upload-dropzone-cta {
+    width: 100%;
   }
 
   .status-banner,

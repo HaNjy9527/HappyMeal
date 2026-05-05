@@ -27,7 +27,6 @@ import {
   createConsent,
   createAnalysisDraft,
   exchangeAuthToken,
-  createMockImageFile,
   getAnalysisDetail,
   getAnalysisHistory,
   getProfile,
@@ -574,6 +573,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   const queryClient = useQueryClient();
   const logoutMutation = useLogout();
   const pendingCandidateFocusId = useRef<string | null>(null);
+  const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const [screen, setScreen] = useState<MainScreen>(
     hasRequiredConsents(user) ? "analysis" : "consent",
   );
@@ -1284,62 +1284,29 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                   context={analysisLoadingContext}
                 />
               ) : (
-                <div className="panel-grid">
-                  <article className="panel-card">
-                    <p className="panel-kicker">Quick Start</p>
-                    <h3>用 mock 圖片快速跑一次主流程</h3>
-                    <p>
-                      為了驗證 MVP，這裡保留三種示範場景，會直接打到同一組
-                      backend API。
-                    </p>
-                    <div className="quick-actions">
-                      <button
-                        className="primary-button"
-                        disabled={analysisLoading || analysisAccessLocked}
-                        onClick={() =>
-                          void beginAnalysis(createMockImageFile("salad"), {
-                            source: "mock",
-                            label: "沙拉示範圖片",
-                          })
-                        }
-                      >
-                        上傳沙拉範例
-                      </button>
-                      <button
-                        className="secondary-button"
-                        disabled={analysisLoading || analysisAccessLocked}
-                        onClick={() =>
-                          void beginAnalysis(createMockImageFile("rice"), {
-                            source: "mock",
-                            label: "飯類示範圖片",
-                          })
-                        }
-                      >
-                        上傳飯類範例
-                      </button>
-                      <button
-                        className="secondary-button"
-                        disabled={analysisLoading || analysisAccessLocked}
-                        onClick={() =>
-                          void beginAnalysis(createMockImageFile("salmon"), {
-                            source: "mock",
-                            label: "魚排示範圖片",
-                          })
-                        }
-                      >
-                        上傳魚排範例
-                      </button>
-                    </div>
-                  </article>
-
-                  <article className="panel-card">
+                <div className="panel-grid start-analysis-grid">
+                  <article className="panel-card start-analysis-upload-card">
                     <p className="panel-kicker">Upload</p>
-                    <h3>改用本機圖片測試</h3>
+                    <h3>上傳圖片</h3>
+                    <p>
+                      支援 JPG /
+                      PNG。分析完成後原始圖片只會暫存處理，不會長期保存。
+                    </p>
                     <label className="upload-dropzone">
-                      <span>
-                        支援 JPG / PNG，分析完成後原始圖片不長期保存。
+                      <span className="upload-dropzone-copy">
+                        從手機或電腦選一張餐點照片，完成後會直接帶你進入候選確認。
                       </span>
+                      <button
+                        className="primary-button upload-dropzone-cta"
+                        type="button"
+                        disabled={analysisLoading || analysisAccessLocked}
+                        onClick={() => uploadInputRef.current?.click()}
+                      >
+                        上傳圖片
+                      </button>
                       <input
+                        ref={uploadInputRef}
+                        className="upload-dropzone-input"
                         type="file"
                         name="analysis-image"
                         accept="image/png,image/jpeg"
@@ -1352,7 +1319,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                     </label>
                   </article>
 
-                  <article className="panel-card">
+                  <article className="panel-card start-analysis-state-card">
                     <p className="panel-kicker">State</p>
                     <h3>分析前檢查</h3>
                     <ul className="compact-list">
