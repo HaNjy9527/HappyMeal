@@ -212,10 +212,12 @@ function AnalysisLoadingState({
     <div className="analysis-loading-shell" aria-live="polite" aria-busy="true">
       <article className="panel-card analysis-loading-hero">
         <div className="analysis-loading-header-row">
-          <span className="analysis-loading-badge">
-            {context.source === "upload" ? "照片辨識中" : "示範流程執行中"}
-          </span>
-          <span className="analysis-loading-status-dot" aria-hidden="true" />
+          <div className="analysis-loading-status-group">
+            <span className="analysis-loading-status-dot" aria-hidden="true" />
+            <span className="analysis-loading-badge">
+              {context.source === "upload" ? "照片辨識中" : "示範流程執行中"}
+            </span>
+          </div>
         </div>
 
         <div className="analysis-loading-hero-copy">
@@ -1021,11 +1023,11 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
       ? reestimateSuggestions
       : candidateItems;
   const reestimatePreviewTitle =
-    reestimatePreviewVersion === "suggested" ? "AI 新版" : "目前內容";
+    reestimatePreviewVersion === "suggested" ? "新的內容" : "目前內容";
   const reestimatePreviewDescription =
     reestimatePreviewVersion === "suggested"
-      ? "這是 AI 根據你補充描述後重算的一版，你可以先滑看內容，再決定要不要改用它。"
-      : "這是你目前保留的版本。若想回頭看 AI 新版，再切換過去即可。";
+      ? "這是根據你的補充重新整理的一版，確認後再決定要不要改用它。"
+      : "這是你目前保留的版本。若想回頭看新的內容，再切換過去即可。";
   const consentCompleted = hasRequiredConsents(user);
   const themeMode = profile?.theme_preference ?? "female_default";
   const validationMessage = buildValidationMessage(profileForm);
@@ -1442,8 +1444,10 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                       </div>
 
                       <div className="field-grid candidate-edit-grid">
-                        <label>
-                          食物名稱
+                        <label className="candidate-field">
+                          <span className="candidate-field-label">
+                            食物名稱
+                          </span>
                           <input
                             name={`candidate-food-name-${item.id}`}
                             placeholder="例如：白飯、豆漿、雞腿便當"
@@ -1457,8 +1461,8 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                             }}
                           />
                         </label>
-                        <label>
-                          份量
+                        <label className="candidate-field">
+                          <span className="candidate-field-label">份量</span>
                           <input
                             name={`candidate-portion-${item.id}`}
                             inputMode="decimal"
@@ -1473,8 +1477,8 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                             }}
                           />
                         </label>
-                        <label>
-                          單位
+                        <label className="candidate-field">
+                          <span className="candidate-field-label">單位</span>
                           <select
                             name={`candidate-unit-${item.id}`}
                             value={item.portion_unit}
@@ -1610,10 +1614,6 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                   <article className="panel-card reestimate-panel">
                     <p className="panel-kicker">AI 新建議</p>
                     <h3>切換查看你要用哪一個版本</h3>
-                    <p>
-                      目前版本和 AI 新版都還在。手機畫面先一次看一個版本，
-                      你只要切換確認後再決定要不要改用 AI 新版。
-                    </p>
                     <div
                       className="reestimate-preview-toggle"
                       role="tablist"
@@ -1643,7 +1643,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                         aria-selected={reestimatePreviewVersion === "suggested"}
                         onClick={() => setReestimatePreviewVersion("suggested")}
                       >
-                        AI 新版
+                        新的內容
                       </button>
                     </div>
                     <div className="reestimate-preview-card">
@@ -1691,7 +1691,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                         type="button"
                         onClick={applyReestimateSuggestions}
                       >
-                        改用 AI 新版
+                        改用新的內容
                       </button>
                     </div>
                   </article>
@@ -1739,25 +1739,33 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
               analysisResult ? (
                 <div className="content-stack">
                   <div className="metric-grid">
-                    <article className="metric-card">
+                    <article className="metric-card metric-card-inline">
                       <span>總熱量</span>
-                      <strong>{analysisResult.total_kcal}</strong>
-                      <small>kcal</small>
+                      <div className="metric-card-value">
+                        <strong>{analysisResult.total_kcal}</strong>
+                        <small>kcal</small>
+                      </div>
                     </article>
-                    <article className="metric-card">
+                    <article className="metric-card metric-card-inline">
                       <span>蛋白質</span>
-                      <strong>{analysisResult.total_protein_g}</strong>
-                      <small>g</small>
+                      <div className="metric-card-value">
+                        <strong>{analysisResult.total_protein_g}</strong>
+                        <small>g</small>
+                      </div>
                     </article>
-                    <article className="metric-card">
+                    <article className="metric-card metric-card-inline">
                       <span>脂肪</span>
-                      <strong>{analysisResult.total_fat_g}</strong>
-                      <small>g</small>
+                      <div className="metric-card-value">
+                        <strong>{analysisResult.total_fat_g}</strong>
+                        <small>g</small>
+                      </div>
                     </article>
-                    <article className="metric-card">
+                    <article className="metric-card metric-card-inline">
                       <span>碳水</span>
-                      <strong>{analysisResult.total_carb_g}</strong>
-                      <small>g</small>
+                      <div className="metric-card-value">
+                        <strong>{analysisResult.total_carb_g}</strong>
+                        <small>g</small>
+                      </div>
                     </article>
                   </div>
 
@@ -1939,25 +1947,33 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                 </article>
 
                 <div className="metric-grid">
-                  <article className="metric-card">
+                  <article className="metric-card metric-card-inline">
                     <span>總熱量</span>
-                    <strong>{selectedHistory.total_kcal}</strong>
-                    <small>kcal</small>
+                    <div className="metric-card-value">
+                      <strong>{selectedHistory.total_kcal}</strong>
+                      <small>kcal</small>
+                    </div>
                   </article>
-                  <article className="metric-card">
+                  <article className="metric-card metric-card-inline">
                     <span>蛋白質</span>
-                    <strong>{selectedHistory.total_protein_g}</strong>
-                    <small>g</small>
+                    <div className="metric-card-value">
+                      <strong>{selectedHistory.total_protein_g}</strong>
+                      <small>g</small>
+                    </div>
                   </article>
-                  <article className="metric-card">
+                  <article className="metric-card metric-card-inline">
                     <span>脂肪</span>
-                    <strong>{selectedHistory.total_fat_g}</strong>
-                    <small>g</small>
+                    <div className="metric-card-value">
+                      <strong>{selectedHistory.total_fat_g}</strong>
+                      <small>g</small>
+                    </div>
                   </article>
-                  <article className="metric-card">
+                  <article className="metric-card metric-card-inline">
                     <span>碳水</span>
-                    <strong>{selectedHistory.total_carb_g}</strong>
-                    <small>g</small>
+                    <div className="metric-card-value">
+                      <strong>{selectedHistory.total_carb_g}</strong>
+                      <small>g</small>
+                    </div>
                   </article>
                 </div>
 

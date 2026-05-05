@@ -435,6 +435,17 @@ select:focus-visible {
   gap: 12px;
 }
 
+.analysis-loading-header-row {
+  justify-content: flex-end;
+}
+
+.analysis-loading-status-group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .analysis-loading-badge,
 .analysis-loading-context-chip {
   min-height: 38px;
@@ -1163,6 +1174,20 @@ select {
   padding: 18px;
 }
 
+.metric-card-inline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.metric-card-value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .metric-card span,
 .summary-card span,
 .target-grid span {
@@ -1253,6 +1278,19 @@ select {
   border-radius: 999px;
   border: 1px solid rgba(24, 50, 61, 0.12);
   background: rgba(255, 255, 255, 0.92);
+  color: var(--text-secondary);
+}
+
+.candidate-field {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.candidate-field-label {
+  white-space: nowrap;
+  font-size: 0.9rem;
   color: var(--text-secondary);
 }
 
@@ -1558,6 +1596,14 @@ select {
 
   .reestimate-inline-button {
     width: 100%;
+  }
+
+  .candidate-field {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  .metric-card-inline {
+    align-items: center;
   }
 
   .reestimate-secondary-actions {

@@ -2,8 +2,8 @@
 
 - 文件名稱：Priority 2｜真實 AI 食物辨識與候選修正
 - 版本：v1
-- 日期：2026-05-01
-- 狀態：V1.X 收斂中，P0/P1 與 P2-2 均已完成；剩餘 P2 為手機驗測
+- 日期：2026-05-05
+- 狀態：可關閉；P0/P1、P2-1、P2-2 與 P2 收尾項均已完成，待最後 smoke test
 - 用途：把真實 AI 辨識主鏈、candidate confirmation、fallback 與穩定化驗收補成可追蹤的開發主題
 
 ---
@@ -51,13 +51,15 @@ Priority 2 同時牽涉：
 11. 低信心候選項視覺提示已落地：前端 candidate review 中 `confidence_score < 0.6` 的卡片加上橙色邊框與淡橙背景（`.is-low-confidence`），並在 support row 顯示「AI 對這項食物信心不足，建議確認名稱與份量。」
 12. confirm 階段已改成 profile 不完整時仍可完成主鏈：後端不再因 `weight_kg`、`activity_level`、`goal_type` 缺漏回 409，而是改回傳 `source="generic"` 的通用建議；前端 confirm 會先提示「這次會先產生通用建議」，result 與 history detail 也會明確標示「通用建議」並提示補完 profile 後可得到更貼近的建議
 13. 2026-05-04 已完成第一輪手機實測：真實圖片主鏈可跑通，塑膠瓶飲料可被辨識為 tea drink / 黑咖啡類候選，故意拍衛生紙時也能正確進入 complete failure 的重拍提示；詳細紀錄見 [Priority2-手機UX實測紀錄-v1.md](./Priority2-%E6%89%8B%E6%A9%9FUX%E5%AF%A6%E6%B8%AC%E7%B4%80%E9%8C%84-v1.md)
+14. upload / recognition loading state 已補齊：上傳後會立即進入明確的辨識中畫面，提供目前階段、來源與後續提示，避免使用者誤以為系統卡住
+15. re-estimate 手機互動已完成最小收斂：AI 校正入口改為次級 CTA，AI 新建議改為單欄版本切換檢視，並以手機底部操作區承接「保留目前內容 / 改用 AI 新版」兩個最終決策
 
 目前仍未完成的重點：
 
-1. 第一輪手機手動驗證已完成，但仍有兩個 P2 收尾項目尚未收斂：上傳後缺少明確的辨識中狀態回饋，以及 re-estimate 在手機上的最小互動焦點仍不夠清楚。
-2. 真實案例已驗證營養可信度風險，例如黑咖啡被估成 420 kcal；此問題不再屬於 P2 分流本身，而應移交 Priority 3 處理 nutrition source / estimation strategy。
+1. 真實案例已驗證營養可信度風險，例如黑咖啡被估成 420 kcal；此問題不再屬於 P2 分流本身，而應移交 Priority 3 處理 nutrition source / estimation strategy。
+2. Priority 2 進入可關閉狀態；正式關閉前建議再做一輪 3 到 5 分鐘手機 smoke test，確認 loading state、re-estimate 底部操作區與 complete failure 主鏈在實機上沒有回歸。
 
-目前進度判定：Priority 2 核心主鏈（辨識分流、candidate review、re-estimate、觀測性、低信心 UI、generic recommendation fallback）均已落地；P2-1 第一輪手機實測亦已完成，剩餘為兩個直接影響手機理解性的收尾項目，不影響主鏈通行，但建議在關閉 P2 前補齊。
+目前進度判定：Priority 2 核心主鏈（辨識分流、candidate review、re-estimate、觀測性、低信心 UI、generic recommendation fallback）與手機收尾項目均已落地；P2 已達可關閉狀態，剩餘風險以 Priority 3 的營養可信度與 Priority 4 的進一步手機 UX 精修為主。
 
 ---
 
@@ -101,7 +103,7 @@ Priority 2 同時牽涉：
 
 ### P2-03 Candidate Confirmation 修正體驗
 
-狀態：已完成可用版，仍需手機手動驗收與 re-estimate 套用體驗收斂。
+狀態：已完成，含手機上的 re-estimate 最小互動收斂。
 
 目標：把 candidate review 定位成「部分成功時的輕量修正工具」。
 
@@ -158,7 +160,7 @@ Priority 2 同時牽涉：
 3. 接著讓圖片上傳回應能直接帶出狀態與提示訊息，避免前端只能靠候選是否為空來猜目前發生了什麼事 ✅ 已完成
 4. 最後由前端承接這些狀態：部分成功時進入 candidate review；完全失敗時直接顯示辨識失敗並引導重拍或換圖 ✅ 已完成
 
-目前 4 層均已落地，P1（觀測性 log + 低信心 UI）與 P2-2（generic recommendation fallback + 通用建議標示）亦已完成。P2-1 第一輪手機手動驗測已完成；剩餘工作為 upload / recognition loading state 與 re-estimate 手機互動收斂。
+目前 4 層均已落地，P1（觀測性 log + 低信心 UI）、P2-1（第一輪手機手動驗測）與 P2-2（generic recommendation fallback + 通用建議標示）亦已完成。原先的 upload / recognition loading state 與 re-estimate 手機互動收斂已補齊，Priority 2 可進入關閉前 smoke test。
 
 ### P2-1：手機 UX 實際驗測
 
@@ -186,8 +188,8 @@ Priority 2 同時牽涉：
 本輪實測後的判讀：
 
 1. success / complete_failure 方向成立，故意拍非食物時也能正確回到重拍提示。
-2. re-estimate 已具備功能可用性，但手機互動結構仍偏像開發驗證頁，而不是收斂後的產品流程。
-3. 若只做最小收尾，Priority 2 應至少補上 loading state 與 re-estimate 焦點收斂；若要做 modal / 分頁式比較體驗，則可移交 Priority 4。
+2. upload / recognition loading state 與 re-estimate 最小手機互動收斂已於本輪實測後完成回補；目前 confirm 頁已具備較清楚的等待、查看版本與決策路徑。
+3. 若後續要做 modal / bottom sheet、safe-area 強化或更完整的手機節奏重整，屬於 Priority 4 的體驗精修，而不再是 P2 關閉前阻塞項。
 
 ### P2-2：profile 不完整時改走通用建議
 
@@ -264,7 +266,8 @@ Priority 2 同時牽涉：
 3. AI 部分成功時，使用者可透過 candidate review 完成少量修正
 4. candidate review 至少支援編輯名稱、份量、單位、刪除與新增項目
 5. confirm 不會再因 rigid whitelist 或 rigid unit contract 導致主鏈中斷
-6. 至少有最小量測可觀察 timeout、error、完全失敗率與部分成功率 ✅ 已完成
+6. 上傳後具備明確辨識中狀態，re-estimate 在手機上具備可理解的查看與決策流程
+7. 至少有最小量測可觀察 timeout、error、完全失敗率與部分成功率 ✅ 已完成
 
 ---
 
