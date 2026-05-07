@@ -604,6 +604,131 @@ def test_post_analysis_confirm_uses_canonical_food_mapping_module(client, db_ses
     assert payload["items"][0]["is_estimated"] is True
 
 
+def test_post_analysis_confirm_uses_drink_fallback_for_black_coffee_bottle(client, db_session, isolated_upload_dir):
+    seed_exercises(db_session)
+    accept_required_consents(client)
+
+    profile_response = client.put("/profile", json=build_profile_payload())
+    assert profile_response.status_code == 200
+
+    draft_response = client.post("/analyses")
+    analysis_id = draft_response.json()["id"]
+
+    upload_response = client.post(
+        f"/analyses/{analysis_id}/image",
+        files={"file": ("black-coffee.jpg", BytesIO(b"fake-jpeg-data"), "image/jpeg")},
+    )
+    assert upload_response.status_code == 200
+
+    confirm_response = client.post(
+        f"/analyses/{analysis_id}/confirm",
+        json={
+            "items": [
+                {
+                    "food_name": "Black Coffee",
+                    "normalized_food_name": "black_coffee",
+                    "portion_value": "1.0",
+                    "portion_unit": "bottle",
+                    "confidence_score": "0.88",
+                }
+            ]
+        },
+    )
+
+    assert confirm_response.status_code == 200
+    payload = confirm_response.json()
+    assert payload["items"][0]["canonical_food_name"] == "generic_unsweetened_drink"
+    assert payload["items"][0]["nutrition_source"] == "drink_fallback"
+    assert payload["items"][0]["is_estimated"] is True
+    assert payload["items"][0]["portion_unit"] == "bottle"
+    assert payload["items"][0]["source_portion_unit"] == "bottle"
+    assert Decimal(str(payload["items"][0]["resolved_weight_g"])) == Decimal("375.00")
+    assert payload["items"][0]["weight_estimation_method"] == "drink_container_default"
+    assert Decimal(str(payload["items"][0]["kcal"])) == Decimal("7.50")
+
+
+def test_post_analysis_confirm_uses_drink_fallback_for_tea_drink_can(client, db_session, isolated_upload_dir):
+    seed_exercises(db_session)
+    accept_required_consents(client)
+
+    profile_response = client.put("/profile", json=build_profile_payload())
+    assert profile_response.status_code == 200
+
+    draft_response = client.post("/analyses")
+    analysis_id = draft_response.json()["id"]
+
+    upload_response = client.post(
+        f"/analyses/{analysis_id}/image",
+        files={"file": ("tea-drink.jpg", BytesIO(b"fake-jpeg-data"), "image/jpeg")},
+    )
+    assert upload_response.status_code == 200
+
+    confirm_response = client.post(
+        f"/analyses/{analysis_id}/confirm",
+        json={
+            "items": [
+                {
+                    "food_name": "Tea Drink",
+                    "normalized_food_name": "tea_drink",
+                    "portion_value": "1.0",
+                    "portion_unit": "can",
+                    "confidence_score": "0.73",
+                }
+            ]
+        },
+    )
+
+    assert confirm_response.status_code == 200
+    payload = confirm_response.json()
+    assert payload["items"][0]["canonical_food_name"] == "generic_unsweetened_drink"
+    assert payload["items"][0]["nutrition_source"] == "drink_fallback"
+    assert Decimal(str(payload["items"][0]["resolved_weight_g"])) == Decimal("330.00")
+    assert payload["items"][0]["weight_estimation_method"] == "drink_container_default"
+    assert Decimal(str(payload["items"][0]["kcal"])) == Decimal("6.60")
+
+
+def test_post_analysis_confirm_uses_direct_milliliters_for_black_tea(client, db_session, isolated_upload_dir):
+    seed_exercises(db_session)
+    accept_required_consents(client)
+
+    profile_response = client.put("/profile", json=build_profile_payload())
+    assert profile_response.status_code == 200
+
+    draft_response = client.post("/analyses")
+    analysis_id = draft_response.json()["id"]
+
+    upload_response = client.post(
+        f"/analyses/{analysis_id}/image",
+        files={"file": ("black-tea.jpg", BytesIO(b"fake-jpeg-data"), "image/jpeg")},
+    )
+    assert upload_response.status_code == 200
+
+    confirm_response = client.post(
+        f"/analyses/{analysis_id}/confirm",
+        json={
+            "items": [
+                {
+                    "food_name": "Black Tea",
+                    "normalized_food_name": "black_tea",
+                    "portion_value": "330.0",
+                    "portion_unit": "ml",
+                    "confidence_score": "0.79",
+                }
+            ]
+        },
+    )
+
+    assert confirm_response.status_code == 200
+    payload = confirm_response.json()
+    assert payload["items"][0]["canonical_food_name"] == "generic_unsweetened_drink"
+    assert payload["items"][0]["nutrition_source"] == "drink_fallback"
+    assert payload["items"][0]["portion_unit"] == "ml"
+    assert payload["items"][0]["source_portion_unit"] == "ml"
+    assert Decimal(str(payload["items"][0]["resolved_weight_g"])) == Decimal("330.00")
+    assert payload["items"][0]["weight_estimation_method"] == "direct_milliliters"
+    assert Decimal(str(payload["items"][0]["kcal"])) == Decimal("6.60")
+
+
 def test_get_analysis_history_returns_completed_items_only(client, db_session, isolated_upload_dir):
     seed_exercises(db_session)
     completed_analysis = create_completed_analysis(client)
