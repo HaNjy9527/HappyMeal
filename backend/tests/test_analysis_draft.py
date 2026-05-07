@@ -6,6 +6,7 @@ import pytest
 from app.core.config import get_settings
 from app.db.models import ExerciseCatalog
 from app.services.analysis_recognition import AnalysisRecognitionResult
+from app.services.food_mapping import CanonicalFoodMappingResult
 from app.schemas.analysis import RecognitionStatus
 from app.services.consent import CURRENT_NON_MEDICAL_DISCLOSURE_VERSION, CURRENT_PRIVACY_POLICY_VERSION
 
@@ -545,6 +546,62 @@ def test_post_analysis_confirm_converts_supported_food_units_instead_of_rejectin
     assert Decimal(str(payload["items"][0]["kcal"])) == Decimal("468.00")
     assert Decimal(str(payload["items"][0]["resolved_weight_g"])) == Decimal("324.00")
     assert payload["items"][0]["weight_estimation_method"] == "common_unit_conversion"
+
+
+def test_post_analysis_confirm_uses_canonical_food_mapping_module(client, db_session, isolated_upload_dir, monkeypatch):
+    seed_exercises(db_session)
+    accept_required_consents(client)
+
+    profile_response = client.put("/profile", json=build_profile_payload())
+    assert profile_response.status_code == 200
+
+    draft_response = client.post("/analyses")
+    analysis_id = draft_response.json()["id"]
+
+    upload_response = client.post(
+        f"/analyses/{analysis_id}/image",
+        files={"file": ("salad-lunch.jpg", BytesIO(b"fake-jpeg-data"), "image/jpeg")},
+    )
+
+    assert upload_response.status_code == 200
+
+    captured_calls = []
+
+    def fake_resolve_canonical_food(*, food_name, normalized_food_name):
+        captured_calls.append((food_name, normalized_food_name))
+        return CanonicalFoodMappingResult(
+            canonical_food_name="generic_protein",
+            match_type="keyword",
+            matched_term="chicken",
+            is_estimated=True,
+        )
+
+    monkeypatch.setattr(
+        "app.services.analysis_confirm.resolve_canonical_food",
+        fake_resolve_canonical_food,
+    )
+
+    confirm_response = client.post(
+        f"/analyses/{analysis_id}/confirm",
+        json={
+            "items": [
+                {
+                    "food_name": "Chicken Surprise",
+                    "normalized_food_name": "mystery_chicken",
+                    "portion_value": "1.0",
+                    "portion_unit": "plate",
+                    "confidence_score": "0.90",
+                }
+            ]
+        },
+    )
+
+    assert confirm_response.status_code == 200
+    payload = confirm_response.json()
+    assert captured_calls == [("Chicken Surprise", "mystery_chicken")]
+    assert payload["items"][0]["canonical_food_name"] == "generic_protein"
+    assert payload["items"][0]["nutrition_source"] == "keyword_fallback"
+    assert payload["items"][0]["is_estimated"] is True
 
 
 def test_get_analysis_history_returns_completed_items_only(client, db_session, isolated_upload_dir):

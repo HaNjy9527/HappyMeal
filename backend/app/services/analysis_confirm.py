@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import re
 
 from dataclasses import dataclass
 from decimal import Decimal, ROUND_HALF_UP
@@ -17,6 +16,7 @@ from app.schemas.analysis import (
     RecommendedExerciseItem,
 )
 from app.services.analysis import get_analysis_for_user
+from app.services.food_mapping import NUTRITION_SOURCE_BY_MATCH_TYPE, resolve_canonical_food
 from app.services.analysis_upload import delete_analysis_uploads
 from app.services.consent import build_non_medical_disclaimer
 from app.services.profile import get_or_create_profile
@@ -140,24 +140,6 @@ UNIT_FAMILIES = {
         "tsp": Decimal("0.33"),
     },
 }
-FOOD_PRESET_ALIASES = {
-    "chicken_rice_bowl": "generic_mixed_meal",
-    "white_rice": "generic_rice",
-    "cabbage": "generic_vegetables",
-    "ginger_shreds": "generic_garnish",
-    "chili_sauce": "generic_condiment",
-}
-FOOD_KEYWORDS = {
-    "generic_condiment": ("sauce", "dressing", "dip", "醬", "醬汁"),
-    "generic_garnish": ("ginger", "scallion", "garlic", "sesame", "薑", "蔥", "蒜", "芝麻"),
-    "boiled_egg": ("egg", "omelette", "蛋", "水煮蛋", "荷包蛋"),
-    "generic_vegetables": ("vegetable", "broccoli", "cabbage", "lettuce", "greens", "高麗菜", "青菜", "花椰菜", "蔬菜"),
-    "generic_rice": ("rice", "porridge", "grain", "飯", "粥", "穀"),
-    "generic_protein": ("chicken", "beef", "pork", "tofu", "salmon", "fish", "shrimp", "雞", "牛", "豬", "豆腐", "魚", "蝦"),
-    "generic_mixed_meal": ("bento", "meal", "curry", "noodle", "pasta", "便當", "套餐", "炒飯", "燴飯", "麵"),
-}
-
-
 def quantize_decimal(value: Decimal) -> Decimal:
     return value.quantize(TWOPLACES, rounding=ROUND_HALF_UP)
 
@@ -185,46 +167,16 @@ def build_resolved_preset(canonical_food_name: str, nutrition_source: str, is_es
 
 
 def resolve_food_preset(payload: AnalysisConfirmItemRequest) -> ResolvedNutritionPreset:
-    direct_preset = NUTRITION_PRESETS.get(payload.normalized_food_name)
-    if direct_preset is not None:
-        return build_resolved_preset(payload.normalized_food_name, "preset", False)
-
-    aliased_preset_name = FOOD_PRESET_ALIASES.get(payload.normalized_food_name)
-    if aliased_preset_name is not None:
-        return build_resolved_preset(aliased_preset_name, "alias_mapping", True)
-
-    food_hint = f"{payload.normalized_food_name} {payload.food_name}".lower()
-    compact_food_hint = re.sub(r"[_\-]+", " ", food_hint)
-
-    if any(keyword in compact_food_hint for keyword in FOOD_KEYWORDS["generic_condiment"]):
-        return build_resolved_preset("generic_condiment", "keyword_fallback", True)
-
-    if any(keyword in compact_food_hint for keyword in FOOD_KEYWORDS["generic_garnish"]):
-        return build_resolved_preset("generic_garnish", "keyword_fallback", True)
-
-    if any(keyword in compact_food_hint for keyword in FOOD_KEYWORDS["boiled_egg"]):
-        return build_resolved_preset("boiled_egg", "keyword_fallback", True)
-
-    has_rice_hint = any(keyword in compact_food_hint for keyword in FOOD_KEYWORDS["generic_rice"])
-    has_protein_hint = any(keyword in compact_food_hint for keyword in FOOD_KEYWORDS["generic_protein"])
-    has_meal_hint = any(keyword in compact_food_hint for keyword in FOOD_KEYWORDS["generic_mixed_meal"])
-
-    if has_rice_hint and has_protein_hint:
-        return build_resolved_preset("generic_mixed_meal", "keyword_fallback", True)
-
-    if has_meal_hint:
-        return build_resolved_preset("generic_mixed_meal", "keyword_fallback", True)
-
-    if any(keyword in compact_food_hint for keyword in FOOD_KEYWORDS["generic_vegetables"]):
-        return build_resolved_preset("generic_vegetables", "keyword_fallback", True)
-
-    if has_rice_hint:
-        return build_resolved_preset("generic_rice", "keyword_fallback", True)
-
-    if has_protein_hint:
-        return build_resolved_preset("generic_protein", "keyword_fallback", True)
-
-    return build_resolved_preset("generic_mixed_meal", "default_fallback", True)
+    resolved_food = resolve_canonical_food(
+        food_name=payload.food_name,
+        normalized_food_name=payload.normalized_food_name,
+    )
+    nutrition_source = NUTRITION_SOURCE_BY_MATCH_TYPE[resolved_food.match_type]
+    return build_resolved_preset(
+        resolved_food.canonical_food_name,
+        nutrition_source,
+        resolved_food.is_estimated,
+    )
 
 
 def resolve_portion(payload: AnalysisConfirmItemRequest, preset: NutritionPreset) -> PortionResolution:
