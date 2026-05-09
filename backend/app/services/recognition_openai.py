@@ -221,36 +221,40 @@ def request_openai_candidates(*, image_path: Path) -> list[ProviderCandidate]:
             max_output_tokens=400,
         )
     except RateLimitError as error:
+        latency_ms = round((time.perf_counter() - t0) * 1000)
         logger.warning(
             "OpenAI recognition quota exceeded",
-            extra={"event": "openai_recognition", "outcome": "failure", "reason": "quota_exceeded"},
+            extra={"event": "openai_recognition", "outcome": "failure", "reason": "quota_exceeded", "latency_ms": latency_ms},
         )
         raise RecognitionProviderFailure(
             reason="quota_exceeded",
             message="AI 服務目前額度不足，請重拍、換圖或稍後再試。",
         ) from error
     except BadRequestError as error:
+        latency_ms = round((time.perf_counter() - t0) * 1000)
         logger.warning(
             "OpenAI recognition invalid image",
-            extra={"event": "openai_recognition", "outcome": "failure", "reason": "invalid_image"},
+            extra={"event": "openai_recognition", "outcome": "failure", "reason": "invalid_image", "latency_ms": latency_ms},
         )
         raise RecognitionProviderFailure(
             reason="invalid_image",
             message="這張圖片目前無法穩定分析，請重拍或改用其他圖片。",
         ) from error
     except APITimeoutError as error:
+        latency_ms = round((time.perf_counter() - t0) * 1000)
         logger.warning(
             "OpenAI recognition timeout",
-            extra={"event": "openai_recognition", "outcome": "failure", "reason": "provider_timeout"},
+            extra={"event": "openai_recognition", "outcome": "failure", "reason": "provider_timeout", "latency_ms": latency_ms},
         )
         raise RecognitionProviderFailure(
             reason="provider_timeout",
             message="AI 分析逾時，請重拍、換圖或稍後再試。",
         ) from error
     except APIConnectionError as error:
+        latency_ms = round((time.perf_counter() - t0) * 1000)
         logger.warning(
             "OpenAI recognition connection error",
-            extra={"event": "openai_recognition", "outcome": "failure", "reason": "provider_unavailable"},
+            extra={"event": "openai_recognition", "outcome": "failure", "reason": "provider_unavailable", "latency_ms": latency_ms},
         )
         raise RecognitionProviderFailure(
             reason="provider_unavailable",
@@ -303,27 +307,40 @@ def request_openai_reestimate_candidates(
             max_output_tokens=400,
         )
     except RateLimitError as error:
+        latency_ms = round((time.perf_counter() - t0) * 1000)
         logger.warning(
             "OpenAI reestimate quota exceeded",
-            extra={"event": "openai_reestimate", "outcome": "failure", "reason": "quota_exceeded"},
+            extra={"event": "openai_reestimate", "outcome": "failure", "reason": "quota_exceeded", "latency_ms": latency_ms},
         )
         raise RecognitionProviderFailure(
             reason="quota_exceeded",
             message="AI 服務目前額度不足，暫時無法重新估算，請稍後再試。",
         ) from error
+    except BadRequestError as error:
+        latency_ms = round((time.perf_counter() - t0) * 1000)
+        logger.warning(
+            "OpenAI reestimate invalid input",
+            extra={"event": "openai_reestimate", "outcome": "failure", "reason": "invalid_image", "latency_ms": latency_ms},
+        )
+        raise RecognitionProviderFailure(
+            reason="invalid_image",
+            message="這次的資料無法重新估算，請重新開始分析。",
+        ) from error
     except APITimeoutError as error:
+        latency_ms = round((time.perf_counter() - t0) * 1000)
         logger.warning(
             "OpenAI reestimate timeout",
-            extra={"event": "openai_reestimate", "outcome": "failure", "reason": "provider_timeout"},
+            extra={"event": "openai_reestimate", "outcome": "failure", "reason": "provider_timeout", "latency_ms": latency_ms},
         )
         raise RecognitionProviderFailure(
             reason="provider_timeout",
             message="AI 重新估算逾時，請稍後再試。",
         ) from error
     except APIConnectionError as error:
+        latency_ms = round((time.perf_counter() - t0) * 1000)
         logger.warning(
             "OpenAI reestimate connection error",
-            extra={"event": "openai_reestimate", "outcome": "failure", "reason": "provider_unavailable"},
+            extra={"event": "openai_reestimate", "outcome": "failure", "reason": "provider_unavailable", "latency_ms": latency_ms},
         )
         raise RecognitionProviderFailure(
             reason="provider_unavailable",
