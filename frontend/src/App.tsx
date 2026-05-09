@@ -210,17 +210,14 @@ function AnalysisLoadingState({
   return (
     <div className="analysis-loading-shell" aria-live="polite" aria-busy="true">
       <article className="panel-card analysis-loading-hero">
-        <div className="analysis-loading-header-row">
-          <div className="analysis-loading-status-group">
-            <span className="analysis-loading-status-dot" aria-hidden="true" />
+        <div className="analysis-loading-hero-copy">
+          <div className="analysis-loading-hero-top">
+            <p className="panel-kicker">AI Meal Recognition</p>
             <span className="analysis-loading-badge">
+              <span className="analysis-loading-status-dot" aria-hidden="true" />
               {context.source === "upload" ? "照片辨識中" : "示範流程執行中"}
             </span>
           </div>
-        </div>
-
-        <div className="analysis-loading-hero-copy">
-          <p className="panel-kicker">AI Meal Recognition</p>
           <h3>{heading}</h3>
           <p className="analysis-loading-copy">{body}</p>
         </div>
@@ -1543,10 +1540,6 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                         先不用
                       </button>
                     </div>
-                    <p>
-                      例如：我只吃半份、這不是甜不辣，是炸雞。AI
-                      只會提供一版新建議， 不會直接覆蓋你目前的內容。
-                    </p>
                     <label className="reestimate-label">
                       備註或校正說明
                       <textarea
