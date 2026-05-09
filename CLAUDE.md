@@ -49,6 +49,23 @@ docker compose up
 
 ---
 
+## 編輯檔案後的清理
+
+每次用 Edit 工具修改檔案後，檢查並刪除同目錄下的 `.tmp.*` 殘留暫存檔：
+
+```powershell
+Remove-Item D:\code\HappyMeal\frontend\src\*.tmp.* -ErrorAction SilentlyContinue
+Remove-Item D:\code\HappyMeal\backend\app\**\*.tmp.* -ErrorAction SilentlyContinue
+```
+
+---
+
+## Git Commits
+
+訊息用中文，格式 `type(scope): 簡短描述`，一行為主。
+
+---
+
 ## Architecture
 
 ### Backend — FastAPI + SQLAlchemy

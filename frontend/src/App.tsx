@@ -2301,18 +2301,16 @@ function LandingPage() {
         <header className="topbar landing-topbar">
           <div>
             <p className="eyebrow">HappyMeal</p>
-            <h1>先登入，再開始你的飲食分析流程</h1>
+            <h1>拍張照，知道你吃了什麼</h1>
           </div>
-          <div className="backend-badge">API {apiBaseUrl}</div>
         </header>
 
         <section className="landing-hero">
           <article className="landing-card landing-card-primary">
-            <p className="spotlight-label">LINE Login</p>
-            <h2>用單一登入入口接上 session 驗證</h2>
+            <p className="spotlight-label">HappyMeal</p>
+            <h2>用 LINE 登入，開始你的飲食紀錄</h2>
             <p className="landing-copy">
-              登入後會直接回到 /home，前端用 /auth/me 讀取你的登入狀態，
-              不在瀏覽器保存 LINE access token。
+              拍下餐點，AI 幫你辨識食材與熱量。每一次分析都會存下來，讓你看清楚自己的飲食習慣。
             </p>
             {error === "line_auth_denied" ? (
               <p className="status-banner is-error">
@@ -2330,12 +2328,12 @@ function LandingPage() {
           </article>
 
           <article className="landing-card">
-            <p className="panel-kicker">驗收重點</p>
-            <h3>這一輪前端會確認三件事</h3>
+            <p className="panel-kicker">功能亮點</p>
+            <h3>三步驟完成一次分析</h3>
             <ul className="compact-list">
-              <li>未登入直接進 /home 會被導回登入頁。</li>
-              <li>登入後 /auth/me 能讀到 display name 與主題設定。</li>
-              <li>登出後 session 會清掉，畫面回到 /。</li>
+              <li>拍下餐點，上傳給 AI 辨識。</li>
+              <li>確認食材與份量，取得熱量與營養估算。</li>
+              <li>查看歷史紀錄，追蹤每日飲食。</li>
             </ul>
           </article>
         </section>
