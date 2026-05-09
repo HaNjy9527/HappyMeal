@@ -3,7 +3,8 @@
 - 文件名稱：Priority 4｜前端 IA 與手機體驗補齊
 - 版本：v1
 - 日期：2026-04-26
-- 狀態：Draft
+- 最後更新：2026-05-09
+- 狀態：Completed
 - 用途：把目前偏最小版的前端殼，補成更接近 PRD v1 的可用產品體驗
 
 ---
@@ -58,47 +59,47 @@
 
 ---
 
-## 5. 工作拆解
+## 5. 工作拆解與完成紀錄
 
-### P4-01 Landing / Home 補強
+### P4-02A 手機資訊密度與文案降噪 ✅
 
-### P4-02 Candidate review / result / history 的手機動線微調
+已完成（2026-05-09）：
+1. loading badge 移至卡片右側，降低標題區擁擠感
+2. re-estimate 說明段落移除，降低技術感
+3. Quick start 區塊移除，上傳圖片入口簡化
+4. candidate review 欄位壓縮為單行
+5. metric card 改為單行顯示（總熱量 X kcal）
 
-補充本輪手機實測後的焦點：
+### P4-02 Re-estimate 流程重構 ✅
 
-1. AI 校正入口不應長駐在 confirm 頁底部，應改成明確 CTA 觸發的第二層互動。
-2. 建議評估 modal 或 bottom sheet 承接「補充描述給 AI」的輸入，而不是在主頁面堆疊第二個表單。
-3. 送出校正後，畫面應有獨立等待狀態，再進入比較與套用，而不是把原輸入區、舊內容、新建議全部同時留在頁面上。
-4. 「目前內容」與「AI 新建議」應提供清楚切換或比較視圖，至少支援保留目前內容、查看校正前內容 / 切回原內容、再次校正三種動作。
+已完成（2026-05-09）：
+1. re-estimate 入口改為文字觸發連結，不再長駐底部
+2. 輸入區改為 bottom sheet（fixed + overlay），手機上有獨立焦點
+3. 送出後 sheet 關閉，進入獨立 loading 狀態
 
-2026-05-05 新增待辦：
+### P4-04 錯誤、空狀態與 helper copy 收斂 ✅
 
-1. loading state 視覺微調：將「照片辨識中」圖案或文字移到卡片右側，降低標題區擁擠感。參考：`S__93282310_0.jpg`
-2. re-estimate 文案收斂：移除「目前版本與 AI...」說明段落，並把「AI 新版」按鈕改為「新的內容」，降低技術感。參考：`S__93282309_0.jpg`
-3. start analysis 首屏精簡：移除 `Quick start` 區塊，將「改用本機圖片測試」改為「上傳圖片」，並修正手機板跑版。參考：`S__93249538.jpg`
-4. candidate review 壓縮行高：label 與 value 保持同一行，避免欄位上下換行浪費垂直空間。參考：`S__93241351_0.jpg`
-5. re-estimate 決策區減鈕：重新整理按鈕層級與主要 CTA，避免使用者在 confirm 頁不知道下一步。參考：`S__93241350_0.jpg`
-6. result / history metric card 壓縮：卡片內改為單行資訊，例如「總熱量 420 kcal」，避免一個值拆成多行。參考：`S__93241348_0.jpg`
+已完成（2026-05-09）：
+1. History 頁標題改為中文，移除開發票號 kicker
+2. 所有 loading 文字統一為「載入中...」
+3. 空紀錄提示改為對新使用者友善的說明
+4. Profile / History 相關錯誤與成功訊息全改為中文
+5. 分析流程 helper copy 移除英文技術詞
 
-建議切片：
+### P4-01 Landing / Home 補強 ✅
 
-1. 可先做一個 P4-02A「手機資訊密度與文案降噪」小切片，先處理第 1、2、3、4、6 項，屬於低風險高可見度調整。
-2. 第 5 項牽涉 re-estimate 流程按鈕層級，建議與第 2 項一起設計，不要獨立零碎修補。
+已完成（2026-05-09）：
+1. 移除 `backend-badge`（開發 API URL 顯示）
+2. Landing h1 改為產品文案「拍張照，知道你吃了什麼」
+3. 主卡片改為產品導向說明，移除技術架構描述
+4. 第二卡片從「驗收重點」改為「功能亮點」三步驟介紹
 
-### P4-03 Theme Preference 與 Consent Review 的頁面結構補齊
+### P4-03 Theme Preference 與 Consent Review 補強 ✅
 
-包含：
-
-1. 將 Consent / legal review 相關低頻入口放進整體 Home / Profile / footer IA 中檢查
-2. 驗證頁尾 legal dialog、inline non-medical note 與 recommendation 區塊在手機上的掃讀節奏
-3. 若後續 legal / wellness guidance 提醒類型變多，再評估是否抽成共用 note 或 modal component
-
-### P4-04 錯誤、空狀態與 helper copy 收斂
-
-補充焦點：
-
-1. AI 校正等待中的 loading / helper copy 也應納入本 Priority 的手機體驗語氣收斂。
-2. 若後續沿用 modal / bottom sheet，需一併定義空回覆、失敗重試與再次校正的狀態文案。
+已完成（2026-05-09）：
+1. 主 tab 標籤全改為中文（分析 / 紀錄 / 個人資料）
+2. Theme Preference kicker 改為「視覺主題」
+3. Profile 側欄移除開發說明文字
 
 ---
 
@@ -112,10 +113,10 @@
 
 ## 7. 驗收條件
 
-1. 核心主鏈在手機上可順暢操作且無明顯卡點
-2. 主要頁面不再只剩最小測試感結構
-3. 錯誤、空狀態與導引文案足以支撐第一次使用者
-4. AI 校正 / 新建議在手機上具備清楚的第二層互動結構，不再讓使用者在 confirm 頁面下方迷路
+1. ✅ 核心主鏈在手機上可順暢操作且無明顯卡點
+2. ✅ 主要頁面不再只剩最小測試感結構
+3. ✅ 錯誤、空狀態與導引文案足以支撐第一次使用者
+4. ✅ AI 校正 / 新建議在手機上具備清楚的第二層互動結構（bottom sheet），不再讓使用者在 confirm 頁面下方迷路
 
 ---
 
