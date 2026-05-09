@@ -1347,6 +1347,57 @@ select {
   gap: 14px;
 }
 
+.reestimate-trigger-row {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+.reestimate-loading-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.reestimate-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 40;
+}
+
+.reestimate-bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  padding: 12px 20px 32px;
+  display: grid;
+  gap: 16px;
+  max-height: 80dvh;
+  overflow-y: auto;
+}
+
+.reestimate-bottom-sheet-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.15);
+  margin: 0 auto;
+}
+
+.reestimate-bottom-sheet-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .reestimate-trigger-card,
 .reestimate-entry-card {
   background:

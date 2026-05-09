@@ -913,6 +913,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     }
 
     setReestimateLoading(true);
+    setReestimateExpanded(false);
     setAnalysisError(null);
 
     try {
@@ -1495,79 +1496,78 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                   </button>
                 ) : null}
 
-                {reestimateSuggestions.length === 0 && !reestimateExpanded ? (
-                  <article className="panel-card reestimate-trigger-card">
-                    <p className="panel-kicker">Optional AI Review</p>
-                    <h3>需要時再請 AI 幫你重看一次</h3>
-                    <p>
-                      如果你已經直接修正完成，可以略過這一步；若想補充描述，再交給
-                      AI 重新估算一次。
-                    </p>
-                    <div className="footer-actions">
-                      <button
-                        className="secondary-button"
-                        type="button"
-                        disabled={
-                          analysisLoading || candidateItems.length === 0
-                        }
-                        onClick={() => {
-                          setReestimateExpanded(true);
-                          setAnalysisError(null);
-                        }}
-                      >
-                        需要校正 AI 建議嗎？
-                      </button>
-                    </div>
+                {reestimateLoading ? (
+                  <article className="panel-card reestimate-loading-card">
+                    <span className="analysis-loading-status-dot" aria-hidden="true" />
+                    AI 重新估算中，請稍候…
                   </article>
                 ) : null}
 
-                {reestimateSuggestions.length === 0 && reestimateExpanded ? (
-                  <article className="panel-card reestimate-panel reestimate-entry-card">
-                    <div className="reestimate-header-row">
-                      <div>
-                        <p className="panel-kicker">AI 校正</p>
-                        <h3>補充描述後再請 AI 估一次</h3>
-                      </div>
-                      <button
-                        className="ghost-button reestimate-inline-button"
-                        type="button"
-                        disabled={reestimateLoading}
-                        onClick={() => {
+                {reestimateExpanded ? (
+                  <>
+                    <div
+                      className="reestimate-overlay"
+                      aria-hidden="true"
+                      onClick={() => {
+                        if (!reestimateLoading) {
                           setReestimateExpanded(false);
                           setAnalysisError(null);
-                        }}
-                      >
-                        先不用
-                      </button>
-                    </div>
-                    <label className="reestimate-label">
-                      備註或校正說明
-                      <textarea
-                        name="reestimate-note"
-                        placeholder="例如：主菜其實是炸雞，我只吃半份白飯。"
-                        value={reestimateNote}
-                        onChange={(event) =>
-                          setReestimateNote(event.currentTarget.value)
                         }
-                        rows={3}
-                      />
-                    </label>
-                    <div className="footer-actions">
-                      <button
-                        className="secondary-button"
-                        type="button"
-                        disabled={
-                          reestimateLoading ||
-                          analysisLoading ||
-                          candidateItems.length === 0 ||
-                          !reestimateNote.trim()
-                        }
-                        onClick={() => void handleReestimateAnalysis()}
-                      >
-                        {reestimateLoading ? "重新估算中..." : "再次請 AI 估算"}
-                      </button>
+                      }}
+                    />
+                    <div
+                      className="reestimate-bottom-sheet"
+                      role="dialog"
+                      aria-label="AI 重新估算"
+                      aria-modal="true"
+                    >
+                      <div className="reestimate-bottom-sheet-handle" aria-hidden="true" />
+                      <div className="reestimate-bottom-sheet-header">
+                        <div>
+                          <p className="panel-kicker">Optional AI Review</p>
+                          <h3>補充描述給 AI</h3>
+                        </div>
+                        <button
+                          className="ghost-button"
+                          type="button"
+                          disabled={reestimateLoading}
+                          onClick={() => {
+                            setReestimateExpanded(false);
+                            setAnalysisError(null);
+                          }}
+                        >
+                          關閉
+                        </button>
+                      </div>
+                      <label className="reestimate-label">
+                        備註或校正說明
+                        <textarea
+                          name="reestimate-note"
+                          placeholder="例如：主菜其實是炸雞，我只吃半份白飯。"
+                          value={reestimateNote}
+                          onChange={(event) =>
+                            setReestimateNote(event.currentTarget.value)
+                          }
+                          rows={3}
+                        />
+                      </label>
+                      <div className="footer-actions">
+                        <button
+                          className="primary-button"
+                          type="button"
+                          disabled={
+                            reestimateLoading ||
+                            analysisLoading ||
+                            candidateItems.length === 0 ||
+                            !reestimateNote.trim()
+                          }
+                          onClick={() => void handleReestimateAnalysis()}
+                        >
+                          {reestimateLoading ? "估算中..." : "送出給 AI"}
+                        </button>
+                      </div>
                     </div>
-                  </article>
+                  </>
                 ) : null}
 
                 {reestimateSuggestions.length > 0 ? (
@@ -1692,6 +1692,22 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                     {analysisLoading ? "確認中..." : "完成確認"}
                   </button>
                 </div>
+
+                {reestimateSuggestions.length === 0 && !reestimateLoading ? (
+                  <div className="reestimate-trigger-row">
+                    <button
+                      className="inline-text-button"
+                      type="button"
+                      disabled={analysisLoading || candidateItems.length === 0}
+                      onClick={() => {
+                        setReestimateExpanded(true);
+                        setAnalysisError(null);
+                      }}
+                    >
+                      想讓 AI 重新估算一次？
+                    </button>
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
