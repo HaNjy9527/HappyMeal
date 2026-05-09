@@ -90,6 +90,12 @@ class JsonFormatter(logging.Formatter):
         "response_will_set_cookie",
         "session_key_count",
         "allow_credentials",
+        "latency_ms",
+        "candidate_count",
+        "item_count",
+        "has_instruction",
+        "used_fallback",
+        "manual_review_required",
     )
 
     def format(self, record: logging.LogRecord) -> str:

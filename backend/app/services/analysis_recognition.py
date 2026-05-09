@@ -30,7 +30,7 @@ def recognize_analysis_image(*, filename: str | None, image_path: Path) -> Analy
     except RecognitionProviderFailure as error:
         logger.warning(
             "Recognition complete_failure from provider",
-            extra={"event": "recognition_result", "outcome": "complete_failure", "reason": error.reason},
+            extra={"event": "recognition_result", "outcome": "complete_failure", "reason": error.reason, "candidate_count": 0, "manual_review_required": False},
         )
         return AnalysisRecognitionResult(
             recognition_status=RecognitionStatus.COMPLETE_FAILURE,
@@ -46,7 +46,7 @@ def recognize_analysis_image(*, filename: str | None, image_path: Path) -> Analy
         if has_low_confidence:
             logger.info(
                 "Recognition partial",
-                extra={"event": "recognition_result", "outcome": "partial", "candidate_count": len(candidates)},
+                extra={"event": "recognition_result", "outcome": "partial", "candidate_count": len(candidates), "manual_review_required": True},
             )
             return AnalysisRecognitionResult(
                 recognition_status=RecognitionStatus.PARTIAL,
@@ -56,7 +56,7 @@ def recognize_analysis_image(*, filename: str | None, image_path: Path) -> Analy
             )
         logger.info(
             "Recognition success",
-            extra={"event": "recognition_result", "outcome": "success", "candidate_count": len(candidates)},
+            extra={"event": "recognition_result", "outcome": "success", "candidate_count": len(candidates), "manual_review_required": False},
         )
         return AnalysisRecognitionResult(
             recognition_status=RecognitionStatus.SUCCESS,
@@ -65,7 +65,7 @@ def recognize_analysis_image(*, filename: str | None, image_path: Path) -> Analy
 
     logger.warning(
         "Recognition complete_failure no reliable candidates",
-        extra={"event": "recognition_result", "outcome": "complete_failure", "reason": "no_reliable_candidates"},
+        extra={"event": "recognition_result", "outcome": "complete_failure", "reason": "no_reliable_candidates", "candidate_count": 0, "manual_review_required": False},
     )
     return AnalysisRecognitionResult(
         recognition_status=RecognitionStatus.COMPLETE_FAILURE,
