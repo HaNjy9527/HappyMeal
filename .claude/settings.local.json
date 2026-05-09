@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python -m pytest tests/test_analysis_metadata.py -v)"
+      "Bash(python -m pytest tests/test_analysis_metadata.py -v)",
+      "PowerShell(* uv run pytest*)"
     ]
   }
 }

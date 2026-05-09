@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from decimal import Decimal
 
 from fastapi import HTTPException, status
@@ -60,6 +61,7 @@ def reestimate_analysis(
     analysis_id: str,
     payload: AnalysisReestimateRequest,
 ) -> AnalysisReestimateResponse:
+    t0 = time.perf_counter()
     analysis = get_analysis_for_user(db, user, analysis_id)
     if analysis.status != AnalysisStatus.AWAITING_CONFIRMATION:
         raise HTTPException(
@@ -102,6 +104,7 @@ def reestimate_analysis(
     if payload.user_instruction:
         message = "AI 已根據你的備註重新估算，請再次確認名稱和份量。"
 
+    latency_ms = round((time.perf_counter() - t0) * 1000)
     logger.info(
         "Re-estimate success",
         extra={
@@ -110,6 +113,7 @@ def reestimate_analysis(
             "candidate_count": len(candidates),
             "has_instruction": bool(payload.user_instruction),
             "used_fallback": used_fallback,
+            "latency_ms": latency_ms,
         },
     )
     return AnalysisReestimateResponse(

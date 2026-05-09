@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import json
-
+import logging
+import time
 from decimal import Decimal
 
 from fastapi import HTTPException, status
@@ -22,6 +23,8 @@ from app.services.nutrition_resolution import NutritionResolutionInput, resolve_
 from app.services.profile import get_or_create_profile
 from app.services.analysis_views import build_analysis_result_items, build_recommendation_response
 
+
+logger = logging.getLogger("app.analysis")
 
 ZERO_DECIMAL = Decimal("0.00")
 PERSONALIZED_RECOMMENDATION_SOURCE = "personalized"
@@ -204,6 +207,7 @@ def confirm_analysis(
     analysis_id: str,
     payload: AnalysisConfirmRequest,
 ) -> AnalysisConfirmResponse:
+    t0 = time.perf_counter()
     analysis = get_analysis_for_user(db, user, analysis_id)
 
     if analysis.status != AnalysisStatus.AWAITING_CONFIRMATION:
@@ -263,4 +267,14 @@ def confirm_analysis(
     db.commit()
     db.refresh(analysis)
     delete_analysis_uploads(analysis.id)
+    latency_ms = round((time.perf_counter() - t0) * 1000)
+    logger.info(
+        "Analysis confirm complete",
+        extra={
+            "event": "analysis_confirm",
+            "outcome": "success",
+            "item_count": len(payload.items),
+            "latency_ms": latency_ms,
+        },
+    )
     return build_confirm_response(analysis, recommended_exercises)

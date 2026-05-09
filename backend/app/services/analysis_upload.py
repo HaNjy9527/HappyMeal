@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import time
 from decimal import Decimal
 from pathlib import Path
 
@@ -11,6 +13,9 @@ from app.db.models import AnalysisStatus, User
 from app.schemas.analysis import AnalysisCandidateResponse, RecognitionStatus
 from app.services.analysis import get_analysis_for_user
 from app.services.analysis_recognition import recognize_analysis_image
+
+
+logger = logging.getLogger("app.analysis")
 
 
 def resolve_analysis_status(recognition_status: RecognitionStatus) -> AnalysisStatus:
@@ -69,6 +74,7 @@ def upload_analysis_image(
     analysis_id: str,
     file: UploadFile,
 ) -> AnalysisCandidateResponse:
+    t0 = time.perf_counter()
     analysis = get_analysis_for_user(db, user, analysis_id)
 
     if analysis.status != AnalysisStatus.DRAFT:
@@ -91,6 +97,15 @@ def upload_analysis_image(
     db.commit()
     db.refresh(analysis)
 
+    latency_ms = round((time.perf_counter() - t0) * 1000)
+    logger.info(
+        "Analysis upload complete",
+        extra={
+            "event": "analysis_upload",
+            "outcome": "success",
+            "latency_ms": latency_ms,
+        },
+    )
     return AnalysisCandidateResponse(
         analysis_id=analysis.id,
         status=analysis.status,
