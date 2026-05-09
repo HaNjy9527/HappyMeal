@@ -41,11 +41,22 @@
       "formatter": "json",
       "stream": "ext://sys.stdout",
       "filters": ["request_context_filter"]
+    },
+    "analysis": {
+      "class": "logging.StreamHandler",
+      "formatter": "json",
+      "stream": "ext://sys.stdout",
+      "filters": ["request_context_filter"]
     }
   },
   "loggers": {
     "app.auth": {
       "handlers": ["auth"],
+      "level": "INFO",
+      "propagate": false
+    },
+    "app.analysis": {
+      "handlers": ["analysis"],
       "level": "INFO",
       "propagate": false
     },
