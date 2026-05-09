@@ -1139,7 +1139,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
               }
               onClick={() => handleMainScreenChange("analysis")}
             >
-              Analysis
+              分析
             </button>
             <button
               className={
@@ -1147,7 +1147,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
               }
               onClick={() => handleMainScreenChange("history")}
             >
-              History
+              紀錄
             </button>
             <button
               className={
@@ -1155,7 +1155,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
               }
               onClick={() => handleMainScreenChange("profile")}
             >
-              Profile
+              個人資料
             </button>
           </nav>
         ) : null}
@@ -2174,7 +2174,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                 </form>
 
                 <aside className="panel-card side-summary">
-                  <p className="panel-kicker">Theme Preference</p>
+                  <p className="panel-kicker">視覺主題</p>
                   <h3>切換視覺主題</h3>
                   <div className="choice-grid two-columns">
                     <button
@@ -2207,7 +2207,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                     <strong>
                       {profile?.display_name ?? user.display_name}
                     </strong>
-                    <p>目前已改成以 LINE Login session 驗證登入狀態。</p>
+                    <p>以 LINE 帳號登入</p>
                   </div>
                   <div className="summary-card">
                     <span>{consentUiCopy.profileStatus.label}</span>
