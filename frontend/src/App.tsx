@@ -682,7 +682,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
       setProfileForm(profileToFormState(response));
     } catch (error) {
       setProfileError(
-        error instanceof Error ? error.message : "Profile 載入失敗",
+        error instanceof Error ? error.message : "個人資料載入失敗",
       );
     } finally {
       setProfileLoading(false);
@@ -698,7 +698,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
       setHistoryItems(response.items);
     } catch (error) {
       setHistoryError(
-        error instanceof Error ? error.message : "History 載入失敗",
+        error instanceof Error ? error.message : "紀錄載入失敗",
       );
     } finally {
       setHistoryLoading(false);
@@ -743,10 +743,10 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
       const response = await updateProfile(payload);
       setProfile(response);
       setProfileForm(profileToFormState(response));
-      setProfileMessage("Profile 已儲存，下一次分析會套用新設定。");
+      setProfileMessage("個人資料已儲存，下一次分析會套用新設定。");
     } catch (error) {
       setProfileError(
-        error instanceof Error ? error.message : "Profile 儲存失敗",
+        error instanceof Error ? error.message : "個人資料儲存失敗",
       );
     } finally {
       setProfileSaving(false);
@@ -841,7 +841,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
   async function handleConfirmAnalysis() {
     if (!analysisId) {
-      setAnalysisError("找不到 analysis id，請重新開始。");
+      setAnalysisError("找不到這次的分析，請重新開始。");
       return;
     }
 
@@ -902,7 +902,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
   async function handleReestimateAnalysis() {
     if (!analysisId) {
-      setAnalysisError("找不到 analysis id，請重新開始。");
+      setAnalysisError("找不到這次的分析，請重新開始。");
       return;
     }
 
@@ -1322,11 +1322,11 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                     <h3>分析前檢查</h3>
                     <ul className="compact-list">
                       <li>
-                        {validationMessage || "Profile 已具備最小分析條件。"}
+                        {validationMessage || "個人資料已就緒。"}
                       </li>
                       <li>
                         {analysisLoading
-                          ? "正在建立 draft 並上傳圖片。"
+                          ? "正在建立分析並上傳圖片。"
                           : "尚未開始新的分析。"}
                       </li>
                       <li>
@@ -1859,8 +1859,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
           <section className="content-stack">
             <div className="section-heading">
               <div>
-                <p className="section-kicker">WP-08 / FE-05 and FE-06</p>
-                <h2>{selectedHistory ? "History Detail" : "History List"}</h2>
+                <h2>{selectedHistory ? "分析詳情" : "分析紀錄"}</h2>
               </div>
               {selectedHistory ? (
                 <button
@@ -1885,10 +1884,10 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
             {!selectedHistory ? (
               historyLoading ? (
-                <p className="empty-panel">History 載入中...</p>
+                <p className="empty-panel">載入中...</p>
               ) : historyItems.length === 0 ? (
                 <p className="empty-panel">
-                  還沒有完成的分析紀錄，先去跑一次 Analysis。
+                  還沒有分析紀錄，拍張餐點照片開始第一次分析吧。
                 </p>
               ) : (
                 <div className="history-stack">
@@ -1913,7 +1912,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                 </div>
               )
             ) : historyDetailLoading ? (
-              <p className="empty-panel">History detail 載入中...</p>
+              <p className="empty-panel">載入中...</p>
             ) : (
               <div className="content-stack">
                 <article className="panel-card">
@@ -2040,7 +2039,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
             ) : null}
 
             {profileLoading ? (
-              <p className="empty-panel">Profile 載入中...</p>
+              <p className="empty-panel">載入中...</p>
             ) : (
               <div className="panel-grid profile-layout">
                 <form
