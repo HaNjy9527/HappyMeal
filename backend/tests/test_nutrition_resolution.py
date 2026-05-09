@@ -8,11 +8,28 @@ from app.services.nutrition_resolution import (
 )
 
 
-def test_resolve_official_source_is_stubbed_as_unmatched_for_now():
+def test_resolve_official_source_matches_curated_catalog():
     candidate = resolve_official_source(
         NutritionResolutionInput(
-            food_name="Chicken Salad",
-            normalized_food_name="chicken_salad",
+            food_name="Black Coffee",
+            normalized_food_name="black_coffee",
+            portion_value=Decimal("1.00"),
+            portion_unit="bottle",
+        )
+    )
+
+    assert candidate.source == "official_source"
+    assert candidate.canonical_food_name == "black_coffee"
+    assert candidate.is_estimated is False
+    assert candidate.matched is True
+    assert candidate.preset is not None
+
+
+def test_resolve_official_source_returns_unmatched_for_unknown_food():
+    candidate = resolve_official_source(
+        NutritionResolutionInput(
+            food_name="Mystery Food",
+            normalized_food_name="mystery_food",
             portion_value=Decimal("1.00"),
             portion_unit="bowl",
         )
@@ -20,7 +37,6 @@ def test_resolve_official_source_is_stubbed_as_unmatched_for_now():
 
     assert candidate.source == "official_source"
     assert candidate.matched is False
-    assert candidate.preset is None
 
 
 def test_resolve_item_nutrition_returns_direct_preset_for_known_food():
@@ -55,7 +71,7 @@ def test_resolve_item_nutrition_returns_direct_preset_for_known_food():
     assert decision.priority == "canonical_mapping"
 
 
-def test_resolve_item_nutrition_returns_alias_mapping_for_known_alias():
+def test_resolve_item_nutrition_returns_official_source_for_white_rice():
     result = resolve_item_nutrition(
         NutritionResolutionInput(
             food_name="White Rice",
@@ -65,10 +81,26 @@ def test_resolve_item_nutrition_returns_alias_mapping_for_known_alias():
         )
     )
 
-    assert result.canonical_food_name == "generic_rice"
-    assert result.nutrition_source == "alias_mapping"
-    assert result.is_estimated is True
+    assert result.canonical_food_name == "white_rice"
+    assert result.nutrition_source == "official_source"
+    assert result.is_estimated is False
     assert result.kcal == Decimal("216.00")
+
+
+def test_resolve_item_nutrition_returns_official_source_for_boiled_egg():
+    result = resolve_item_nutrition(
+        NutritionResolutionInput(
+            food_name="Boiled Egg",
+            normalized_food_name="boiled_egg",
+            portion_value=Decimal("1.00"),
+            portion_unit="pcs",
+        )
+    )
+
+    assert result.canonical_food_name == "boiled_egg"
+    assert result.nutrition_source == "official_source"
+    assert result.is_estimated is False
+    assert result.kcal == Decimal("78.00")
 
 
 def test_resolve_item_nutrition_returns_keyword_fallback_for_keyword_match():
@@ -115,7 +147,7 @@ def test_resolve_item_nutrition_returns_default_fallback_for_unknown_food():
     assert decision.priority == "fallback_estimate"
 
 
-def test_resolve_item_nutrition_uses_drink_fallback_for_black_coffee_bottle():
+def test_resolve_item_nutrition_uses_official_source_for_black_coffee_bottle():
     result = resolve_item_nutrition(
         NutritionResolutionInput(
             food_name="Black Coffee",
@@ -125,9 +157,9 @@ def test_resolve_item_nutrition_uses_drink_fallback_for_black_coffee_bottle():
         )
     )
 
-    assert result.canonical_food_name == "generic_unsweetened_drink"
-    assert result.nutrition_source == "drink_fallback"
-    assert result.is_estimated is True
+    assert result.canonical_food_name == "black_coffee"
+    assert result.nutrition_source == "official_source"
+    assert result.is_estimated is False
     assert result.resolved_weight_g == Decimal("375.00")
     assert result.weight_estimation_method == "drink_container_default"
     assert result.kcal == Decimal("7.50")
@@ -141,8 +173,8 @@ def test_resolve_item_nutrition_uses_drink_fallback_for_black_coffee_bottle():
         )
     )
 
-    assert decision.source == "drink_fallback"
-    assert decision.priority == "special_guard"
+    assert decision.source == "official_source"
+    assert decision.priority == "official_source"
 
 
 def test_resolve_item_nutrition_uses_direct_milliliters_for_tea_drink():

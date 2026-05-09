@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from app.services.food_mapping import NUTRITION_SOURCE_BY_MATCH_TYPE, resolve_canonical_food
+from app.services.nutrition_catalog import lookup_official_nutrition
 from app.services.portion_resolution import (
     NUTRITION_PRESETS,
     NutritionPreset,
@@ -66,6 +67,24 @@ class NutritionSourceDecision:
 
 
 def resolve_official_source(payload: NutritionResolutionInput) -> NutritionSourceCandidate:
+    resolved_food = resolve_canonical_food(
+        food_name=payload.food_name,
+        normalized_food_name=payload.normalized_food_name,
+    )
+    official_record = lookup_official_nutrition(
+        food_name=payload.food_name,
+        normalized_food_name=payload.normalized_food_name,
+        canonical_food_name=resolved_food.canonical_food_name,
+    )
+    if official_record is not None:
+        return NutritionSourceCandidate(
+            source=official_record.source,
+            canonical_food_name=official_record.canonical_food_name,
+            is_estimated=False,
+            preset=official_record.preset,
+            matched=True,
+        )
+
     return NutritionSourceCandidate(
         source="official_source",
         canonical_food_name=payload.normalized_food_name,

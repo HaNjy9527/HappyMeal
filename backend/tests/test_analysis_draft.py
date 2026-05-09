@@ -615,7 +615,7 @@ def test_post_analysis_confirm_uses_nutrition_resolution_module(client, db_sessi
     assert payload["items"][0]["is_estimated"] is True
 
 
-def test_post_analysis_confirm_uses_drink_fallback_for_black_coffee_bottle(client, db_session, isolated_upload_dir):
+def test_post_analysis_confirm_uses_official_source_for_black_coffee_bottle(client, db_session, isolated_upload_dir):
     seed_exercises(db_session)
     accept_required_consents(client)
 
@@ -648,9 +648,9 @@ def test_post_analysis_confirm_uses_drink_fallback_for_black_coffee_bottle(clien
 
     assert confirm_response.status_code == 200
     payload = confirm_response.json()
-    assert payload["items"][0]["canonical_food_name"] == "generic_unsweetened_drink"
-    assert payload["items"][0]["nutrition_source"] == "drink_fallback"
-    assert payload["items"][0]["is_estimated"] is True
+    assert payload["items"][0]["canonical_food_name"] == "black_coffee"
+    assert payload["items"][0]["nutrition_source"] == "official_source"
+    assert payload["items"][0]["is_estimated"] is False
     assert payload["items"][0]["portion_unit"] == "bottle"
     assert payload["items"][0]["source_portion_unit"] == "bottle"
     assert Decimal(str(payload["items"][0]["resolved_weight_g"])) == Decimal("375.00")
