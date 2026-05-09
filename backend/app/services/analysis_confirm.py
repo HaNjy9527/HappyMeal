@@ -15,15 +15,10 @@ from app.schemas.analysis import (
     RecommendedExerciseItem,
 )
 from app.services.analysis import get_analysis_for_user
-from app.services.food_mapping import NUTRITION_SOURCE_BY_MATCH_TYPE, resolve_canonical_food
 from app.services.analysis_upload import delete_analysis_uploads
-from app.services.portion_resolution import (
-    ResolvedNutritionPreset,
-    quantize_decimal,
-    resolve_nutrition_preset,
-    resolve_portion,
-)
+from app.services.portion_resolution import quantize_decimal
 from app.services.consent import build_non_medical_disclaimer
+from app.services.nutrition_resolution import NutritionResolutionInput, resolve_item_nutrition
 from app.services.profile import get_or_create_profile
 from app.services.analysis_views import build_analysis_result_items, build_recommendation_response
 
@@ -69,47 +64,33 @@ def has_complete_recommendation_profile(profile) -> bool:
     )
 
 
-def resolve_food_preset(payload: AnalysisConfirmItemRequest) -> ResolvedNutritionPreset:
-    resolved_food = resolve_canonical_food(
-        food_name=payload.food_name,
-        normalized_food_name=payload.normalized_food_name,
-    )
-    nutrition_source = NUTRITION_SOURCE_BY_MATCH_TYPE[resolved_food.match_type]
-    return resolve_nutrition_preset(
-        food_name=payload.food_name,
-        normalized_food_name=payload.normalized_food_name,
-        canonical_food_name=resolved_food.canonical_food_name,
-        nutrition_source=nutrition_source,
-        is_estimated=resolved_food.is_estimated,
-    )
-
-
 def build_analysis_item(payload: AnalysisConfirmItemRequest) -> FoodAnalysisItem:
-    resolved_preset = resolve_food_preset(payload)
-    portion_resolution = resolve_portion(
-        food_name=payload.food_name,
-        normalized_food_name=payload.normalized_food_name,
-        portion_unit=payload.portion_unit,
-        portion_value=payload.portion_value,
-        preset=resolved_preset.preset,
+    resolved_nutrition = resolve_item_nutrition(
+        NutritionResolutionInput(
+            food_name=payload.food_name,
+            normalized_food_name=payload.normalized_food_name,
+            portion_value=payload.portion_value,
+            portion_unit=payload.portion_unit,
+            confidence_score=payload.confidence_score,
+        )
     )
 
     return FoodAnalysisItem(
         food_name=payload.food_name,
         normalized_food_name=payload.normalized_food_name,
-        portion_value=quantize_decimal(payload.portion_value),
-        portion_unit=portion_resolution.portion_unit,
-        source_portion_unit=portion_resolution.source_portion_unit,
-        canonical_food_name=resolved_preset.canonical_food_name,
-        nutrition_source=resolved_preset.nutrition_source,
-        is_estimated=resolved_preset.is_estimated,
-        resolved_weight_g=portion_resolution.resolved_weight_g,
-        weight_estimation_method=portion_resolution.weight_estimation_method,
-        confidence_score=payload.confidence_score,
-        kcal=quantize_decimal(resolved_preset.preset.kcal * portion_resolution.multiplier),
-        protein_g=quantize_decimal(resolved_preset.preset.protein_g * portion_resolution.multiplier),
-        fat_g=quantize_decimal(resolved_preset.preset.fat_g * portion_resolution.multiplier),
-        carb_g=quantize_decimal(resolved_preset.preset.carb_g * portion_resolution.multiplier),
+        portion_value=resolved_nutrition.portion_value,
+        portion_unit=resolved_nutrition.portion_unit,
+        source_portion_unit=resolved_nutrition.source_portion_unit,
+        canonical_food_name=resolved_nutrition.canonical_food_name,
+        nutrition_source=resolved_nutrition.nutrition_source,
+        is_estimated=resolved_nutrition.is_estimated,
+        resolved_weight_g=resolved_nutrition.resolved_weight_g,
+        weight_estimation_method=resolved_nutrition.weight_estimation_method,
+        confidence_score=resolved_nutrition.confidence_score,
+        kcal=resolved_nutrition.kcal,
+        protein_g=resolved_nutrition.protein_g,
+        fat_g=resolved_nutrition.fat_g,
+        carb_g=resolved_nutrition.carb_g,
     )
 
 

@@ -6,7 +6,7 @@ import pytest
 from app.core.config import get_settings
 from app.db.models import ExerciseCatalog
 from app.services.analysis_recognition import AnalysisRecognitionResult
-from app.services.food_mapping import CanonicalFoodMappingResult
+from app.services.nutrition_resolution import NutritionResolutionResult
 from app.schemas.analysis import RecognitionStatus
 from app.services.consent import CURRENT_NON_MEDICAL_DISCLOSURE_VERSION, CURRENT_PRIVACY_POLICY_VERSION
 
@@ -548,7 +548,7 @@ def test_post_analysis_confirm_converts_supported_food_units_instead_of_rejectin
     assert payload["items"][0]["weight_estimation_method"] == "common_unit_conversion"
 
 
-def test_post_analysis_confirm_uses_canonical_food_mapping_module(client, db_session, isolated_upload_dir, monkeypatch):
+def test_post_analysis_confirm_uses_nutrition_resolution_module(client, db_session, isolated_upload_dir, monkeypatch):
     seed_exercises(db_session)
     accept_required_consents(client)
 
@@ -567,18 +567,29 @@ def test_post_analysis_confirm_uses_canonical_food_mapping_module(client, db_ses
 
     captured_calls = []
 
-    def fake_resolve_canonical_food(*, food_name, normalized_food_name):
-        captured_calls.append((food_name, normalized_food_name))
-        return CanonicalFoodMappingResult(
+    def fake_resolve_item_nutrition(payload):
+        captured_calls.append((payload.food_name, payload.normalized_food_name))
+        return NutritionResolutionResult(
+            food_name=payload.food_name,
+            normalized_food_name=payload.normalized_food_name,
+            portion_value=Decimal("1.00"),
+            portion_unit="plate",
+            source_portion_unit="plate",
             canonical_food_name="generic_protein",
-            match_type="keyword",
-            matched_term="chicken",
+            nutrition_source="keyword_fallback",
             is_estimated=True,
+            resolved_weight_g=Decimal("180.00"),
+            weight_estimation_method="exact_unit_match",
+            kcal=Decimal("260.00"),
+            protein_g=Decimal("26.00"),
+            fat_g=Decimal("14.00"),
+            carb_g=Decimal("4.00"),
+            confidence_score=payload.confidence_score,
         )
 
     monkeypatch.setattr(
-        "app.services.analysis_confirm.resolve_canonical_food",
-        fake_resolve_canonical_food,
+        "app.services.analysis_confirm.resolve_item_nutrition",
+        fake_resolve_item_nutrition,
     )
 
     confirm_response = client.post(
