@@ -96,6 +96,7 @@ class JsonFormatter(logging.Formatter):
         "has_instruction",
         "used_fallback",
         "manual_review_required",
+        "edited_item_count",
     )
 
     def format(self, record: logging.LogRecord) -> str:

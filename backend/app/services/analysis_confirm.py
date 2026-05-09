@@ -267,6 +267,7 @@ def confirm_analysis(
     db.commit()
     db.refresh(analysis)
     delete_analysis_uploads(analysis.id)
+    edited_item_count = sum(1 for item in payload.items if item.is_user_edited)
     latency_ms = round((time.perf_counter() - t0) * 1000)
     logger.info(
         "Analysis confirm complete",
@@ -274,6 +275,7 @@ def confirm_analysis(
             "event": "analysis_confirm",
             "outcome": "success",
             "item_count": len(payload.items),
+            "edited_item_count": edited_item_count,
             "latency_ms": latency_ms,
         },
     )

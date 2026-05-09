@@ -48,6 +48,7 @@ class AnalysisConfirmItemRequest(BaseModel):
     portion_value: Decimal = Field(gt=0)
     portion_unit: str
     confidence_score: Decimal | None = Field(default=None, ge=0, le=1)
+    is_user_edited: bool = False
 
 
 class AnalysisConfirmRequest(BaseModel):
@@ -55,7 +56,7 @@ class AnalysisConfirmRequest(BaseModel):
 
 
 class AnalysisReestimateItemRequest(AnalysisConfirmItemRequest):
-    is_user_edited: bool = False
+    pass
 
 
 class AnalysisReestimateRequest(BaseModel):
