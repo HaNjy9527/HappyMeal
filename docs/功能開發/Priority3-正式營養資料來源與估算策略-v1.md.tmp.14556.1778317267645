@@ -158,35 +158,14 @@
 
 目標：保留來源與估算資訊，供系統與低噪音 UI 使用。
 
-目前狀態：已完成。
-
-2026-05-09 實作補充：
-
-1. DB model 已具備 `canonical_food_name`、`nutrition_source`、`is_estimated`、`resolved_weight_g`、`weight_estimation_method` 五個 metadata 欄位，自 P3-01～P3-03 起即完整寫入。
-2. API response（confirm 與 history detail）已透過 `build_analysis_result_items` 完整回傳上述欄位，前端可直接讀取。
-3. 新增 `is_anomalous` 欄位至 `AnalysisResultItem` schema：當 `is_estimated=True` 且 `kcal > 1500` 時標記為 `True`，讓前端可選擇性顯示粗估警告，而不阻斷正常流程。
-4. 異常偵測邏輯集中在 `analysis_views.py` 的 `_is_item_anomalous()` helper，閾值常數為 `KCAL_ANOMALY_THRESHOLD = Decimal("1500.00")`。
-5. 官方來源（`is_estimated=False`）即使熱量偏高也不會被標記，避免誤判真實食物的高熱量數據。
-6. 資料仍寫入 DB，`is_anomalous` 為計算欄位，由 response 層動態產生，不新增 DB migration。
-7. 已補齊 8 個單元測試（`test_analysis_metadata.py`），覆蓋邊界值、官方來源豁免、drink_fallback 正確判斷與 metadata 完整傳遞。
-
-本次 MVP 邊界：
-
-1. 不新增 DB 欄位或 migration。
-2. `is_anomalous` 僅作為提示旗標，後端不攔截或拒絕異常熱量資料寫入；前端 UI 整合留待 Priority 4。
-
 ### P3-05 結果與建議整合
 
 目標：讓 history 與 recommendation 可直接重用這套營養結果，而不是每次重新猜測。
 
-目前狀態：已完成（由現有架構滿足，無需新增實作）。
+補充焦點：
 
-2026-05-09 確認補充：
-
-1. `confirm_analysis` 已將所有營養結果寫入 `FoodAnalysisItem`；`GET /analyses/{id}` 只讀 DB，不重新估算。
-2. `recommendation_snapshot` 在 confirm 完成時即固定寫入 DB；history detail 讀取 snapshot，不重新計算 target。
-3. history list（`GET /analyses`）只回傳 `total_kcal`、`food_summary`、`recommendation_summary` 等摘要欄位，不涉及 item 層級的 `is_anomalous`；設計上正確，無需異動。
-4. history detail 已包含完整 `AnalysisResultItem`，包括 P3-04 新增的 `is_anomalous`，metadata 可供排查使用。
+1. 需確認異常高熱量結果不會直接寫入 history 而破壞長期可信度。
+2. 必要時應能利用 nutrition source / is_estimated / resolved_weight_g 等 metadata 幫助排查失真來源。
 
 ---
 
@@ -438,63 +417,15 @@ docker compose stop db
 
 ### 10.5 後續仍待 P3 收尾的項目
 
-P3-03 已完成 MVP 版，後續 P3-04 / P3-05 已於 2026-05-09 完成收尾驗收：
+P3-03 已完成 MVP 版，但整個 Priority 3 若要正式標記完成，建議再補一輪 P3-04 / P3-05 收尾驗收：
 
-1. ✅ `official_source`、`drink_fallback`、`default_fallback` 的 metadata 均可正確保存並透過 API 回看（P3-04 驗收）。
-2. ✅ history detail 穩定重用 confirm 後的 DB 結果，不重新估算（P3-05 確認）。
-3. ✅ recommendation 使用 confirm 時固定的 totals snapshot（P3-05 確認）。
-
----
-
-## 11. 2026-05-09 P3-04 metadata 與 P3-05 結果整合驗收補充
-
-### 11.1 驗收範圍
-
-本次驗收聚焦三個面向：
-
-1. metadata 欄位是否在 confirm 後完整寫入 DB 並由 API 回傳
-2. `is_anomalous` 異常偵測邏輯是否正確區分估算來源與官方來源
-3. history list / detail 是否重用 DB 結果而非重新估算
-
-### 11.2 驗收方式
-
-```powershell
-$env:PYTHONPATH='D:\code\HappyMeal\backend'
-uv run pytest tests/test_analysis_metadata.py -v
-uv run pytest -v
-```
-
-### 11.3 驗收結果
-
-| 測試集 | 結果 |
-| ------ | ---- |
-| `test_analysis_metadata.py` | `8 passed` |
-| 全套測試 | `85 passed` |
-
-### 11.4 已驗收的異常偵測行為
-
-| 情境 | `is_estimated` | `kcal` | 預期 `is_anomalous` | 驗收狀況 |
-| ---- | -------------- | ------ | ------------------- | -------- |
-| 粗估食物超過 1500 kcal | True | 1501 | True | 通過 |
-| 粗估食物等於 1500 kcal | True | 1500 | False | 通過 |
-| 粗估食物低於 1500 kcal | True | 800 | False | 通過 |
-| 官方來源高熱量食物 | False | 2000 | False | 通過 |
-| drink_fallback 超過 1500 kcal | True | 1600 | True | 通過 |
-
-### 11.5 Priority 3 整體驗收結論
-
-所有 P3 驗收條件已達標：
-
-1. ✅ 真實辨識接上後，常見餐點不會因 food key 或單位而卡死
-2. ✅ 營養結果來源具備最小可追溯性（metadata 完整回傳，`is_anomalous` 提供粗估警示）
-3. ✅ 結果可被 history 與 recommendation 穩定重用
-4. ✅ 包裝飲料案例不再出現黑咖啡約 7 kcal 被估成數百 kcal 的失真
-
-Priority 3 正式標記為 **Completed**。
+1. 確認 `official_source`、`drink_fallback`、`default_fallback` 的 metadata 都能正確保存與回看。
+2. 確認 history detail 能穩定重用 confirm 後的營養結果，而不是重新估算。
+3. 確認 recommendation 使用的是完成時的 totals snapshot。
 
 ---
 
-## 12. 相關文件
+## 11. 相關文件
 
 1. 總覽： [../PRD-實作進度與下一步-v1.md](../PRD-%E5%AF%A6%E4%BD%9C%E9%80%B2%E5%BA%A6%E8%88%87%E4%B8%8B%E4%B8%80%E6%AD%A5-v1.md)
 2. Priority 2： [Priority2-真實-AI-食物辨識與候選修正-v1.md](./Priority2-%E7%9C%9F%E5%AF%A6-AI-%E9%A3%9F%E7%89%A9%E8%BE%A8%E8%AD%98%E8%88%87%E5%80%99%E9%81%B8%E4%BF%AE%E6%AD%A3-v1.md)

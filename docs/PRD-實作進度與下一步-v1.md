@@ -3,6 +3,7 @@
 - 文件名稱：HappyMeal PRD 實作進度與下一步
 - 版本：v1
 - 日期：2026-04-20
+- 最後更新：2026-05-09
 - 狀態：Draft
 - 用途：對照 `PRD-v1.md` 與目前 repo 實作狀態，整理已完成、部分完成、未完成項目，並提出下一個開發優先順序。
 
@@ -96,7 +97,7 @@
 | FR-03    | 拍照與圖片上傳        | 部分完成 | 已支援 JPG、PNG 上傳與大小限制，並在完成後刪除暫存圖片                                                              | 手機相機體驗與前端流程仍屬最小版                                 |
 | FR-04    | 食物辨識              | 部分完成 | GPT / OpenAI provider 已接上；`success`、`partial`（`confidence_score < 0.6`）、`complete_failure` 三種狀態均已落地並可由前端分流；仍需補最小觀測性與手機驗測 | 辨識分流已完成；正式完成前仍需觀測性與實機驗收 |
 | FR-05    | 手動修正與份量確認    | 已完成   | 前端可修改 food name 與 portion，後端可接收 confirm 結果並寫入 item                                                 | 已可完成候選確認                                                 |
-| FR-06    | 營養估算              | 部分完成 | 可計算 kcal、protein、fat、carb 並回傳總和與明細，但目前來自 preset mapping，不是正式 nutrition source              | 能展示結果，但資料來源仍需升級                                   |
+| FR-06    | 營養估算              | 部分完成 | 已具備 canonical mapping、official source catalog、unit normalization 與 fallback 策略；metadata 可追溯，`is_anomalous` 提供粗估警示；official catalog coverage 仍屬 MVP 範圍，後續可依真實樣本擴充 | Priority 3 已完成；完整 nutrition source coverage 仍需長期累積 |
 | FR-07    | 增肌／減脂建議        | 已完成   | 已依 profile 與 goal 產生 target calories、macro 與推薦運動，語氣仍維持 wellness guidance                           | 已能形成 MVP 第一層建議                                          |
 | FR-08    | 熱門運動熱量消耗      | 部分完成 | 已有 20 筆 ExerciseCatalog seed，confirm 後可推薦 3 個運動並估算消耗                                                | 尚未形成獨立查詢頁或完整查詢體驗                                 |
 | FR-09    | 分析歷史              | 已完成   | 已有 history list 與 detail，且回傳建議快照，不保存原始圖片                                                         | 符合主鏈需求                                                     |
@@ -129,7 +130,7 @@
 最重要的落差如下：
 
 1. GPT / OpenAI 食物辨識已接上，`partial` 判定已落地，但最小觀測性與手機實機驗測仍需補齊
-2. Priority 3 已完成 canonical food mapping 第一版與 nutrition source MVP，但正式營養資料來源 coverage 仍未做滿
+2. Priority 3 已全數完成（canonical mapping、unit normalization、nutrition source 層級、metadata 可追溯性、history 結果重用），official catalog coverage 仍屬 MVP 範圍，後續可依真實樣本擴充
 3. Consent Intro 已完成最小版；Landing / Home / Theme 等 IA 頁面仍偏最小版
 4. 手機優先體驗雖可用，但仍未精修成 PRD 描述的產品感受
 
@@ -147,7 +148,7 @@
 | ---------- | -------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Priority 1 | Consent 與非醫療提醒主鏈   | 已完成 V1 最小版，後續精修移交 Priority 4                 | [功能開發/Priority1-Consent-與非醫療提醒主鏈-v1.md](./功能開發/Priority1-Consent-%E8%88%87%E9%9D%9E%E9%86%AB%E7%99%82%E6%8F%90%E9%86%92%E4%B8%BB%E9%8F%88-v1.md)                                        |
 | Priority 2 | 真實 AI 食物辨識與候選修正 | V1.X：GPT 辨識已接上，補齊分流、修正體驗與穩定驗收        | [功能開發/Priority2-真實-AI-食物辨識與候選修正-v1.md](./功能開發/Priority2-%E7%9C%9F%E5%AF%A6-AI-%E9%A3%9F%E7%89%A9%E8%BE%A8%E8%AD%98%E8%88%87%E5%80%99%E9%81%B8%E4%BF%AE%E6%AD%A3-v1.md)               |
-| Priority 3 | 正式營養資料來源與估算策略 | V1.X：補齊 nutrition source 與可信估算策略                | [功能開發/Priority3-正式營養資料來源與估算策略-v1.md](./功能開發/Priority3-%E6%AD%A3%E5%BC%8F%E7%87%9F%E9%A4%8A%E8%B3%87%E6%96%99%E4%BE%86%E6%BA%90%E8%88%87%E4%BC%B0%E7%AE%97%E7%AD%96%E7%95%A5-v1.md) |
+| Priority 3 | 正式營養資料來源與估算策略 | **已完成**：canonical mapping、unit normalization、nutrition source 層級、metadata 可追溯性、history 結果重用均已驗收 | [功能開發/Priority3-正式營養資料來源與估算策略-v1.md](./功能開發/Priority3-%E6%AD%A3%E5%BC%8F%E7%87%9F%E9%A4%8A%E8%B3%87%E6%96%99%E4%BE%86%E6%BA%90%E8%88%87%E4%BC%B0%E7%AE%97%E7%AD%96%E7%95%A5-v1.md) |
 | Priority 4 | 前端 IA 與手機體驗補齊     | V1.X：收斂 Home / Analysis / History / Profile 的手機體驗 | [功能開發/Priority4-前端IA與手機體驗補齊-v1.md](./功能開發/Priority4-%E5%89%8D%E7%AB%AFIA%E8%88%87%E6%89%8B%E6%A9%9F%E9%AB%94%E9%A9%97%E8%A3%9C%E9%BD%8A-v1.md)                                         |
 | Priority 5 | 觀測性與效能基線           | V1.X：補部署後驗收、AI provider 錯誤、效能與成本量測      | [功能開發/Priority5-觀測性與效能基線-v1.md](./功能開發/Priority5-%E8%A7%80%E6%B8%AC%E6%80%A7%E8%88%87%E6%95%88%E8%83%BD%E5%9F%BA%E7%B7%9A-v1.md)                                                        |
 
