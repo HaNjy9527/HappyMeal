@@ -4,7 +4,7 @@
 - 版本：v1
 - 日期：2026-04-26
 - 最後更新：2026-05-09
-- 狀態：P5-01～P5-04 已完成；P5-05 待部署後驗收
+- 狀態：P5-01～P5-05 全數完成
 - 用途：為真實 AI provider 與部署後驗收建立最小量測基線
 
 ---
@@ -73,9 +73,15 @@
 - confirm log 補入 `edited_item_count`
 - `_optional_fields` 補入 `edited_item_count`
 
-### P5-05 部署後最小驗收指標
+### P5-05 部署後最小驗收指標 ✅
 
-待部署後人工執行。驗收 checklist 見下方第 5 節。
+已完成（2026-05-09）：
+- 部署至 AWS Lightsail 後，從 Container service → Logs tab 人工查看 stdout JSON log
+- 確認 `openai_recognition`：`latency_ms` 5300ms、`candidate_count` 3、`outcome: "success"`
+- 確認 `recognition_result`：`outcome: "success"`、`manual_review_required: false`
+- 確認 `analysis_upload`：`latency_ms` 5487ms
+- 確認 `analysis_confirm`：`latency_ms` 53ms、`item_count` 3、`edited_item_count` 0
+- 全部五項指標均正常流入，驗收通過
 
 ---
 

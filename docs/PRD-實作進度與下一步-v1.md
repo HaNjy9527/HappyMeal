@@ -3,7 +3,7 @@
 - 文件名稱：HappyMeal PRD 實作進度與下一步
 - 版本：v1
 - 日期：2026-04-20
-- 最後更新：2026-05-09（Priority 4 完成）
+- 最後更新：2026-05-09（Priority 4、Priority 5 完成）
 - 狀態：Draft
 - 用途：對照 `PRD-v1.md` 與目前 repo 實作狀態，整理已完成、部分完成、未完成項目，並提出下一個開發優先順序。
 
@@ -150,7 +150,7 @@
 | Priority 2 | 真實 AI 食物辨識與候選修正 | V1.X：GPT 辨識已接上，補齊分流、修正體驗與穩定驗收        | [功能開發/Priority2-真實-AI-食物辨識與候選修正-v1.md](./功能開發/Priority2-%E7%9C%9F%E5%AF%A6-AI-%E9%A3%9F%E7%89%A9%E8%BE%A8%E8%AD%98%E8%88%87%E5%80%99%E9%81%B8%E4%BF%AE%E6%AD%A3-v1.md)               |
 | Priority 3 | 正式營養資料來源與估算策略 | **已完成**：canonical mapping、unit normalization、nutrition source 層級、metadata 可追溯性、history 結果重用均已驗收 | [功能開發/Priority3-正式營養資料來源與估算策略-v1.md](./功能開發/Priority3-%E6%AD%A3%E5%BC%8F%E7%87%9F%E9%A4%8A%E8%B3%87%E6%96%99%E4%BE%86%E6%BA%90%E8%88%87%E4%BC%B0%E7%AE%97%E7%AD%96%E7%95%A5-v1.md) |
 | Priority 4 | 前端 IA 與手機體驗補齊     | **已完成**：Landing 產品化、主導覽中文化、re-estimate bottom sheet、文案全面收斂 | [功能開發/Priority4-前端IA與手機體驗補齊-v1.md](./功能開發/Priority4-%E5%89%8D%E7%AB%AFIA%E8%88%87%E6%89%8B%E6%A9%9F%E9%AB%94%E9%A9%97%E8%A3%9C%E9%BD%8A-v1.md)                                         |
-| Priority 5 | 觀測性與效能基線           | V1.X：補部署後驗收、AI provider 錯誤、效能與成本量測      | [功能開發/Priority5-觀測性與效能基線-v1.md](./功能開發/Priority5-%E8%A7%80%E6%B8%AC%E6%80%A7%E8%88%87%E6%95%88%E8%83%BD%E5%9F%BA%E7%B7%9A-v1.md)                                                        |
+| Priority 5 | 觀測性與效能基線           | **已完成**：analysis latency、provider error rate、fallback rate、correction rate 量測均已實作並通過部署後驗收 | [功能開發/Priority5-觀測性與效能基線-v1.md](./功能開發/Priority5-%E8%A7%80%E6%B8%AC%E6%80%A7%E8%88%87%E6%95%88%E8%83%BD%E5%9F%BA%E7%B7%9A-v1.md)                                                        |
 
 ### 7.2 Priority 閱讀順序
 
