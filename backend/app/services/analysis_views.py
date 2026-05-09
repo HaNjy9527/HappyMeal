@@ -16,6 +16,11 @@ from app.schemas.analysis import (
 
 ZERO_DECIMAL = Decimal("0.00")
 GENERIC_RECOMMENDATION_NOTE = "這是通用版建議，補完個人資料可得到更貼近你的建議。"
+KCAL_ANOMALY_THRESHOLD = Decimal("1500.00")
+
+
+def _is_item_anomalous(item: FoodAnalysisItem) -> bool:
+    return item.is_estimated and item.kcal > KCAL_ANOMALY_THRESHOLD
 
 
 def build_analysis_result_items(items: list[FoodAnalysisItem]) -> list[AnalysisResultItem]:
@@ -36,6 +41,7 @@ def build_analysis_result_items(items: list[FoodAnalysisItem]) -> list[AnalysisR
             protein_g=item.protein_g,
             fat_g=item.fat_g,
             carb_g=item.carb_g,
+            is_anomalous=_is_item_anomalous(item),
         )
         for item in items
     ]

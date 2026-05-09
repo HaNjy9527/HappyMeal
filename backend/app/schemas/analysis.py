@@ -87,6 +87,7 @@ class AnalysisResultItem(BaseModel):
     protein_g: Decimal
     fat_g: Decimal
     carb_g: Decimal
+    is_anomalous: bool = False
 
 
 class RecommendedExerciseItem(BaseModel):

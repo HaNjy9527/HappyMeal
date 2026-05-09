@@ -54,7 +54,7 @@
 1. 若以 Step 2 核心開發為標準，主要工作已大致完成
 2. 若以 PRD v1 完整 MVP 體驗為標準，整體約落在「主鏈已通，但仍需補齊正式能力與使用者可見流程」的階段
 3. 目前最明確已完成的項目是 LINE Login、Profile、Theme、Consent API、最小版 Consent Intro、Analysis 主鏈、History 主鏈、GPT / OpenAI 食物辨識最小路徑與後端測試骨架
-4. 目前最明確未做滿的項目是 AI 辨識穩定性與分流驗收、正式營養資料來源，以及 IA 中較完整的頁面體驗
+4. 目前最明確未做滿的項目是 AI 辨識穩定性與分流驗收、正式營養資料來源的完整 coverage，以及 IA 中較完整的頁面體驗
 
 版本判讀上，建議把目前狀態視為 `V1 MVP / Beta`：核心單次餐點分析主鏈已可驗證。接下來的 `V1.X` 是把 PRD v1 尚未補齊的缺口收斂到 `V1.0 Release`，不是 PRD v2。
 
@@ -129,7 +129,7 @@
 最重要的落差如下：
 
 1. GPT / OpenAI 食物辨識已接上，`partial` 判定已落地，但最小觀測性與手機實機驗測仍需補齊
-2. preset nutrition 尚未替換成正式營養資料來源
+2. Priority 3 已完成 canonical food mapping 第一版與 nutrition source MVP，但正式營養資料來源 coverage 仍未做滿
 3. Consent Intro 已完成最小版；Landing / Home / Theme 等 IA 頁面仍偏最小版
 4. 手機優先體驗雖可用，但仍未精修成 PRD 描述的產品感受
 
@@ -168,7 +168,7 @@
 
 詳見：[功能開發/Priority2-真實-AI-食物辨識與候選修正-v1.md](./功能開發/Priority2-%E7%9C%9F%E5%AF%A6-AI-%E9%A3%9F%E7%89%A9%E8%BE%A8%E8%AD%98%E8%88%87%E5%80%99%E9%81%B8%E4%BF%AE%E6%AD%A3-v1.md)
 
-### Priority 3｜把 preset 營養估算替換成正式 nutrition source
+### Priority 3｜完善 nutrition source 與 canonical mapping 策略
 
 詳見：[功能開發/Priority3-正式營養資料來源與估算策略-v1.md](./功能開發/Priority3-%E6%AD%A3%E5%BC%8F%E7%87%9F%E9%A4%8A%E8%B3%87%E6%96%99%E4%BE%86%E6%BA%90%E8%88%87%E4%BC%B0%E7%AE%97%E7%AD%96%E7%95%A5-v1.md)
 

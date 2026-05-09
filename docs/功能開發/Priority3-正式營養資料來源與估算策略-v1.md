@@ -39,10 +39,10 @@
 
 目前仍未完成的重點：
 
-1. 正式 nutrition source 仍未接入，目前仍以 preset 與 fallback estimate 為主
-2. canonical food mapping 策略仍屬第一版，尚未形成可持續擴充的正式資料層
+1. 正式 nutrition source 已有本地策展版 MVP，但尚未接完整外部資料來源或完整食物資料庫
+2. canonical food mapping 正式資料層第一版已落地，但 canonical coverage 仍有限，後續仍需依真實樣本擴充
 3. 前端目前尚未完整呈現低噪音的估算來源提示與相關 UX 收斂
-4. 包裝飲料案例顯示 unit normalization、每份容量換算與 nutrition source 命中策略尚未可靠，已足以影響 result 與 history 的可信度
+4. 包裝飲料案例已先以 drink fallback 收斂明顯失真，黑咖啡後續也已升級為 `official_source`；甜飲精度仍需更多真實樣本驗證
 
 ---
 
@@ -63,18 +63,69 @@
 
 目標：先把 food name 與 normalized food name 對齊到較穩定的 canonical key。
 
+目前狀態：第一版正式資料層已完成。
+
+2026-05-09 實作補充：
+
+1. 已將 food name 判定責任自 `analysis_confirm` 抽離，集中到獨立的 `food_mapping` 模組。
+2. 已建立單一入口 `resolve_canonical_food()`，輸入為 `food_name` 與 `normalized_food_name`，輸出為穩定的 canonical mapping 結果。
+3. mapping 結果已固定包含 `canonical_food_name`、`match_type`、`matched_term`、`is_estimated`，供後端內部統一使用。
+4. 已將 direct、alias、keyword、default fallback 四種名稱判定路徑整理為正式規則層，不再散落在 confirm 流程內。
+5. `analysis_confirm` 現在只負責呼叫 canonical mapping、查對應 preset / nutrition source、再做份量與營養計算。
+6. 對外 API shape 維持不變；`canonical_food_name` 持續回傳，`nutrition_source` 仍維持既有相容字串：
+   `preset`、`alias_mapping`、`keyword_fallback`、`default_fallback`。
+
+第一版 canonical coverage：
+
+1. canonical key 沿用現有 preset 與 generic 類別，例如 `chicken_salad`、`boiled_egg`、`generic_mixed_meal`、`generic_rice`、`generic_vegetables`。
+2. alias 第一版已固定包含 `chicken_rice_bowl`、`white_rice`、`cabbage`、`ginger_shreds`、`chili_sauce`。
+3. keyword 規則第一版已固定優先序：`generic_condiment`、`generic_garnish`、`boiled_egg`、`generic_mixed_meal`、`generic_vegetables`、`generic_rice`、`generic_protein`、`default_fallback`。
+
+目前邊界：
+
+1. 本階段未新增資料庫 table 或 migration。
+2. 本階段未建立完整食物資料庫或後台維護介面。
+3. 本階段重點是把名稱判定抽成可維護資料層，不是一次補齊所有食物 coverage。
+
 ### P3-02 unit normalization
 
 目標：盡量將輸入單位轉成 g，降低後續計算分歧。
+
+目前狀態：Backend MVP 已完成。
 
 補充焦點：
 
 1. 包裝飲料需要補強 ml / bottle / can / serving 與 g 或每份營養標示之間的換算策略。
 2. 若辨識到的是「黑咖啡 / 茶飲 / 瓶裝飲料」這類 packaged drink，不應直接沿用高熱量餐食 fallback。
 
+2026-05-09 實作補充：
+
+1. 已將份量換算責任自 `analysis_confirm` 抽離，集中到獨立的 `portion_resolution` 模組。
+2. `analysis_confirm` 現在只負責組裝 confirm 主鏈；單位正規化、飲料判定、克重換算與 estimation method 命名都集中在單一模組。
+3. 已保留既有 response shape，不新增公開 API 欄位；`portion_unit`、`source_portion_unit`、`resolved_weight_g`、`weight_estimation_method` 均沿用既有欄位。
+4. 已補齊新的 unit alias：`ml`、`milliliter(s)`、`cc`、`l`、`liter(s)`、`bottle`、`bottles`、`can`、`cans`。
+5. 非飲料情境仍沿用既有 `g`、exact unit match、family conversion、common serving fallback 流程，避免影響既有餐點 totals 快照。
+6. 飲料情境新增容量導向換算規則：
+   `ml / cc -> g`、`l -> 1000 ml`、`can -> 330 ml`、`bottle -> 375 ml`、`cup -> 240 ml`、`serving -> 240 ml`。
+7. 已新增 packaged drink 判定 helper，依 `food_name` 與 `normalized_food_name` 內的 `black_coffee`、`americano`、`black_tea`、`green_tea`、`tea_drink` 與 `coffee / tea / drink / beverage` 關鍵字判定是否走飲料路徑。
+8. 飲料若無法命中合適 preset，不再落回 `generic_mixed_meal`，而是改走低估保守的 `generic_unsweetened_drink` fallback。
+9. `generic_unsweetened_drink` 暫時採 demo 級防呆值：
+   每 `100 g` 為 `2 kcal`、`0 g protein`、`0 g fat`、`0.5 g carb`。
+10. 已新增飲料專用 `weight_estimation_method`：
+    `direct_milliliters`、`drink_container_default`、`drink_serving_default`。
+
+本次 MVP 邊界：
+
+1. 本階段不新增資料庫 migration，沿用既有 `weight_estimation_method` 字串欄位。
+2. 本階段不新增前端 UI 或 response schema。
+3. 本階段對可判定為飲料但甜度不明的候選，先採低估保守策略，避免再出現黑咖啡數百 kcal。
+4. 甜飲精度、正式 nutrition source 與更細的包裝標示解析，留待 P3-03 處理。
+
 ### P3-03 nutrition source 層級
 
 目標：定義來源優先序。
+
+目前狀態：MVP 版已完成。
 
 建議順序：
 
@@ -86,6 +137,21 @@
 
 1. 需把黑咖啡 420 kcal 這類失真案例納入 source selection 驗證樣本。
 2. packaged drink 若無法命中正式資料來源，fallback 也應有更保守的防呆，不可產生明顯違反包裝標示等級的結果。
+
+2026-05-09 實作補充：
+
+1. 已新增 `nutrition_resolution` 統一介面，讓 confirm 流程透過 `resolve_item_nutrition()` 取得完整營養解析結果。
+2. 已建立明確的 source decision flow：`official_source -> canonical_mapping -> fallback_estimate -> special_guard`。
+3. 已新增本地策展版 `official_source` catalog，先納入少量高信心資料，例如黑咖啡、白飯、水煮蛋、雞胸與 leafy vegetables。
+4. 黑咖啡已由 P3-02 階段的 `drink_fallback` 進一步升級為優先命中 `official_source`。
+5. 茶飲等尚未列入 official catalog 的 packaged drink，仍可透過 `drink_fallback` 防呆。
+6. 未知食物仍可透過 `default_fallback` 完成流程，不會因找不到正式來源而中斷。
+
+本次 MVP 邊界：
+
+1. 本階段不做完整食物搜尋資料庫，也不串外部 nutrition API。
+2. 本階段不新增公開 API 欄位，也不新增資料庫 migration。
+3. `nutrition_source` 可能出現新增值 `official_source`，但 response shape 維持不變。
 
 ### P3-04 metadata 與可追溯性
 
@@ -233,7 +299,132 @@ DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for r
 
 ---
 
-## 9. 相關文件
+## 9. 2026-05-09 P3-02 unit normalization 驗收補充
+
+本次補充驗收的目的，是確認 P3-02 Backend MVP 已完成三個核心面向：
+
+1. 責任抽離：`analysis_confirm` 已改為呼叫單一 `portion_resolution` 模組，而不是在服務內散落處理單位換算
+2. 單位擴充：`ml / l / bottle / can / cup / serving` 的飲料換算規則已落地
+3. 防呆收斂：黑咖啡與茶飲等 packaged drink 不再落回高熱量 mixed meal fallback
+
+### 9.1 驗收範圍
+
+本次驗收聚焦以下行為：
+
+1. `portion_resolution` 單元測試是否正確覆蓋 `ml`、`l`、`bottle`、`serving` 與非飲料回歸案例
+2. `analysis_confirm` 整合流程是否能正確回傳 `source_portion_unit`、`resolved_weight_g`、`weight_estimation_method`
+3. 黑咖啡 / 茶飲案例是否改走 `drink_fallback`，不再出現數百 kcal 的明顯失真
+4. 既有 `Chicken Salad` / `Boiled Egg` totals 與 unknown food fallback 是否維持既有行為
+
+### 9.2 驗收方式
+
+本次實際執行的驗收命令如下：
+
+```powershell
+$env:PYTHONPATH='D:\code\HappyMeal\backend'
+& 'D:\code\HappyMeal\.venv\Scripts\python.exe' -m pytest backend\tests\test_portion_resolution.py -q
+& 'D:\code\HappyMeal\.venv\Scripts\python.exe' -m pytest backend\tests\test_analysis_draft.py -q
+& 'D:\code\HappyMeal\.venv\Scripts\python.exe' -m pytest backend\tests\test_food_mapping.py -q
+```
+
+補充說明：
+
+1. 本次環境下 `pytest.exe` 啟動器不可直接使用，因此改用 `.venv\Scripts\python.exe -m pytest` 執行。
+2. 仍需先把 `backend` 放進 `PYTHONPATH`，因為測試使用 `app.*` 匯入。
+
+### 9.3 驗收結果
+
+驗收結果如下：
+
+1. `backend/tests/test_portion_resolution.py`：`6 passed`
+2. `backend/tests/test_analysis_draft.py`：`22 passed`
+3. `backend/tests/test_food_mapping.py`：`7 passed`
+
+判讀結論：P3-02 Backend MVP 已可接受。飲料單位換算與防呆已落地，confirm 主鏈未觀察到既有回歸，P3-01 canonical mapping 驗收也仍維持通過。
+
+### 9.4 已驗收的 P3-02 行為
+
+| 輸入 | 預期 nutrition_source | 預期結果 | 驗收狀況 |
+| ---- | --------------------- | -------- | -------- |
+| Black Coffee / black_coffee / bottle | drink_fallback | `375 g`、`drink_container_default`、`7.50 kcal` | 通過 |
+| Tea Drink / tea_drink / can | drink_fallback | `330 g`、`drink_container_default`、`6.60 kcal` | 通過 |
+| Black Tea / black_tea / 330 ml | drink_fallback | `330 g`、`direct_milliliters`、`6.60 kcal` | 通過 |
+| Chicken Rice / grilled_chicken_rice / bowl | preset | `324 g`、`common_unit_conversion` | 通過 |
+| Chicken Salad + Boiled Egg | preset | totals 仍為 `398.00 kcal / 34.50 protein / 23.30 fat / 12.60 carb` | 通過 |
+
+### 9.5 目前邊界與後續待辦
+
+本次完成的是 P3-02 的 Backend MVP，不代表整個 Priority 3 已完成。後續 P3-03 已在同日另行補上本地 `official_source` MVP；完整外部資料來源與更廣的甜飲精度仍需後續處理。
+
+P3-02 驗收後仍需處理：
+
+1. P3-03 已補上本地 `official_source` MVP；完整外部 nutrition source 與更廣資料來源仍待後續擴充
+2. P3-04 metadata 與低噪音 UI 提示整合
+3. P3-05 history / recommendation 對最終營養結果的穩定重用驗收
+4. packaged drink 的甜飲精度與更多真實包裝標示樣本驗證
+
+---
+
+## 10. 2026-05-09 P3-03 nutrition source 層級驗收補充
+
+本次補充驗收的目的，是確認 P3-03 已完成 MVP 版的三個核心面向：
+
+1. 介面：建立 `NutritionResolutionInput` / `NutritionResolutionResult` 與 `resolve_item_nutrition()`
+2. 流程控制：建立 `official_source -> canonical_mapping -> fallback_estimate -> special_guard` 的決策順序
+3. 來源內容：建立本地策展版 `official_source` catalog
+
+### 10.1 驗收範圍
+
+本次驗收聚焦以下行為：
+
+1. `official_source` 可以命中少量高信心食物。
+2. 黑咖啡不再只依賴 `drink_fallback`，而是優先命中 `official_source`。
+3. 白飯、水煮蛋可優先命中 `official_source`。
+4. 茶飲未列入 official catalog 時，仍可走 `drink_fallback`。
+5. 未知食物仍可走 `default_fallback`。
+6. confirm API response 欄位維持不變。
+
+### 10.2 驗收方式
+
+本次實際執行的驗收命令如下：
+
+```powershell
+docker compose run --rm -e PYTHONPATH=/app backend pytest tests/test_nutrition_catalog.py tests/test_nutrition_resolution.py tests/test_analysis_draft.py -q
+docker compose stop db
+```
+
+### 10.3 驗收結果
+
+驗收結果如下：
+
+1. `backend/tests/test_nutrition_catalog.py`：通過
+2. `backend/tests/test_nutrition_resolution.py`：通過
+3. `backend/tests/test_analysis_draft.py`：通過
+4. 合計結果：`35 passed`
+
+判讀結論：P3-03 nutrition source 層級已完成 MVP 版。系統已有最小可信 `official_source`，也保留 canonical mapping、fallback estimate 與 packaged drink 防呆。
+
+### 10.4 已驗收的 source 行為
+
+| 輸入 | 預期 nutrition_source | 預期結果 | 驗收狀況 |
+| ---- | --------------------- | -------- | -------- |
+| Black Coffee / black_coffee / bottle | official_source | 約 7.50 kcal | 通過 |
+| White Rice / white_rice / bowl | official_source | 216.00 kcal | 通過 |
+| Boiled Egg / boiled_egg / pcs | official_source | 78.00 kcal | 通過 |
+| Tea Drink / tea_drink / ml | drink_fallback | 330 ml 約 6.60 kcal | 通過 |
+| Mystery Food / mystery_food / bowl | default_fallback | 流程不中斷且 kcal 大於 0 | 通過 |
+
+### 10.5 後續仍待 P3 收尾的項目
+
+P3-03 已完成 MVP 版，但整個 Priority 3 若要正式標記完成，建議再補一輪 P3-04 / P3-05 收尾驗收：
+
+1. 確認 `official_source`、`drink_fallback`、`default_fallback` 的 metadata 都能正確保存與回看。
+2. 確認 history detail 能穩定重用 confirm 後的營養結果，而不是重新估算。
+3. 確認 recommendation 使用的是完成時的 totals snapshot。
+
+---
+
+## 11. 相關文件
 
 1. 總覽： [../PRD-實作進度與下一步-v1.md](../PRD-%E5%AF%A6%E4%BD%9C%E9%80%B2%E5%BA%A6%E8%88%87%E4%B8%8B%E4%B8%80%E6%AD%A5-v1.md)
 2. Priority 2： [Priority2-真實-AI-食物辨識與候選修正-v1.md](./Priority2-%E7%9C%9F%E5%AF%A6-AI-%E9%A3%9F%E7%89%A9%E8%BE%A8%E8%AD%98%E8%88%87%E5%80%99%E9%81%B8%E4%BF%AE%E6%AD%A3-v1.md)
