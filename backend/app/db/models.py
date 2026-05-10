@@ -210,6 +210,8 @@ class FoodNutritionEmbedding(TimestampMixin, Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_id)
     canonical_food_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    food_code: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    food_category: Mapped[str | None] = mapped_column(String(100), nullable=True)
     display_name_zh: Mapped[str] = mapped_column(String(255), nullable=False)
     embed_text: Mapped[str] = mapped_column(Text, nullable=False)
     embedding: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=True)
@@ -218,3 +220,4 @@ class FoodNutritionEmbedding(TimestampMixin, Base):
     fat_g_per_100g: Mapped[Decimal] = mapped_column(Numeric(7, 2), nullable=False)
     carb_g_per_100g: Mapped[Decimal] = mapped_column(Numeric(7, 2), nullable=False)
     source: Mapped[str] = mapped_column(String(50), nullable=False, default="official")
+    nutrients_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
