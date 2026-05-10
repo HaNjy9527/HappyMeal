@@ -5,6 +5,7 @@ from decimal import Decimal
 from enum import Enum
 from uuid import uuid4
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import JSON, DateTime, Enum as SqlEnum, ForeignKey, Index, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -202,3 +203,18 @@ class ConsentRecord(Base):
     accepted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     user: Mapped[User] = relationship(back_populates="consents")
+
+
+class FoodNutritionEmbedding(TimestampMixin, Base):
+    __tablename__ = "food_nutrition_embeddings"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_id)
+    canonical_food_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    display_name_zh: Mapped[str] = mapped_column(String(255), nullable=False)
+    embed_text: Mapped[str] = mapped_column(Text, nullable=False)
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=True)
+    kcal_per_100g: Mapped[Decimal] = mapped_column(Numeric(7, 2), nullable=False)
+    protein_g_per_100g: Mapped[Decimal] = mapped_column(Numeric(7, 2), nullable=False)
+    fat_g_per_100g: Mapped[Decimal] = mapped_column(Numeric(7, 2), nullable=False)
+    carb_g_per_100g: Mapped[Decimal] = mapped_column(Numeric(7, 2), nullable=False)
+    source: Mapped[str] = mapped_column(String(50), nullable=False, default="official")
