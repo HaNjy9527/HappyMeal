@@ -109,6 +109,21 @@ NUTRITION_PRESETS = {
     # --- 台灣常見輕食 ---
     "spring_roll": NutritionPreset("pcs", Decimal("200.00"), Decimal("280.00"), Decimal("8.00"), Decimal("8.00"), Decimal("44.00")),
     "congee": NutritionPreset("bowl", Decimal("300.00"), Decimal("150.00"), Decimal("3.00"), Decimal("0.50"), Decimal("34.00")),
+    # --- 台式早餐 ---
+    "egg_crepe": NutritionPreset("pcs", Decimal("150.00"), Decimal("280.00"), Decimal("10.00"), Decimal("10.00"), Decimal("36.00")),
+    "sesame_flatbread": NutritionPreset("pcs", Decimal("160.00"), Decimal("430.00"), Decimal("11.00"), Decimal("18.00"), Decimal("58.00")),
+    "steamed_bun": NutritionPreset("pcs", Decimal("100.00"), Decimal("220.00"), Decimal("7.00"), Decimal("2.00"), Decimal("44.00")),
+    "toast": NutritionPreset("pcs", Decimal("60.00"), Decimal("160.00"), Decimal("5.00"), Decimal("3.00"), Decimal("28.00")),
+    # --- 夜市小吃 ---
+    "oyster_noodles": NutritionPreset("bowl", Decimal("350.00"), Decimal("260.00"), Decimal("10.00"), Decimal("4.00"), Decimal("48.00")),
+    "oyster_omelette": NutritionPreset("pcs", Decimal("200.00"), Decimal("320.00"), Decimal("10.00"), Decimal("12.00"), Decimal("44.00")),
+    "popcorn_chicken": NutritionPreset("serving", Decimal("150.00"), Decimal("420.00"), Decimal("22.00"), Decimal("24.00"), Decimal("30.00")),
+    "scallion_pancake": NutritionPreset("pcs", Decimal("100.00"), Decimal("310.00"), Decimal("6.00"), Decimal("14.00"), Decimal("42.00")),
+    "taiwanese_sausage_rice": NutritionPreset("pcs", Decimal("200.00"), Decimal("520.00"), Decimal("14.00"), Decimal("16.00"), Decimal("80.00")),
+    # --- 甜湯甜點 ---
+    "red_bean_soup": NutritionPreset("bowl", Decimal("300.00"), Decimal("180.00"), Decimal("6.00"), Decimal("0.50"), Decimal("38.00")),
+    "grass_jelly": NutritionPreset("cup", Decimal("300.00"), Decimal("120.00"), Decimal("1.00"), Decimal("0.50"), Decimal("28.00")),
+    "taro_balls": NutritionPreset("serving", Decimal("200.00"), Decimal("260.00"), Decimal("3.00"), Decimal("1.00"), Decimal("58.00")),
 }
 
 UNIT_ALIASES = {

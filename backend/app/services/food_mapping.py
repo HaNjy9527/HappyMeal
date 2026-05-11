@@ -83,6 +83,21 @@ CANONICAL_FOOD_KEYS = frozenset(
         # 台灣常見輕食
         "spring_roll",
         "congee",
+        # 台式早餐
+        "egg_crepe",
+        "sesame_flatbread",
+        "steamed_bun",
+        "toast",
+        # 夜市小吃
+        "oyster_noodles",
+        "oyster_omelette",
+        "popcorn_chicken",
+        "scallion_pancake",
+        "taiwanese_sausage_rice",
+        # 甜湯甜點
+        "red_bean_soup",
+        "grass_jelly",
+        "taro_balls",
     }
 )
 
@@ -195,6 +210,34 @@ ALIAS_MAPPING = {
     "rice_congee": "congee",
     "plain_congee": "congee",
     "white_congee": "congee",
+    # 台式早餐 aliases
+    "dan_bing": "egg_crepe",
+    "taiwanese_egg_crepe": "egg_crepe",
+    "shao_bing": "sesame_flatbread",
+    "shao_bing_you_tiao": "sesame_flatbread",
+    "mantou": "steamed_bun",
+    "plain_steamed_bun": "steamed_bun",
+    "white_toast": "toast",
+    "sliced_bread": "toast",
+    # 夜市小吃 aliases
+    "o_a_mi_sua": "oyster_noodles",
+    "oyster_vermicelli": "oyster_noodles",
+    "o_a_jian": "oyster_omelette",
+    "oyster_pancake": "oyster_omelette",
+    "yan_su_ji": "popcorn_chicken",
+    "taiwanese_fried_chicken": "popcorn_chicken",
+    "cong_you_bing": "scallion_pancake",
+    "green_onion_pancake": "scallion_pancake",
+    "da_chang_bao_xiao_chang": "taiwanese_sausage_rice",
+    "sausage_in_glutinous_rice": "taiwanese_sausage_rice",
+    # 甜湯甜點 aliases
+    "hong_dou_tang": "red_bean_soup",
+    "sweet_red_bean_soup": "red_bean_soup",
+    "azuki_bean_soup": "red_bean_soup",
+    "xian_cao": "grass_jelly",
+    "shao_xian_cao": "grass_jelly",
+    "yu_yuan": "taro_balls",
+    "taro_ball_dessert": "taro_balls",
 }
 
 KEYWORD_RULES = [
@@ -206,6 +249,15 @@ KEYWORD_RULES = [
     ("fruit_smoothie", ("smoothie", "果昔")),
     ("bubble_milk_tea", ("boba", "bubble tea", "pearl milk", "珍珠奶茶", "珍奶")),
     # 特定食物（先於通用規則）
+    ("egg_crepe", ("dan bing", "蛋餅")),
+    ("oyster_noodles", ("mian xian", "蚵仔麵線", "oyster noodle", "麵線")),
+    ("oyster_omelette", ("oyster omelette", "蚵仔煎", "o a jian")),
+    ("popcorn_chicken", ("popcorn chicken", "鹽酥雞", "yan su ji")),
+    ("scallion_pancake", ("scallion pancake", "蔥油餅", "green onion pancake")),
+    ("taiwanese_sausage_rice", ("sausage rice", "大腸包小腸")),
+    ("red_bean_soup", ("red bean soup", "紅豆湯", "hong dou tang")),
+    ("grass_jelly", ("grass jelly", "仙草", "燒仙草")),
+    ("taro_balls", ("taro ball", "芋圓", "yu yuan")),
     ("oatmeal", ("oatmeal", "燕麥粥")),
     ("greek_yogurt", ("yogurt", "優格")),
     ("spring_roll", ("spring roll", "潤餅", "popiah")),

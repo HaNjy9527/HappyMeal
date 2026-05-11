@@ -334,6 +334,69 @@ OFFICIAL_NUTRITION_CATALOG = {
         aliases=("congee", "rice_congee", "plain_congee", "white_congee"),
         preset=NutritionPreset("bowl", Decimal("300.00"), Decimal("150.00"), Decimal("3.00"), Decimal("0.50"), Decimal("34.00")),
     ),
+    # --- 台式早餐 ---
+    "egg_crepe": OfficialNutritionRecord(
+        canonical_food_name="egg_crepe",
+        aliases=("egg_crepe", "dan_bing", "taiwanese_egg_crepe", "egg_roll_crepe"),
+        preset=NutritionPreset("pcs", Decimal("150.00"), Decimal("280.00"), Decimal("10.00"), Decimal("10.00"), Decimal("36.00")),
+    ),
+    "sesame_flatbread": OfficialNutritionRecord(
+        canonical_food_name="sesame_flatbread",
+        aliases=("sesame_flatbread", "shao_bing", "shao_bing_you_tiao", "sesame_bread_fried_dough"),
+        preset=NutritionPreset("pcs", Decimal("160.00"), Decimal("430.00"), Decimal("11.00"), Decimal("18.00"), Decimal("58.00")),
+    ),
+    "steamed_bun": OfficialNutritionRecord(
+        canonical_food_name="steamed_bun",
+        aliases=("steamed_bun", "mantou", "plain_steamed_bun", "chinese_steamed_bun"),
+        preset=NutritionPreset("pcs", Decimal("100.00"), Decimal("220.00"), Decimal("7.00"), Decimal("2.00"), Decimal("44.00")),
+    ),
+    "toast": OfficialNutritionRecord(
+        canonical_food_name="toast",
+        aliases=("toast", "white_toast", "sliced_bread", "bread_toast"),
+        preset=NutritionPreset("pcs", Decimal("60.00"), Decimal("160.00"), Decimal("5.00"), Decimal("3.00"), Decimal("28.00")),
+    ),
+    # --- 夜市小吃 ---
+    "oyster_noodles": OfficialNutritionRecord(
+        canonical_food_name="oyster_noodles",
+        aliases=("oyster_noodles", "o_a_mi_sua", "oyster_vermicelli", "taiwanese_oyster_noodles"),
+        preset=NutritionPreset("bowl", Decimal("350.00"), Decimal("260.00"), Decimal("10.00"), Decimal("4.00"), Decimal("48.00")),
+    ),
+    "oyster_omelette": OfficialNutritionRecord(
+        canonical_food_name="oyster_omelette",
+        aliases=("oyster_omelette", "o_a_jian", "oyster_pancake", "taiwanese_oyster_omelette"),
+        preset=NutritionPreset("pcs", Decimal("200.00"), Decimal("320.00"), Decimal("10.00"), Decimal("12.00"), Decimal("44.00")),
+    ),
+    "popcorn_chicken": OfficialNutritionRecord(
+        canonical_food_name="popcorn_chicken",
+        aliases=("popcorn_chicken", "yan_su_ji", "taiwanese_fried_chicken", "crispy_chicken_bites"),
+        preset=NutritionPreset("serving", Decimal("150.00"), Decimal("420.00"), Decimal("22.00"), Decimal("24.00"), Decimal("30.00")),
+    ),
+    "scallion_pancake": OfficialNutritionRecord(
+        canonical_food_name="scallion_pancake",
+        aliases=("scallion_pancake", "cong_you_bing", "green_onion_pancake", "taiwanese_scallion_pancake"),
+        preset=NutritionPreset("pcs", Decimal("100.00"), Decimal("310.00"), Decimal("6.00"), Decimal("14.00"), Decimal("42.00")),
+    ),
+    "taiwanese_sausage_rice": OfficialNutritionRecord(
+        canonical_food_name="taiwanese_sausage_rice",
+        aliases=("taiwanese_sausage_rice", "da_chang_bao_xiao_chang", "sausage_in_glutinous_rice", "large_intestine_sausage"),
+        preset=NutritionPreset("pcs", Decimal("200.00"), Decimal("520.00"), Decimal("14.00"), Decimal("16.00"), Decimal("80.00")),
+    ),
+    # --- 甜湯甜點 ---
+    "red_bean_soup": OfficialNutritionRecord(
+        canonical_food_name="red_bean_soup",
+        aliases=("red_bean_soup", "hong_dou_tang", "sweet_red_bean_soup", "azuki_bean_soup"),
+        preset=NutritionPreset("bowl", Decimal("300.00"), Decimal("180.00"), Decimal("6.00"), Decimal("0.50"), Decimal("38.00")),
+    ),
+    "grass_jelly": OfficialNutritionRecord(
+        canonical_food_name="grass_jelly",
+        aliases=("grass_jelly", "xian_cao", "shao_xian_cao", "hot_grass_jelly"),
+        preset=NutritionPreset("cup", Decimal("300.00"), Decimal("120.00"), Decimal("1.00"), Decimal("0.50"), Decimal("28.00")),
+    ),
+    "taro_balls": OfficialNutritionRecord(
+        canonical_food_name="taro_balls",
+        aliases=("taro_balls", "yu_yuan", "taro_ball_dessert", "taro_and_sweet_potato_balls"),
+        preset=NutritionPreset("serving", Decimal("200.00"), Decimal("260.00"), Decimal("3.00"), Decimal("1.00"), Decimal("58.00")),
+    ),
 }
 
 
