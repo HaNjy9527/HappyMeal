@@ -49,6 +49,81 @@ NUTRITION_PRESETS = {
     "generic_garnish": NutritionPreset("tbsp", Decimal("6.00"), Decimal("8.00"), Decimal("0.20"), Decimal("0.10"), Decimal("1.50")),
     "generic_protein": NutritionPreset("plate", Decimal("180.00"), Decimal("260.00"), Decimal("26.00"), Decimal("14.00"), Decimal("4.00")),
     "generic_unsweetened_drink": NutritionPreset("g", Decimal("100.00"), Decimal("2.00"), Decimal("0.00"), Decimal("0.00"), Decimal("0.50")),
+    # --- 便當 ---
+    "chicken_leg_bento": NutritionPreset("box", Decimal("650.00"), Decimal("750.00"), Decimal("32.00"), Decimal("22.00"), Decimal("95.00")),
+    "pork_chop_bento": NutritionPreset("box", Decimal("650.00"), Decimal("800.00"), Decimal("30.00"), Decimal("28.00"), Decimal("95.00")),
+    "braised_pork_bento": NutritionPreset("box", Decimal("600.00"), Decimal("750.00"), Decimal("26.00"), Decimal("25.00"), Decimal("90.00")),
+    "fish_fillet_bento": NutritionPreset("box", Decimal("600.00"), Decimal("680.00"), Decimal("28.00"), Decimal("18.00"), Decimal("90.00")),
+    "vegetarian_bento": NutritionPreset("box", Decimal("550.00"), Decimal("580.00"), Decimal("16.00"), Decimal("14.00"), Decimal("90.00")),
+    # --- 飯類 ---
+    "minced_pork_rice": NutritionPreset("bowl", Decimal("250.00"), Decimal("380.00"), Decimal("12.00"), Decimal("11.00"), Decimal("55.00")),
+    "shredded_chicken_rice": NutritionPreset("bowl", Decimal("250.00"), Decimal("320.00"), Decimal("14.00"), Decimal("6.00"), Decimal("52.00")),
+    "pork_chop_rice": NutritionPreset("plate", Decimal("380.00"), Decimal("580.00"), Decimal("24.00"), Decimal("18.00"), Decimal("78.00")),
+    "fried_rice": NutritionPreset("plate", Decimal("280.00"), Decimal("450.00"), Decimal("12.00"), Decimal("14.00"), Decimal("68.00")),
+    "curry_rice": NutritionPreset("plate", Decimal("380.00"), Decimal("550.00"), Decimal("18.00"), Decimal("14.00"), Decimal("85.00")),
+    # --- 麵食 ---
+    "beef_noodle_soup": NutritionPreset("bowl", Decimal("650.00"), Decimal("620.00"), Decimal("30.00"), Decimal("18.00"), Decimal("85.00")),
+    "plain_noodle_soup": NutritionPreset("bowl", Decimal("400.00"), Decimal("330.00"), Decimal("12.00"), Decimal("4.00"), Decimal("62.00")),
+    "dan_zai_noodle": NutritionPreset("bowl", Decimal("350.00"), Decimal("290.00"), Decimal("14.00"), Decimal("6.00"), Decimal("48.00")),
+    "dry_noodle": NutritionPreset("bowl", Decimal("250.00"), Decimal("400.00"), Decimal("12.00"), Decimal("14.00"), Decimal("57.00")),
+    "rice_noodle_soup": NutritionPreset("bowl", Decimal("400.00"), Decimal("280.00"), Decimal("8.00"), Decimal("5.00"), Decimal("52.00")),
+    "steamed_dumpling": NutritionPreset("serving", Decimal("250.00"), Decimal("420.00"), Decimal("18.00"), Decimal("12.00"), Decimal("58.00")),
+    "pan_fried_dumpling": NutritionPreset("serving", Decimal("180.00"), Decimal("380.00"), Decimal("14.00"), Decimal("16.00"), Decimal("48.00")),
+    # --- 蛋白質 ---
+    "chicken_leg": NutritionPreset("pcs", Decimal("200.00"), Decimal("280.00"), Decimal("26.00"), Decimal("18.00"), Decimal("0.00")),
+    "fried_chicken_cutlet": NutritionPreset("pcs", Decimal("200.00"), Decimal("460.00"), Decimal("28.00"), Decimal("24.00"), Decimal("30.00")),
+    "pork_chop": NutritionPreset("pcs", Decimal("180.00"), Decimal("360.00"), Decimal("26.00"), Decimal("22.00"), Decimal("12.00")),
+    "braised_pork_belly": NutritionPreset("serving", Decimal("150.00"), Decimal("380.00"), Decimal("18.00"), Decimal("28.00"), Decimal("8.00")),
+    # --- 湯 ---
+    "fish_ball_soup": NutritionPreset("bowl", Decimal("350.00"), Decimal("180.00"), Decimal("12.00"), Decimal("6.00"), Decimal("18.00")),
+    "egg_drop_soup": NutritionPreset("bowl", Decimal("300.00"), Decimal("80.00"), Decimal("6.00"), Decimal("4.00"), Decimal("4.00")),
+    "radish_pork_rib_soup": NutritionPreset("bowl", Decimal("380.00"), Decimal("260.00"), Decimal("18.00"), Decimal("14.00"), Decimal("14.00")),
+    "miso_soup": NutritionPreset("bowl", Decimal("250.00"), Decimal("55.00"), Decimal("3.00"), Decimal("2.00"), Decimal("5.00")),
+    # --- 配菜 ---
+    "braised_egg": NutritionPreset("pcs", Decimal("60.00"), Decimal("95.00"), Decimal("7.00"), Decimal("6.00"), Decimal("2.00")),
+    "tofu": NutritionPreset("g", Decimal("100.00"), Decimal("76.00"), Decimal("8.00"), Decimal("4.00"), Decimal("2.00")),
+    "braised_tofu": NutritionPreset("serving", Decimal("150.00"), Decimal("140.00"), Decimal("12.00"), Decimal("7.00"), Decimal("8.00")),
+    "pig_blood_cake": NutritionPreset("serving", Decimal("100.00"), Decimal("200.00"), Decimal("8.00"), Decimal("2.00"), Decimal("38.00")),
+    "stir_fried_morning_glory": NutritionPreset("g", Decimal("100.00"), Decimal("65.00"), Decimal("2.00"), Decimal("4.00"), Decimal("5.00")),
+    "stir_fried_cabbage": NutritionPreset("g", Decimal("100.00"), Decimal("55.00"), Decimal("2.00"), Decimal("3.00"), Decimal("5.00")),
+    # --- 飲料 ---
+    "unsweetened_soy_milk": NutritionPreset("cup", Decimal("250.00"), Decimal("70.00"), Decimal("5.00"), Decimal("3.00"), Decimal("5.00")),
+    "sweetened_soy_milk": NutritionPreset("cup", Decimal("250.00"), Decimal("120.00"), Decimal("5.00"), Decimal("3.00"), Decimal("18.00")),
+    "rice_milk": NutritionPreset("cup", Decimal("250.00"), Decimal("180.00"), Decimal("2.00"), Decimal("4.00"), Decimal("33.00")),
+    "bubble_milk_tea": NutritionPreset("cup", Decimal("500.00"), Decimal("400.00"), Decimal("3.00"), Decimal("5.00"), Decimal("85.00")),
+    # --- 輕食 / 早餐 ---
+    "oatmeal": NutritionPreset("bowl", Decimal("250.00"), Decimal("150.00"), Decimal("5.00"), Decimal("3.00"), Decimal("27.00")),
+    "greek_yogurt": NutritionPreset("cup", Decimal("200.00"), Decimal("130.00"), Decimal("17.00"), Decimal("0.70"), Decimal("10.00")),
+    "avocado_toast": NutritionPreset("pcs", Decimal("130.00"), Decimal("240.00"), Decimal("6.00"), Decimal("14.00"), Decimal("24.00")),
+    "sandwich": NutritionPreset("pcs", Decimal("180.00"), Decimal("280.00"), Decimal("12.00"), Decimal("8.00"), Decimal("38.00")),
+    "rice_ball": NutritionPreset("pcs", Decimal("150.00"), Decimal("230.00"), Decimal("7.00"), Decimal("4.00"), Decimal("43.00")),
+    "tuna_salad": NutritionPreset("bowl", Decimal("250.00"), Decimal("220.00"), Decimal("20.00"), Decimal("10.00"), Decimal("12.00")),
+    # --- 水果 ---
+    "banana": NutritionPreset("pcs", Decimal("120.00"), Decimal("105.00"), Decimal("1.30"), Decimal("0.40"), Decimal("27.00")),
+    "apple": NutritionPreset("pcs", Decimal("180.00"), Decimal("95.00"), Decimal("0.50"), Decimal("0.30"), Decimal("25.00")),
+    "mixed_fruits": NutritionPreset("bowl", Decimal("200.00"), Decimal("100.00"), Decimal("1.00"), Decimal("0.50"), Decimal("25.00")),
+    # --- 咖啡 / 飲品 ---
+    "latte": NutritionPreset("cup", Decimal("240.00"), Decimal("120.00"), Decimal("6.00"), Decimal("4.00"), Decimal("14.00")),
+    "matcha_latte": NutritionPreset("cup", Decimal("240.00"), Decimal("160.00"), Decimal("6.00"), Decimal("5.00"), Decimal("22.00")),
+    "fruit_smoothie": NutritionPreset("cup", Decimal("300.00"), Decimal("180.00"), Decimal("3.00"), Decimal("1.50"), Decimal("42.00")),
+    # --- 台灣常見輕食 ---
+    "spring_roll": NutritionPreset("pcs", Decimal("200.00"), Decimal("280.00"), Decimal("8.00"), Decimal("8.00"), Decimal("44.00")),
+    "congee": NutritionPreset("bowl", Decimal("300.00"), Decimal("150.00"), Decimal("3.00"), Decimal("0.50"), Decimal("34.00")),
+    # --- 台式早餐 ---
+    "egg_crepe": NutritionPreset("pcs", Decimal("150.00"), Decimal("280.00"), Decimal("10.00"), Decimal("10.00"), Decimal("36.00")),
+    "sesame_flatbread": NutritionPreset("pcs", Decimal("160.00"), Decimal("430.00"), Decimal("11.00"), Decimal("18.00"), Decimal("58.00")),
+    "steamed_bun": NutritionPreset("pcs", Decimal("100.00"), Decimal("220.00"), Decimal("7.00"), Decimal("2.00"), Decimal("44.00")),
+    "toast": NutritionPreset("pcs", Decimal("60.00"), Decimal("160.00"), Decimal("5.00"), Decimal("3.00"), Decimal("28.00")),
+    # --- 夜市小吃 ---
+    "oyster_noodles": NutritionPreset("bowl", Decimal("350.00"), Decimal("260.00"), Decimal("10.00"), Decimal("4.00"), Decimal("48.00")),
+    "oyster_omelette": NutritionPreset("pcs", Decimal("200.00"), Decimal("320.00"), Decimal("10.00"), Decimal("12.00"), Decimal("44.00")),
+    "popcorn_chicken": NutritionPreset("serving", Decimal("150.00"), Decimal("420.00"), Decimal("22.00"), Decimal("24.00"), Decimal("30.00")),
+    "scallion_pancake": NutritionPreset("pcs", Decimal("100.00"), Decimal("310.00"), Decimal("6.00"), Decimal("14.00"), Decimal("42.00")),
+    "taiwanese_sausage_rice": NutritionPreset("pcs", Decimal("200.00"), Decimal("520.00"), Decimal("14.00"), Decimal("16.00"), Decimal("80.00")),
+    # --- 甜湯甜點 ---
+    "red_bean_soup": NutritionPreset("bowl", Decimal("300.00"), Decimal("180.00"), Decimal("6.00"), Decimal("0.50"), Decimal("38.00")),
+    "grass_jelly": NutritionPreset("cup", Decimal("300.00"), Decimal("120.00"), Decimal("1.00"), Decimal("0.50"), Decimal("28.00")),
+    "taro_balls": NutritionPreset("serving", Decimal("200.00"), Decimal("260.00"), Decimal("3.00"), Decimal("1.00"), Decimal("58.00")),
 }
 
 UNIT_ALIASES = {
