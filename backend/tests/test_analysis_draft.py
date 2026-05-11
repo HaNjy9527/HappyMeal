@@ -567,7 +567,7 @@ def test_post_analysis_confirm_uses_nutrition_resolution_module(client, db_sessi
 
     captured_calls = []
 
-    def fake_resolve_item_nutrition(payload):
+    def fake_resolve_item_nutrition(payload, db=None):
         captured_calls.append((payload.food_name, payload.normalized_food_name))
         return NutritionResolutionResult(
             food_name=payload.food_name,

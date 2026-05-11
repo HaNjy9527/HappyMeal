@@ -67,7 +67,10 @@ def has_complete_recommendation_profile(profile) -> bool:
     )
 
 
-def build_analysis_item(payload: AnalysisConfirmItemRequest) -> FoodAnalysisItem:
+def build_analysis_item(
+    payload: AnalysisConfirmItemRequest,
+    db: Session,
+) -> FoodAnalysisItem:
     resolved_nutrition = resolve_item_nutrition(
         NutritionResolutionInput(
             food_name=payload.food_name,
@@ -75,7 +78,8 @@ def build_analysis_item(payload: AnalysisConfirmItemRequest) -> FoodAnalysisItem
             portion_value=payload.portion_value,
             portion_unit=payload.portion_unit,
             confidence_score=payload.confidence_score,
-        )
+        ),
+        db,
     )
 
     return FoodAnalysisItem(
@@ -225,7 +229,7 @@ def confirm_analysis(
     total_carb_g = ZERO_DECIMAL
 
     for item_payload in payload.items:
-        item = build_analysis_item(item_payload)
+        item = build_analysis_item(item_payload, db)
         analysis.items.append(item)
         total_kcal += item.kcal
         total_protein_g += item.protein_g

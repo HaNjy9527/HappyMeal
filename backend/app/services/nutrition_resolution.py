@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
+from sqlalchemy.orm import Session
+
 from app.services.food_mapping import NUTRITION_SOURCE_BY_MATCH_TYPE, resolve_canonical_food
 from app.services.nutrition_catalog import lookup_official_nutrition
 from app.services.portion_resolution import (
@@ -12,6 +14,7 @@ from app.services.portion_resolution import (
     quantize_decimal,
     resolve_portion,
 )
+from app.services.rag_lookup import lookup_rag_food
 
 
 @dataclass(frozen=True)
@@ -66,7 +69,35 @@ class NutritionSourceDecision:
     priority: str
 
 
-def resolve_official_source(payload: NutritionResolutionInput) -> NutritionSourceCandidate:
+def resolve_official_source(
+    payload: NutritionResolutionInput,
+    db: Session | None = None,
+) -> NutritionSourceCandidate:
+    # 1. RAG 向量查詢（有 db session 才嘗試）
+    if db is not None:
+        rag_match = lookup_rag_food(
+            food_name=payload.food_name,
+            normalized_food_name=payload.normalized_food_name,
+            db=db,
+        )
+        if rag_match is not None:
+            preset = NutritionPreset(
+                portion_unit="g",
+                weight_g=Decimal("100"),
+                kcal=rag_match.kcal_per_100g,
+                protein_g=rag_match.protein_g_per_100g,
+                fat_g=rag_match.fat_g_per_100g,
+                carb_g=rag_match.carb_g_per_100g,
+            )
+            return NutritionSourceCandidate(
+                source="rag_official",
+                canonical_food_name=rag_match.display_name_zh,
+                is_estimated=False,
+                preset=preset,
+                matched=True,
+            )
+
+    # 2. 退回現有 keyword catalog
     resolved_food = resolve_canonical_food(
         food_name=payload.food_name,
         normalized_food_name=payload.normalized_food_name,
@@ -147,8 +178,11 @@ def apply_special_source_guards(
     return resolution
 
 
-def select_nutrition_source(payload: NutritionResolutionInput) -> NutritionSourceDecision:
-    official_source = resolve_official_source(payload)
+def select_nutrition_source(
+    payload: NutritionResolutionInput,
+    db: Session | None = None,
+) -> NutritionSourceDecision:
+    official_source = resolve_official_source(payload, db)
     if official_source.matched:
         selected = NutritionSourceResolution(candidate=official_source, priority="official_source")
     else:
@@ -177,8 +211,11 @@ def select_nutrition_source(payload: NutritionResolutionInput) -> NutritionSourc
     )
 
 
-def resolve_item_nutrition(payload: NutritionResolutionInput) -> NutritionResolutionResult:
-    source_decision = select_nutrition_source(payload)
+def resolve_item_nutrition(
+    payload: NutritionResolutionInput,
+    db: Session | None = None,
+) -> NutritionResolutionResult:
+    source_decision = select_nutrition_source(payload, db)
     portion_resolution = resolve_portion(
         food_name=payload.food_name,
         normalized_food_name=payload.normalized_food_name,

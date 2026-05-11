@@ -3,8 +3,9 @@
 - 文件名稱：V2-01｜RAG + pgvector 向量營養查詢開發文件
 - 文件類型：操作指南 / 開發規格
 - 建立時間：2026-05-09 21:49
+- 最後更新：2026-05-11（實作完成）
 - 版本：v1
-- 狀態：Draft
+- 狀態：✅ 程式碼完成，待執行腳本驗收
 - 目標讀者：HappyMeal 後端開發者、面試作品集維護者
 - 使用者目標：把現有 `official_source` 從本地策展 catalog 升級為可查詢衛福部食品營養資料的向量檢索層
 
@@ -348,52 +349,64 @@ USING hnsw (embedding vector_cosine_ops);
 
 ## 9. 開發任務拆解
 
-### V2-01-01 啟用 pgvector 與資料表
+### V2-01-01 啟用 pgvector 與資料表 ✅
 
-1. Alembic migration：`CREATE EXTENSION IF NOT EXISTS vector`
-2. 新增 `nutrition_food_vectors` table
-3. 新增 SQLAlchemy model
-4. 本地 Docker PostgreSQL 驗證 migration
+- Alembic migration：`CREATE EXTENSION IF NOT EXISTS vector`
+- 建立 `food_nutrition_embeddings` 表（含 HNSW index）
+- 新增 SQLAlchemy `FoodNutritionEmbedding` model（Vector(1536)）
+- Docker image 改為 `pgvector/pgvector:pg16`
+- 85 tests 全過（SQLite 接受 VECTOR 型別名稱）
 
-### V2-01-02 官方資料 ingestion
+### V2-01-02 加入 food_code / food_category / nutrients_json 欄位 ✅
 
-1. 下載或匯入食品營養成分資料集
-2. 將多列分析項 pivot 成每食物一列
-3. 只保留 MVP 必要營養欄位：kcal、protein、fat、carb
-4. 產生 `embedding_text`
-5. 加入 ingestion 單元測試
+- Alembic migration 新增三欄（JSONB）
+- `food_code` 建立 unique index，作為 UPSERT key
+- model 更新（JSONB → JSON 確保 SQLite 測試相容）
 
-### V2-01-03 Embedding pipeline
+### V2-01-03 官方資料 import ✅（腳本已完成，待執行）
 
-1. 新增 `NUTRITION_EMBEDDING_MODEL`
-2. 呼叫 `text-embedding-3-small`
-3. 批次產生 embedding
-4. 寫入 `nutrition_food_vectors`
-5. log `input_tokens`、`estimated_cost_usd`，銜接 V2-02 成本監控
+- `backend/scripts/import_nutrition_xlsx.py`
+- 讀取衛福部 2025 版 Excel（2503 筆），row 2 為 header，row 3 起為資料
+- embedding_text 格式：`{食品分類} {樣品名稱} {俗名1} {俗名2}...`
+- canonical_food_name = food_code（確保唯一性）
+- nutrients_json 存全部 110 欄
+- UPSERT on food_code（idempotent）
+- **待執行：**
+  ```powershell
+  uv run python scripts/import_nutrition_xlsx.py --xlsx "../docs/食品營養成分資料庫2025版UPDATE1EXCEL(另開新視窗).xlsx"
+  ```
 
-### V2-01-04 Vector search service
+### V2-01-04 Embedding pipeline ✅（腳本已完成，待執行）
 
-1. 新增 `search_official_nutrition_by_vector()`
-2. 查詢 top-k
-3. 回傳 distance、similarity、rank
-4. 支援 threshold 判定
-5. 加入 exact search 測試
+- `backend/scripts/generate_embeddings.py`
+- 查詢 embedding IS NULL 的列，每批 100 筆
+- 呼叫 `text-embedding-3-small`，向量寫回 DB，每批 commit（斷點重跑安全）
+- **待執行：**
+  ```powershell
+  uv run python scripts/generate_embeddings.py
+  ```
 
-### V2-01-05 接入 nutrition resolution
+### V2-01-05 RAG 接入 nutrition resolution ✅
 
-1. 新增 `resolve_vector_official_source()`
-2. 在 `select_nutrition_source()` 的第一順位呼叫
-3. 命中時回傳 `official_vector_source`
-4. 未命中時回到現有 `official_source -> canonical_mapping -> fallback_estimate`
-5. 保留 packaged drink special guard
+- 新建 `backend/app/services/rag_lookup.py`
+  - `embed_food_query(text)` → 呼叫 OpenAI embeddings
+  - `lookup_rag_food(food_name, normalized_food_name, db)` → cosine distance 查詢
+  - 任何 exception 靜默 return None（SQLite 測試自動走 fallback）
+- 修改 `nutrition_resolution.py`：`resolve_official_source / select_nutrition_source / resolve_item_nutrition` 加 `db: Session | None = None`，RAG 在 keyword catalog 之前
+- 修改 `analysis_confirm.py`：`build_analysis_item(payload, db)` 傳入 db
+- 實作細節：
+  - source label：`"rag_official"`（區別舊的 `"official_source"`）
+  - cosine distance threshold：`0.20`（≈ similarity 0.80）
+  - 向量傳入：`CAST(:vec AS vector)`，JSON array 格式
+  - RAG 命中 → `NutritionPreset(weight_g=100, kcal=per_100g_value, ...)`
+- 85 tests 全過
 
-### V2-01-06 驗收與調參
+### V2-01-06 驗收與調參（待執行）
 
-1. 建立 20 筆常見食物測試樣本
-2. 覆蓋台灣常見餐點與飲料
-3. 記錄 top-1 similarity 與是否接受
-4. 調整 threshold
-5. 補上部署後人工驗收紀錄
+1. 確認 2503 筆資料匯入（embedding IS NOT NULL）
+2. 送出 `白米飯`、`水煮蛋`、`黑咖啡` → 確認 `nutrition_source = "rag_official"`
+3. 送出亂造食物 → 確認退回 fallback
+4. 依實測結果調整 threshold（目前 0.20）
 
 ---
 
