@@ -4,10 +4,21 @@ from pathlib import Path
 
 from app.core.config import get_settings
 from app.services.analysis_recognition import recognize_analysis_image
-from app.services.recognition_openai import parse_openai_response, recognize_meal_image_with_openai
+from app.services.recognition_openai import ProviderCallResult, parse_openai_response, recognize_meal_image_with_openai
 from app.services.recognition_provider import ProviderCandidate
 from app.services.recognition_normalization import normalize_provider_candidates
 from app.schemas.analysis import RecognitionStatus
+
+
+def _make_provider_result(candidates: list[ProviderCandidate]) -> ProviderCallResult:
+    """測試用：把 list[ProviderCandidate] 包成 ProviderCallResult。"""
+    return ProviderCallResult(
+        candidates=candidates,
+        input_tokens=0,
+        output_tokens=0,
+        latency_ms=0,
+        outcome="success",
+    )
 
 
 def test_normalize_provider_candidates_skips_blank_names_and_applies_defaults():
@@ -60,7 +71,7 @@ def test_recognize_analysis_image_uses_provider_output(monkeypatch):
     def fake_recognize_meal_image_with_openai(*, filename: str | None, image_path: Path):
         assert filename == "meal.jpg"
         assert image_path == Path("tmp/meal.jpg")
-        return provider_candidates
+        return _make_provider_result(provider_candidates)
 
     monkeypatch.setattr(
         "app.services.analysis_recognition.recognize_meal_image_with_openai",
@@ -124,10 +135,18 @@ def test_recognize_meal_image_with_openai_uses_real_client_when_key_exists(monke
 
     captured_request: dict[str, object] = {}
 
+    class FakeUsage:
+        input_tokens = 10
+        output_tokens = 5
+
+    class FakeResponse:
+        output_text = json.dumps(response_payload)
+        usage = FakeUsage()
+
     class FakeResponses:
         def create(self, **kwargs):
             captured_request.update(kwargs)
-            return type("FakeResponse", (), {"output_text": json.dumps(response_payload)})()
+            return FakeResponse()
 
     class FakeClient:
         def __init__(self):
@@ -139,13 +158,15 @@ def test_recognize_meal_image_with_openai_uses_real_client_when_key_exists(monke
     image_path.write_bytes(b"fake-image-bytes")
 
     try:
-        candidates = recognize_meal_image_with_openai(filename="meal.jpg", image_path=image_path)
+        result = recognize_meal_image_with_openai(filename="meal.jpg", image_path=image_path)
     finally:
         get_settings.cache_clear()
 
     assert captured_request["model"] == "gpt-5.4-mini"
-    assert candidates[0].food_name == "Black Tea"
-    assert candidates[0].portion_unit == "cup"
+    assert result.candidates[0].food_name == "Black Tea"
+    assert result.candidates[0].portion_unit == "cup"
+    assert result.input_tokens == 10
+    assert result.output_tokens == 5
 
 
 def test_recognize_meal_image_with_openai_keeps_mock_fallback_without_key(monkeypatch, tmp_path):
@@ -156,12 +177,13 @@ def test_recognize_meal_image_with_openai_keeps_mock_fallback_without_key(monkey
     image_path.write_bytes(b"fake-image-bytes")
 
     try:
-        candidates = recognize_meal_image_with_openai(filename="salad-lunch.jpg", image_path=image_path)
+        result = recognize_meal_image_with_openai(filename="salad-lunch.jpg", image_path=image_path)
     finally:
         get_settings.cache_clear()
 
-    assert len(candidates) == 2
-    assert candidates[0].food_name == "Chicken Salad"
+    assert len(result.candidates) == 2
+    assert result.candidates[0].food_name == "Chicken Salad"
+    assert result.outcome == "success"
 
 
 def test_recognize_analysis_image_returns_partial_when_any_candidate_has_low_confidence(monkeypatch):
@@ -184,7 +206,7 @@ def test_recognize_analysis_image_returns_partial_when_any_candidate_has_low_con
 
     monkeypatch.setattr(
         "app.services.analysis_recognition.recognize_meal_image_with_openai",
-        lambda **_: provider_candidates,
+        lambda **_: _make_provider_result(provider_candidates),
     )
 
     result = recognize_analysis_image(filename="meal.jpg", image_path=Path("tmp/meal.jpg"))
@@ -215,7 +237,7 @@ def test_recognize_analysis_image_returns_success_when_all_candidates_have_high_
 
     monkeypatch.setattr(
         "app.services.analysis_recognition.recognize_meal_image_with_openai",
-        lambda **_: provider_candidates,
+        lambda **_: _make_provider_result(provider_candidates),
     )
 
     result = recognize_analysis_image(filename="meal.jpg", image_path=Path("tmp/meal.jpg"))

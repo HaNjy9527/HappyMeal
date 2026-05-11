@@ -14,9 +14,11 @@ from app.schemas.analysis import (
     AnalysisReestimateResponse,
     RecognitionStatus,
 )
+from app.services.ai_event_log import record_ai_event
 from app.services.analysis import get_analysis_for_user
 from app.services.recognition_normalization import normalize_provider_candidates
 from app.services.recognition_openai import (
+    ProviderCallResult,
     RecognitionProviderFailure,
     reestimate_meal_items_with_openai,
 )
@@ -71,7 +73,7 @@ def reestimate_analysis(
 
     items_payload = build_items_payload(payload)
     try:
-        provider_candidates = reestimate_meal_items_with_openai(
+        provider_result: ProviderCallResult = reestimate_meal_items_with_openai(
             items_payload=items_payload,
             user_instruction=payload.user_instruction,
         )
@@ -80,13 +82,35 @@ def reestimate_analysis(
             "Re-estimate provider failure",
             extra={"event": "reestimate_result", "outcome": "failure", "reason": error.reason},
         )
+        record_ai_event(
+            db,
+            event="openai_reestimate",
+            user_id=user.id,
+            analysis_id=analysis_id,
+            outcome="failure",
+            reason=error.reason,
+            latency_ms=error.latency_ms or None,
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=error.message,
         ) from error
 
-    used_fallback = not bool(provider_candidates)
-    if not provider_candidates:
+    # openai_reestimate event（成功路徑）
+    record_ai_event(
+        db,
+        event="openai_reestimate",
+        user_id=user.id,
+        analysis_id=analysis_id,
+        outcome="success",
+        candidate_count=len(provider_result.candidates),
+        input_tokens=provider_result.input_tokens or None,
+        output_tokens=provider_result.output_tokens or None,
+        latency_ms=provider_result.latency_ms or None,
+    )
+
+    used_fallback = not bool(provider_result.candidates)
+    if not provider_result.candidates:
         logger.info(
             "Re-estimate used fallback",
             extra={
@@ -97,6 +121,8 @@ def reestimate_analysis(
             },
         )
         provider_candidates = build_fallback_candidates(payload)
+    else:
+        provider_candidates = provider_result.candidates
 
     candidates = normalize_provider_candidates(provider_candidates)
     recognition_status = RecognitionStatus.PARTIAL if payload.user_instruction else RecognitionStatus.SUCCESS
@@ -116,6 +142,19 @@ def reestimate_analysis(
             "latency_ms": latency_ms,
         },
     )
+
+    record_ai_event(
+        db,
+        event="reestimate_result",
+        user_id=user.id,
+        analysis_id=analysis_id,
+        outcome=recognition_status.value,
+        candidate_count=len(candidates),
+        has_instruction=bool(payload.user_instruction),
+        used_fallback=used_fallback,
+        latency_ms=latency_ms,
+    )
+
     return AnalysisReestimateResponse(
         analysis_id=analysis.id,
         recognition_status=recognition_status,

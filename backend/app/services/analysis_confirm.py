@@ -17,6 +17,7 @@ from app.schemas.analysis import (
 )
 from app.services.analysis import get_analysis_for_user
 from app.services.analysis_upload import delete_analysis_uploads
+from app.services.ai_event_log import record_ai_event
 from app.services.portion_resolution import quantize_decimal
 from app.services.consent import build_non_medical_disclaimer
 from app.services.nutrition_resolution import NutritionResolutionInput, resolve_item_nutrition
@@ -282,5 +283,14 @@ def confirm_analysis(
             "edited_item_count": edited_item_count,
             "latency_ms": latency_ms,
         },
+    )
+    record_ai_event(
+        db,
+        event="analysis_confirm",
+        user_id=user.id,
+        analysis_id=analysis_id,
+        outcome="success",
+        item_count=len(payload.items),
+        latency_ms=latency_ms,
     )
     return build_confirm_response(analysis, recommended_exercises)

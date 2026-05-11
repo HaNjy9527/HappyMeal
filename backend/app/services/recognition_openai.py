@@ -131,11 +131,24 @@ Rules:
 """.strip()
 
 
+@dataclass(frozen=True)
+class ProviderCallResult:
+    """Provider API 呼叫結果，含 token 用量與延遲。"""
+
+    candidates: list[ProviderCandidate]
+    input_tokens: int
+    output_tokens: int
+    latency_ms: int
+    outcome: str          # "success" | "failure"
+    reason: str | None = None
+
+
 @dataclass(slots=True)
 class RecognitionProviderFailure(Exception):
     reason: str
     message: str
     manual_review_required: bool = False
+    latency_ms: int = 0   # 供上層寫 event log 用
 
     def __post_init__(self) -> None:
         super().__init__(self.message)
@@ -196,7 +209,7 @@ def parse_openai_response(output_text: str) -> list[ProviderCandidate]:
     return candidates
 
 
-def request_openai_candidates(*, image_path: Path) -> list[ProviderCandidate]:
+def request_openai_candidates(*, image_path: Path) -> ProviderCallResult:
     settings = get_settings()
     client = create_openai_client()
     t0 = time.perf_counter()
@@ -229,6 +242,7 @@ def request_openai_candidates(*, image_path: Path) -> list[ProviderCandidate]:
         raise RecognitionProviderFailure(
             reason="quota_exceeded",
             message="AI 服務目前額度不足，請重拍、換圖或稍後再試。",
+            latency_ms=latency_ms,
         ) from error
     except BadRequestError as error:
         latency_ms = round((time.perf_counter() - t0) * 1000)
@@ -239,6 +253,7 @@ def request_openai_candidates(*, image_path: Path) -> list[ProviderCandidate]:
         raise RecognitionProviderFailure(
             reason="invalid_image",
             message="這張圖片目前無法穩定分析，請重拍或改用其他圖片。",
+            latency_ms=latency_ms,
         ) from error
     except APITimeoutError as error:
         latency_ms = round((time.perf_counter() - t0) * 1000)
@@ -249,6 +264,7 @@ def request_openai_candidates(*, image_path: Path) -> list[ProviderCandidate]:
         raise RecognitionProviderFailure(
             reason="provider_timeout",
             message="AI 分析逾時，請重拍、換圖或稍後再試。",
+            latency_ms=latency_ms,
         ) from error
     except APIConnectionError as error:
         latency_ms = round((time.perf_counter() - t0) * 1000)
@@ -259,6 +275,7 @@ def request_openai_candidates(*, image_path: Path) -> list[ProviderCandidate]:
         raise RecognitionProviderFailure(
             reason="provider_unavailable",
             message="AI 服務目前無法連線，請重拍、換圖或稍後再試。",
+            latency_ms=latency_ms,
         ) from error
 
     latency_ms = round((time.perf_counter() - t0) * 1000)
@@ -272,14 +289,20 @@ def request_openai_candidates(*, image_path: Path) -> list[ProviderCandidate]:
             "latency_ms": latency_ms,
         },
     )
-    return candidates
+    return ProviderCallResult(
+        candidates=candidates,
+        input_tokens=response.usage.input_tokens,
+        output_tokens=response.usage.output_tokens,
+        latency_ms=latency_ms,
+        outcome="success",
+    )
 
 
 def request_openai_reestimate_candidates(
     *,
     items_payload: list[dict[str, object]],
     user_instruction: str | None,
-) -> list[ProviderCandidate]:
+) -> ProviderCallResult:
     settings = get_settings()
     client = create_openai_client()
     instruction_payload = {
@@ -315,6 +338,7 @@ def request_openai_reestimate_candidates(
         raise RecognitionProviderFailure(
             reason="quota_exceeded",
             message="AI 服務目前額度不足，暫時無法重新估算，請稍後再試。",
+            latency_ms=latency_ms,
         ) from error
     except BadRequestError as error:
         latency_ms = round((time.perf_counter() - t0) * 1000)
@@ -325,6 +349,7 @@ def request_openai_reestimate_candidates(
         raise RecognitionProviderFailure(
             reason="invalid_image",
             message="這次的資料無法重新估算，請重新開始分析。",
+            latency_ms=latency_ms,
         ) from error
     except APITimeoutError as error:
         latency_ms = round((time.perf_counter() - t0) * 1000)
@@ -335,6 +360,7 @@ def request_openai_reestimate_candidates(
         raise RecognitionProviderFailure(
             reason="provider_timeout",
             message="AI 重新估算逾時，請稍後再試。",
+            latency_ms=latency_ms,
         ) from error
     except APIConnectionError as error:
         latency_ms = round((time.perf_counter() - t0) * 1000)
@@ -345,6 +371,7 @@ def request_openai_reestimate_candidates(
         raise RecognitionProviderFailure(
             reason="provider_unavailable",
             message="AI 服務目前無法連線，暫時無法重新估算。",
+            latency_ms=latency_ms,
         ) from error
 
     latency_ms = round((time.perf_counter() - t0) * 1000)
@@ -358,32 +385,47 @@ def request_openai_reestimate_candidates(
             "latency_ms": latency_ms,
         },
     )
-    return candidates
+    return ProviderCallResult(
+        candidates=candidates,
+        input_tokens=response.usage.input_tokens,
+        output_tokens=response.usage.output_tokens,
+        latency_ms=latency_ms,
+        outcome="success",
+    )
 
 
-def recognize_meal_image_with_openai(*, filename: str | None, image_path: Path) -> list[ProviderCandidate]:
+def recognize_meal_image_with_openai(*, filename: str | None, image_path: Path) -> ProviderCallResult:
     settings = get_settings()
 
     if settings.ai_food_api_key:
         return request_openai_candidates(image_path=image_path)
 
+    # Mock path（無 API key 時，依 filename 回傳假資料）
     if filename:
         normalized_filename = filename.lower()
-
         if "salad" in normalized_filename:
-            return MOCK_CANDIDATE_PRESETS["salad"]
+            mock_candidates = MOCK_CANDIDATE_PRESETS["salad"]
+        elif "rice" in normalized_filename:
+            mock_candidates = MOCK_CANDIDATE_PRESETS["rice"]
+        else:
+            mock_candidates = DEFAULT_PROVIDER_CANDIDATES
+    else:
+        mock_candidates = DEFAULT_PROVIDER_CANDIDATES
 
-        if "rice" in normalized_filename:
-            return MOCK_CANDIDATE_PRESETS["rice"]
-
-    return DEFAULT_PROVIDER_CANDIDATES
+    return ProviderCallResult(
+        candidates=mock_candidates,
+        input_tokens=0,
+        output_tokens=0,
+        latency_ms=0,
+        outcome="success",
+    )
 
 
 def reestimate_meal_items_with_openai(
     *,
     items_payload: list[dict[str, object]],
     user_instruction: str | None,
-) -> list[ProviderCandidate]:
+) -> ProviderCallResult:
     settings = get_settings()
 
     if settings.ai_food_api_key:
@@ -392,4 +434,10 @@ def reestimate_meal_items_with_openai(
             user_instruction=user_instruction,
         )
 
-    return []
+    return ProviderCallResult(
+        candidates=[],
+        input_tokens=0,
+        output_tokens=0,
+        latency_ms=0,
+        outcome="success",
+    )

@@ -221,3 +221,24 @@ class FoodNutritionEmbedding(TimestampMixin, Base):
     carb_g_per_100g: Mapped[Decimal] = mapped_column(Numeric(7, 2), nullable=False)
     source: Mapped[str] = mapped_column(String(50), nullable=False, default="official")
     nutrients_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
+
+class AnalysisEventLog(Base):
+    __tablename__ = "ai_event_log"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_id)
+    user_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    analysis_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("food_analyses.id", ondelete="SET NULL"), nullable=True)
+    event: Mapped[str] = mapped_column(String(50), nullable=False)
+    outcome: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    reason: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    candidate_count: Mapped[int | None] = mapped_column(nullable=True)
+    item_count: Mapped[int | None] = mapped_column(nullable=True)
+    manual_review_required: Mapped[bool | None] = mapped_column(nullable=True)
+    has_instruction: Mapped[bool | None] = mapped_column(nullable=True)
+    used_fallback: Mapped[bool | None] = mapped_column(nullable=True)
+    input_tokens: Mapped[int | None] = mapped_column(nullable=True)
+    output_tokens: Mapped[int | None] = mapped_column(nullable=True)
+    prompt_version: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    latency_ms: Mapped[int | None] = mapped_column(nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)

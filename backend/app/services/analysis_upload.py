@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.db.models import AnalysisStatus, User
 from app.schemas.analysis import AnalysisCandidateResponse, RecognitionStatus
+from app.services.ai_event_log import record_ai_event
 from app.services.analysis import get_analysis_for_user
 from app.services.analysis_recognition import recognize_analysis_image
 
@@ -92,6 +93,32 @@ def upload_analysis_image(
     finally:
         delete_analysis_uploads(analysis_id)
 
+    # openai_recognition event（success 或 failure 都寫）
+    record_ai_event(
+        db,
+        event="openai_recognition",
+        user_id=user.id,
+        analysis_id=analysis_id,
+        outcome=recognition_result.provider_outcome,
+        reason=recognition_result.provider_reason,
+        candidate_count=len(recognition_result.candidates) if recognition_result.provider_outcome == "success" else None,
+        input_tokens=recognition_result.provider_input_tokens if recognition_result.provider_outcome == "success" else None,
+        output_tokens=recognition_result.provider_output_tokens if recognition_result.provider_outcome == "success" else None,
+        latency_ms=recognition_result.provider_latency_ms or None,
+    )
+
+    # recognition_result event（僅 API 成功時才有辨識結果可記錄）
+    if recognition_result.provider_outcome == "success":
+        record_ai_event(
+            db,
+            event="recognition_result",
+            user_id=user.id,
+            analysis_id=analysis_id,
+            outcome=recognition_result.recognition_status.value,
+            candidate_count=len(recognition_result.candidates),
+            manual_review_required=recognition_result.manual_review_required,
+        )
+
     analysis.status = resolve_analysis_status(recognition_result.recognition_status)
     db.add(analysis)
     db.commit()
@@ -106,6 +133,16 @@ def upload_analysis_image(
             "latency_ms": latency_ms,
         },
     )
+
+    record_ai_event(
+        db,
+        event="analysis_upload",
+        user_id=user.id,
+        analysis_id=analysis_id,
+        outcome="success",
+        latency_ms=latency_ms,
+    )
+
     return AnalysisCandidateResponse(
         analysis_id=analysis.id,
         status=analysis.status,
