@@ -65,6 +65,24 @@ CANONICAL_FOOD_KEYS = frozenset(
         "sweetened_soy_milk",
         "rice_milk",
         "bubble_milk_tea",
+        # 輕食 / 早餐
+        "oatmeal",
+        "greek_yogurt",
+        "avocado_toast",
+        "sandwich",
+        "rice_ball",
+        "tuna_salad",
+        # 水果
+        "banana",
+        "apple",
+        "mixed_fruits",
+        # 咖啡 / 飲品
+        "latte",
+        "matcha_latte",
+        "fruit_smoothie",
+        # 台灣常見輕食
+        "spring_roll",
+        "congee",
     }
 )
 
@@ -146,12 +164,52 @@ ALIAS_MAPPING = {
     "boba_milk_tea": "bubble_milk_tea",
     "pearl_milk_tea": "bubble_milk_tea",
     "zhen_zhu_nai_cha": "bubble_milk_tea",
+    # 輕食 / 早餐 aliases
+    "oat_porridge": "oatmeal",
+    "rolled_oats": "oatmeal",
+    "overnight_oats": "oatmeal",
+    "plain_yogurt": "greek_yogurt",
+    "yogurt": "greek_yogurt",
+    "avocado_on_toast": "avocado_toast",
+    "whole_wheat_sandwich": "sandwich",
+    "club_sandwich": "sandwich",
+    "onigiri": "rice_ball",
+    "taiwan_rice_ball": "rice_ball",
+    "tuna_vegetable_salad": "tuna_salad",
+    # 水果 aliases
+    "fruit_salad": "mixed_fruits",
+    "fruit_plate": "mixed_fruits",
+    "fruit_platter": "mixed_fruits",
+    # 咖啡 / 飲品 aliases
+    "cafe_latte": "latte",
+    "flat_white": "latte",
+    "green_tea_latte": "matcha_latte",
+    "matcha_milk": "matcha_latte",
+    "smoothie": "fruit_smoothie",
+    "fruit_shake": "fruit_smoothie",
+    "berry_smoothie": "fruit_smoothie",
+    # 台灣常見輕食 aliases
+    "popiah": "spring_roll",
+    "taiwanese_spring_roll": "spring_roll",
+    "fresh_spring_roll": "spring_roll",
+    "rice_congee": "congee",
+    "plain_congee": "congee",
+    "white_congee": "congee",
 }
 
 KEYWORD_RULES = [
     ("generic_condiment", ("sauce", "dressing", "dip", "醬", "醬汁")),
     ("generic_garnish", ("ginger", "scallion", "garlic", "sesame", "薑", "蔥", "蒜", "芝麻")),
+    # 特定飲品（先於通用規則）
+    ("matcha_latte", ("matcha", "抹茶")),
+    ("latte", ("latte",)),
+    ("fruit_smoothie", ("smoothie", "果昔")),
     ("bubble_milk_tea", ("boba", "bubble tea", "pearl milk", "珍珠奶茶", "珍奶")),
+    # 特定食物（先於通用規則）
+    ("oatmeal", ("oatmeal", "燕麥粥")),
+    ("greek_yogurt", ("yogurt", "優格")),
+    ("spring_roll", ("spring roll", "潤餅", "popiah")),
+    ("mixed_fruits", ("fruit platter", "fruit bowl", "fruit plate", "水果拼盤", "水果切盤", "水果盤")),
     ("miso_soup", ("miso", "味噌")),
     ("beef_noodle_soup", ("beef noodle", "牛肉麵")),
     ("fried_rice", ("fried rice", "炒飯")),

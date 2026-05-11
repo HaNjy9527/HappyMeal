@@ -91,6 +91,24 @@ NUTRITION_PRESETS = {
     "sweetened_soy_milk": NutritionPreset("cup", Decimal("250.00"), Decimal("120.00"), Decimal("5.00"), Decimal("3.00"), Decimal("18.00")),
     "rice_milk": NutritionPreset("cup", Decimal("250.00"), Decimal("180.00"), Decimal("2.00"), Decimal("4.00"), Decimal("33.00")),
     "bubble_milk_tea": NutritionPreset("cup", Decimal("500.00"), Decimal("400.00"), Decimal("3.00"), Decimal("5.00"), Decimal("85.00")),
+    # --- 輕食 / 早餐 ---
+    "oatmeal": NutritionPreset("bowl", Decimal("250.00"), Decimal("150.00"), Decimal("5.00"), Decimal("3.00"), Decimal("27.00")),
+    "greek_yogurt": NutritionPreset("cup", Decimal("200.00"), Decimal("130.00"), Decimal("17.00"), Decimal("0.70"), Decimal("10.00")),
+    "avocado_toast": NutritionPreset("pcs", Decimal("130.00"), Decimal("240.00"), Decimal("6.00"), Decimal("14.00"), Decimal("24.00")),
+    "sandwich": NutritionPreset("pcs", Decimal("180.00"), Decimal("280.00"), Decimal("12.00"), Decimal("8.00"), Decimal("38.00")),
+    "rice_ball": NutritionPreset("pcs", Decimal("150.00"), Decimal("230.00"), Decimal("7.00"), Decimal("4.00"), Decimal("43.00")),
+    "tuna_salad": NutritionPreset("bowl", Decimal("250.00"), Decimal("220.00"), Decimal("20.00"), Decimal("10.00"), Decimal("12.00")),
+    # --- 水果 ---
+    "banana": NutritionPreset("pcs", Decimal("120.00"), Decimal("105.00"), Decimal("1.30"), Decimal("0.40"), Decimal("27.00")),
+    "apple": NutritionPreset("pcs", Decimal("180.00"), Decimal("95.00"), Decimal("0.50"), Decimal("0.30"), Decimal("25.00")),
+    "mixed_fruits": NutritionPreset("bowl", Decimal("200.00"), Decimal("100.00"), Decimal("1.00"), Decimal("0.50"), Decimal("25.00")),
+    # --- 咖啡 / 飲品 ---
+    "latte": NutritionPreset("cup", Decimal("240.00"), Decimal("120.00"), Decimal("6.00"), Decimal("4.00"), Decimal("14.00")),
+    "matcha_latte": NutritionPreset("cup", Decimal("240.00"), Decimal("160.00"), Decimal("6.00"), Decimal("5.00"), Decimal("22.00")),
+    "fruit_smoothie": NutritionPreset("cup", Decimal("300.00"), Decimal("180.00"), Decimal("3.00"), Decimal("1.50"), Decimal("42.00")),
+    # --- 台灣常見輕食 ---
+    "spring_roll": NutritionPreset("pcs", Decimal("200.00"), Decimal("280.00"), Decimal("8.00"), Decimal("8.00"), Decimal("44.00")),
+    "congee": NutritionPreset("bowl", Decimal("300.00"), Decimal("150.00"), Decimal("3.00"), Decimal("0.50"), Decimal("34.00")),
 }
 
 UNIT_ALIASES = {

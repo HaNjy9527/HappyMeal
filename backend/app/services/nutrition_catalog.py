@@ -260,6 +260,80 @@ OFFICIAL_NUTRITION_CATALOG = {
         aliases=("bubble_milk_tea", "boba_milk_tea", "pearl_milk_tea", "zhen_zhu_nai_cha"),
         preset=NutritionPreset("cup", Decimal("500.00"), Decimal("400.00"), Decimal("3.00"), Decimal("5.00"), Decimal("85.00")),
     ),
+    # --- 輕食 / 早餐 ---
+    "oatmeal": OfficialNutritionRecord(
+        canonical_food_name="oatmeal",
+        aliases=("oatmeal", "oat_porridge", "rolled_oats", "overnight_oats"),
+        preset=NutritionPreset("bowl", Decimal("250.00"), Decimal("150.00"), Decimal("5.00"), Decimal("3.00"), Decimal("27.00")),
+    ),
+    "greek_yogurt": OfficialNutritionRecord(
+        canonical_food_name="greek_yogurt",
+        aliases=("greek_yogurt", "plain_yogurt", "yogurt", "strained_yogurt"),
+        preset=NutritionPreset("cup", Decimal("200.00"), Decimal("130.00"), Decimal("17.00"), Decimal("0.70"), Decimal("10.00")),
+    ),
+    "avocado_toast": OfficialNutritionRecord(
+        canonical_food_name="avocado_toast",
+        aliases=("avocado_toast", "avocado_on_toast", "toast_with_avocado"),
+        preset=NutritionPreset("pcs", Decimal("130.00"), Decimal("240.00"), Decimal("6.00"), Decimal("14.00"), Decimal("24.00")),
+    ),
+    "sandwich": OfficialNutritionRecord(
+        canonical_food_name="sandwich",
+        aliases=("sandwich", "whole_wheat_sandwich", "club_sandwich", "sub_sandwich"),
+        preset=NutritionPreset("pcs", Decimal("180.00"), Decimal("280.00"), Decimal("12.00"), Decimal("8.00"), Decimal("38.00")),
+    ),
+    "rice_ball": OfficialNutritionRecord(
+        canonical_food_name="rice_ball",
+        aliases=("rice_ball", "onigiri", "taiwan_rice_ball", "stuffed_rice_ball"),
+        preset=NutritionPreset("pcs", Decimal("150.00"), Decimal("230.00"), Decimal("7.00"), Decimal("4.00"), Decimal("43.00")),
+    ),
+    "tuna_salad": OfficialNutritionRecord(
+        canonical_food_name="tuna_salad",
+        aliases=("tuna_salad", "tuna_vegetable_salad", "tuna_green_salad"),
+        preset=NutritionPreset("bowl", Decimal("250.00"), Decimal("220.00"), Decimal("20.00"), Decimal("10.00"), Decimal("12.00")),
+    ),
+    # --- 水果 ---
+    "banana": OfficialNutritionRecord(
+        canonical_food_name="banana",
+        aliases=("banana", "ripe_banana"),
+        preset=NutritionPreset("pcs", Decimal("120.00"), Decimal("105.00"), Decimal("1.30"), Decimal("0.40"), Decimal("27.00")),
+    ),
+    "apple": OfficialNutritionRecord(
+        canonical_food_name="apple",
+        aliases=("apple", "fuji_apple", "red_apple", "green_apple"),
+        preset=NutritionPreset("pcs", Decimal("180.00"), Decimal("95.00"), Decimal("0.50"), Decimal("0.30"), Decimal("25.00")),
+    ),
+    "mixed_fruits": OfficialNutritionRecord(
+        canonical_food_name="mixed_fruits",
+        aliases=("mixed_fruits", "fruit_salad", "fruit_bowl", "fruit_plate", "fruit_platter"),
+        preset=NutritionPreset("bowl", Decimal("200.00"), Decimal("100.00"), Decimal("1.00"), Decimal("0.50"), Decimal("25.00")),
+    ),
+    # --- 咖啡 / 飲品 ---
+    "latte": OfficialNutritionRecord(
+        canonical_food_name="latte",
+        aliases=("latte", "cafe_latte", "milk_coffee", "flat_white"),
+        preset=NutritionPreset("cup", Decimal("240.00"), Decimal("120.00"), Decimal("6.00"), Decimal("4.00"), Decimal("14.00")),
+    ),
+    "matcha_latte": OfficialNutritionRecord(
+        canonical_food_name="matcha_latte",
+        aliases=("matcha_latte", "matcha_milk", "green_tea_latte"),
+        preset=NutritionPreset("cup", Decimal("240.00"), Decimal("160.00"), Decimal("6.00"), Decimal("5.00"), Decimal("22.00")),
+    ),
+    "fruit_smoothie": OfficialNutritionRecord(
+        canonical_food_name="fruit_smoothie",
+        aliases=("fruit_smoothie", "smoothie", "fruit_shake", "berry_smoothie"),
+        preset=NutritionPreset("cup", Decimal("300.00"), Decimal("180.00"), Decimal("3.00"), Decimal("1.50"), Decimal("42.00")),
+    ),
+    # --- 台灣常見輕食 ---
+    "spring_roll": OfficialNutritionRecord(
+        canonical_food_name="spring_roll",
+        aliases=("spring_roll", "taiwanese_spring_roll", "popiah", "fresh_spring_roll"),
+        preset=NutritionPreset("pcs", Decimal("200.00"), Decimal("280.00"), Decimal("8.00"), Decimal("8.00"), Decimal("44.00")),
+    ),
+    "congee": OfficialNutritionRecord(
+        canonical_food_name="congee",
+        aliases=("congee", "rice_congee", "plain_congee", "white_congee"),
+        preset=NutritionPreset("bowl", Decimal("300.00"), Decimal("150.00"), Decimal("3.00"), Decimal("0.50"), Decimal("34.00")),
+    ),
 }
 
 
