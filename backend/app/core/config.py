@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     ai_food_api_key: str = Field(default="", alias="AI_API_KEY")
     ai_food_model: str = Field(default="gpt-5.4-mini", alias="AI_FOOD_MODEL")
     nutrition_data_source: str = Field(default="", alias="NUTRITION_DATA_SOURCE")
+    image_preprocess_enabled: bool = Field(default=True, alias="IMAGE_PREPROCESS_ENABLED")
+    image_preprocess_max_px: int = Field(default=1024, alias="IMAGE_PREPROCESS_MAX_PX")
 
     model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")
 

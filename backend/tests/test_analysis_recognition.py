@@ -1,6 +1,9 @@
+import io
 import json
 from decimal import Decimal
 from pathlib import Path
+
+from PIL import Image
 
 from app.core.config import get_settings
 from app.services.analysis_recognition import recognize_analysis_image
@@ -155,7 +158,9 @@ def test_recognize_meal_image_with_openai_uses_real_client_when_key_exists(monke
     monkeypatch.setattr("app.services.recognition_openai.create_openai_client", lambda: FakeClient())
 
     image_path = tmp_path / "meal.jpg"
-    image_path.write_bytes(b"fake-image-bytes")
+    buf = io.BytesIO()
+    Image.new("RGB", (10, 10), color=(128, 128, 128)).save(buf, format="JPEG")
+    image_path.write_bytes(buf.getvalue())
 
     try:
         result = recognize_meal_image_with_openai(filename="meal.jpg", image_path=image_path)

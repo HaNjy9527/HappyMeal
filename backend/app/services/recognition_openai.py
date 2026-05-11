@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import io
 import json
 import logging
 import time
@@ -9,6 +10,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from openai import APIConnectionError, APITimeoutError, BadRequestError, OpenAI, RateLimitError
+from PIL import Image
 
 from app.core.config import get_settings
 from app.services.recognition_provider import ProviderCandidate
@@ -162,10 +164,40 @@ def create_openai_client() -> OpenAI:
     return OpenAI(api_key=settings.ai_food_api_key)
 
 
+def preprocess_image(image_path: Path, max_px: int) -> tuple[bytes, str]:
+    """長邊超過 max_px 時縮小，統一輸出 JPEG quality=85。"""
+    with Image.open(image_path) as img:
+        if img.mode != "RGB":
+            background = Image.new("RGB", img.size, (255, 255, 255))
+            if img.mode == "RGBA":
+                background.paste(img, mask=img.split()[3])
+            else:
+                background.paste(img)
+            img = background
+
+        width, height = img.size
+        long_edge = max(width, height)
+        if long_edge > max_px:
+            scale = max_px / long_edge
+            new_size = (int(width * scale), int(height * scale))
+            img = img.resize(new_size, Image.LANCZOS)
+
+        buffer = io.BytesIO()
+        img.save(buffer, format="JPEG", quality=85, optimize=True)
+        return buffer.getvalue(), "image/jpeg"
+
+
 def get_image_data_url(image_path: Path) -> str:
-    suffix = image_path.suffix.lower()
-    mime_type = "image/png" if suffix == ".png" else "image/jpeg"
-    encoded_image = base64.b64encode(image_path.read_bytes()).decode("utf-8")
+    settings = get_settings()
+
+    if settings.image_preprocess_enabled:
+        image_bytes, mime_type = preprocess_image(image_path, settings.image_preprocess_max_px)
+    else:
+        suffix = image_path.suffix.lower()
+        mime_type = "image/png" if suffix == ".png" else "image/jpeg"
+        image_bytes = image_path.read_bytes()
+
+    encoded_image = base64.b64encode(image_bytes).decode("utf-8")
     return f"data:{mime_type};base64,{encoded_image}"
 
 
