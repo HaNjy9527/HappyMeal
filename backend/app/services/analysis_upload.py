@@ -14,6 +14,7 @@ from app.schemas.analysis import AnalysisCandidateResponse, RecognitionStatus
 from app.services.ai_event_log import record_ai_event
 from app.services.analysis import get_analysis_for_user
 from app.services.analysis_recognition import recognize_analysis_image
+from app.services.recognition_openai import RECOGNITION_PROMPT_VERSION
 
 
 logger = logging.getLogger("app.analysis")
@@ -105,6 +106,7 @@ def upload_analysis_image(
         input_tokens=recognition_result.provider_input_tokens if recognition_result.provider_outcome == "success" else None,
         output_tokens=recognition_result.provider_output_tokens if recognition_result.provider_outcome == "success" else None,
         latency_ms=recognition_result.provider_latency_ms or None,
+        prompt_version=RECOGNITION_PROMPT_VERSION,
     )
 
     # recognition_result event（僅 API 成功時才有辨識結果可記錄）

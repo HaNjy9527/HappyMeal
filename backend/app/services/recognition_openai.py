@@ -75,6 +75,9 @@ DEFAULT_PROVIDER_CANDIDATES = [
     ),
 ]
 
+RECOGNITION_PROMPT_VERSION = "v1"
+REESTIMATE_PROMPT_VERSION = "v1"
+
 OPENAI_RECOGNITION_PROMPT = """
 Analyze this single meal photo and identify up to 5 foods or drinks that are clearly visible.
 

@@ -18,6 +18,7 @@ from app.services.ai_event_log import record_ai_event
 from app.services.analysis import get_analysis_for_user
 from app.services.recognition_normalization import normalize_provider_candidates
 from app.services.recognition_openai import (
+    REESTIMATE_PROMPT_VERSION,
     ProviderCallResult,
     RecognitionProviderFailure,
     reestimate_meal_items_with_openai,
@@ -90,6 +91,7 @@ def reestimate_analysis(
             outcome="failure",
             reason=error.reason,
             latency_ms=error.latency_ms or None,
+            prompt_version=REESTIMATE_PROMPT_VERSION,
         )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
