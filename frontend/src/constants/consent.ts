@@ -28,11 +28,6 @@ export const consentUiCopy = {
     incomplete: "請完成兩項勾選後繼續。",
     complete: "已可送出，完成後會回到 Analysis。",
   },
-  footer: {
-    kicker: "Legal & consent",
-    description:
-      "你可以隨時回看隱私政策與非醫療用途聲明，不影響目前主流程操作。",
-  },
   action: {
     submit: "同意並繼續",
     submitting: "送出中...",

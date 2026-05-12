@@ -22,7 +22,6 @@ import {
   ProfileResponse,
   ProfileUpdateRequest,
   ThemePreference,
-  apiBaseUrl,
   confirmAnalysis,
   createConsent,
   createAnalysisDraft,
@@ -214,7 +213,10 @@ function AnalysisLoadingState({
           <div className="analysis-loading-hero-top">
             <p className="panel-kicker">AI Meal Recognition</p>
             <span className="analysis-loading-badge">
-              <span className="analysis-loading-status-dot" aria-hidden="true" />
+              <span
+                className="analysis-loading-status-dot"
+                aria-hidden="true"
+              />
               {context.source === "upload" ? "照片辨識中" : "示範流程執行中"}
             </span>
           </div>
@@ -533,10 +535,6 @@ function LegalFooter({
 }) {
   return (
     <footer className="legal-footer">
-      <div>
-        <p className="panel-kicker">{consentUiCopy.footer.kicker}</p>
-        <p className="legal-footer-copy">{consentUiCopy.footer.description}</p>
-      </div>
       <div className="legal-link-list" aria-label="隱私與聲明回看入口">
         {consentSections.map((section) => (
           <button
@@ -636,6 +634,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
   const [activeLegalReview, setActiveLegalReview] = useState<
     ConsentContentSection["id"] | null
   >(null);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const activeLegalSection = resolveConsentSection(activeLegalReview);
 
@@ -651,6 +650,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     if (!hasConsents && screen !== "consent") {
       setActiveLegalReview(null);
       setSelectedHistory(null);
+      setIsUserMenuOpen(false);
       setScreen("consent");
     }
   }, [screen, user]);
@@ -697,9 +697,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
       const response = await getAnalysisHistory();
       setHistoryItems(response.items);
     } catch (error) {
-      setHistoryError(
-        error instanceof Error ? error.message : "紀錄載入失敗",
-      );
+      setHistoryError(error instanceof Error ? error.message : "紀錄載入失敗");
     } finally {
       setHistoryLoading(false);
     }
@@ -755,15 +753,11 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
   async function handleThemeChange(themePreference: ThemePreference) {
     setProfileError(null);
+    setProfileMessage(null);
 
     try {
       const response = await updateThemePreference(themePreference);
       setProfile(response);
-      setProfileMessage(
-        themePreference === "female_default"
-          ? "已切換成柔和主題。"
-          : "已切換成俐落主題。",
-      );
     } catch (error) {
       setProfileError(error instanceof Error ? error.message : "主題切換失敗");
     }
@@ -1051,7 +1045,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
     if (screen === "history") {
       return {
-        title: selectedHistory ? "History Detail" : "History",
+        title: selectedHistory ? "分析詳情" : "分析紀錄",
         copy: selectedHistory
           ? `回看 ${selectedHistory.food_summary} 的營養結果與建議快照。`
           : "回看最近完成的分析摘要，確認總熱量與建議是否延續。",
@@ -1060,7 +1054,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
     if (screen === "profile") {
       return {
-        title: "Profile",
+        title: "個人資料",
         copy:
           validationMessage ||
           "資料完整後，後續分析會直接套用這份目標與活動量設定。",
@@ -1069,19 +1063,13 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
     if (!analysisResult) {
       return {
-        title:
-          analysisStage === "confirm"
-            ? "Candidate Confirmation"
-            : "Start Analysis",
+        title: analysisStage === "confirm" ? "候選確認" : "開始分析",
         copy: "先完成一次分析，這裡會顯示你的總熱量與運動建議。",
       };
     }
 
     return {
-      title:
-        analysisStage === "confirm"
-          ? "Candidate Confirmation"
-          : "Analysis Result",
+      title: analysisStage === "confirm" ? "候選確認" : "分析結果",
       copy: `本次總熱量 ${analysisResult.total_kcal} kcal，建議搭配 ${analysisResult.recommendation.recommended_exercises[0]?.name ?? "輕量活動"}。`,
     };
   }, [
@@ -1103,36 +1091,40 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
         }
       >
         <header className="topbar">
-          <div>
-            <p className="eyebrow">HappyMeal Step 2 MVP</p>
-            <h1>從建檔到歷史回看的一條主鏈</h1>
-          </div>
+          <p className="eyebrow topbar-brand">HappyMeal</p>
           <div className="topbar-actions">
-            <div className="user-badge">
-              <strong>{user.display_name}</strong>
-              <span>{user.avatar_url ? "LINE 已連線" : "LINE 使用者"}</span>
+            <div className="user-menu">
+              <button
+                type="button"
+                className="user-badge user-badge-trigger"
+                aria-expanded={isUserMenuOpen}
+                aria-haspopup="menu"
+                onClick={() => setIsUserMenuOpen((open) => !open)}
+              >
+                <span className="user-badge-copy">
+                  <strong>{user.display_name}</strong>
+                </span>
+              </button>
+              {isUserMenuOpen ? (
+                <div className="user-menu-popover" role="menu">
+                  <button
+                    className="ghost-button user-menu-action"
+                    disabled={logoutMutation.isPending}
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      logoutMutation.mutate();
+                    }}
+                  >
+                    {logoutMutation.isPending ? "登出中..." : "登出"}
+                  </button>
+                </div>
+              ) : null}
             </div>
-            <div className="backend-badge">API {apiBaseUrl}</div>
-            <button
-              className="ghost-button"
-              disabled={logoutMutation.isPending}
-              onClick={() => logoutMutation.mutate()}
-            >
-              {logoutMutation.isPending ? "登出中..." : "登出"}
-            </button>
           </div>
         </header>
 
-        <section className="spotlight-card">
-          <div>
-            <p className="spotlight-label">目前流程</p>
-            <h2>{spotlightContent.title}</h2>
-          </div>
-          <p className="spotlight-copy">{spotlightContent.copy}</p>
-        </section>
-
         {consentCompleted ? (
-          <nav className="tab-strip" aria-label="主要導覽">
+          <nav className="tab-strip tab-strip-floating" aria-label="主要導覽">
             <button
               className={
                 screen === "analysis" ? "tab-chip is-active" : "tab-chip"
@@ -1155,7 +1147,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
               }
               onClick={() => handleMainScreenChange("profile")}
             >
-              個人資料
+              設定
             </button>
           </nav>
         ) : null}
@@ -1238,13 +1230,12 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
           <section className="content-stack">
             <div className="section-heading">
               <div>
-                <p className="section-kicker">WP-08 / FE-02 to FE-04</p>
                 <h2>
                   {analysisStage === "start"
-                    ? "Start Analysis"
+                    ? "開始分析"
                     : analysisStage === "confirm"
-                      ? "Candidate Confirmation"
-                      : "Analysis Result"}
+                      ? "候選確認"
+                      : "分析結果"}
                 </h2>
               </div>
               {analysisStage !== "start" ? (
@@ -1283,68 +1274,44 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                 />
               ) : (
                 <div className="panel-grid start-analysis-grid">
-                  <article className="panel-card start-analysis-upload-card">
-                    <p className="panel-kicker">Upload</p>
-                    <h3>上傳圖片</h3>
-                    <p>
-                      支援 JPG /
-                      PNG。分析完成後原始圖片只會暫存處理，不會長期保存。
-                    </p>
-                    <label className="upload-dropzone">
-                      <span className="upload-dropzone-copy">
-                        從手機或電腦選一張餐點照片，完成後會直接帶你進入候選確認。
-                      </span>
-                      <button
-                        className="primary-button upload-dropzone-cta"
-                        type="button"
-                        disabled={analysisLoading || analysisAccessLocked}
-                        onClick={() => uploadInputRef.current?.click()}
-                      >
-                        上傳圖片
-                      </button>
-                      <input
-                        ref={uploadInputRef}
-                        className="upload-dropzone-input"
-                        type="file"
-                        name="analysis-image"
-                        accept="image/png,image/jpeg"
-                        disabled={analysisLoading || analysisAccessLocked}
-                        onChange={(event) => {
-                          void handleFileInput(event.currentTarget.files);
-                          event.currentTarget.value = "";
-                        }}
-                      />
-                    </label>
-                  </article>
+                  <button
+                    className="primary-button start-analysis-upload-button"
+                    type="button"
+                    disabled={analysisLoading || analysisAccessLocked}
+                    onClick={() => uploadInputRef.current?.click()}
+                  >
+                    上傳圖片
+                  </button>
+                  <input
+                    ref={uploadInputRef}
+                    className="upload-dropzone-input"
+                    type="file"
+                    name="analysis-image"
+                    accept="image/png,image/jpeg"
+                    disabled={analysisLoading || analysisAccessLocked}
+                    onChange={(event) => {
+                      void handleFileInput(event.currentTarget.files);
+                      event.currentTarget.value = "";
+                    }}
+                  />
 
-                  <article className="panel-card start-analysis-state-card">
-                    <p className="panel-kicker">State</p>
-                    <h3>分析前檢查</h3>
-                    <ul className="compact-list">
-                      <li>
-                        {validationMessage || "個人資料已就緒。"}
-                      </li>
-                      <li>
-                        {analysisLoading
-                          ? "正在建立分析並上傳圖片。"
-                          : "尚未開始新的分析。"}
-                      </li>
-                      <li>
-                        {analysisAccessLocked
-                          ? consentUiCopy.message.lockedSummary
-                          : consentUiCopy.message.unlockedSummary}
-                      </li>
-                      <li>本階段只做單次分析，不做每日累積。</li>
-                    </ul>
-                    {analysisAccessLocked ? (
+                  <div
+                    className="legal-link-list start-analysis-legal-list"
+                    aria-label="分析前檢查聲明入口"
+                  >
+                    {consentSections.map((section) => (
                       <button
-                        className="secondary-button"
-                        onClick={() => handleMainScreenChange("consent")}
+                        key={section.id}
+                        type="button"
+                        className="legal-link-button"
+                        onClick={() => setActiveLegalReview(section.id)}
                       >
-                        {consentUiCopy.action.goToConsent}
+                        {section.id === "privacy"
+                          ? "隱私政策"
+                          : "非醫療用途聲明"}
                       </button>
-                    ) : null}
-                  </article>
+                    ))}
+                  </div>
                 </div>
               )
             ) : null}
@@ -1498,7 +1465,10 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
                 {reestimateLoading ? (
                   <article className="panel-card reestimate-loading-card">
-                    <span className="analysis-loading-status-dot" aria-hidden="true" />
+                    <span
+                      className="analysis-loading-status-dot"
+                      aria-hidden="true"
+                    />
                     AI 重新估算中，請稍候…
                   </article>
                 ) : null}
@@ -1521,7 +1491,10 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                       aria-label="AI 重新估算"
                       aria-modal="true"
                     >
-                      <div className="reestimate-bottom-sheet-handle" aria-hidden="true" />
+                      <div
+                        className="reestimate-bottom-sheet-handle"
+                        aria-hidden="true"
+                      />
                       <div className="reestimate-bottom-sheet-header">
                         <div>
                           <p className="panel-kicker">Optional AI Review</p>
@@ -2018,19 +1991,6 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
         {screen === "profile" ? (
           <section className="content-stack">
-            <div className="section-heading">
-              <div>
-                <p className="section-kicker">WP-08 / FE-01 and FE-07</p>
-                <h2>Profile Edit</h2>
-              </div>
-              <button
-                className="ghost-button"
-                onClick={() => void loadProfile()}
-              >
-                重新載入
-              </button>
-            </div>
-
             {profileError ? (
               <p className="status-banner is-error">{profileError}</p>
             ) : null}
@@ -2041,202 +2001,164 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
             {profileLoading ? (
               <p className="empty-panel">載入中...</p>
             ) : (
-              <div className="panel-grid profile-layout">
-                <form
-                  className="panel-card profile-form"
-                  onSubmit={handleProfileSubmit}
-                >
-                  <p className="panel-kicker">Profile Edit</p>
-                  <h3>更新身體資料與目標</h3>
+              <>
+                <div className="panel-grid profile-layout">
+                  <form
+                    className="panel-card profile-form"
+                    onSubmit={handleProfileSubmit}
+                  >
+                    <h3>更新身體資料與目標</h3>
 
-                  <div className="field-grid field-grid-wide">
-                    <label>
-                      年齡
-                      <input
-                        name="age"
-                        value={profileForm.age}
-                        inputMode="numeric"
-                        onChange={(event) => {
-                          const nextValue = event.currentTarget.value;
-                          setProfileForm((current) => ({
-                            ...current,
-                            age: nextValue,
-                          }));
-                        }}
-                      />
-                    </label>
-                    <label>
-                      身高 cm
-                      <input
-                        name="height_cm"
-                        value={profileForm.height_cm}
-                        inputMode="numeric"
-                        onChange={(event) => {
-                          const nextValue = event.currentTarget.value;
-                          setProfileForm((current) => ({
-                            ...current,
-                            height_cm: nextValue,
-                          }));
-                        }}
-                      />
-                    </label>
-                    <label>
-                      體重 kg
-                      <input
-                        name="weight_kg"
-                        value={profileForm.weight_kg}
-                        inputMode="decimal"
-                        onChange={(event) => {
-                          const nextValue = event.currentTarget.value;
-                          setProfileForm((current) => ({
-                            ...current,
-                            weight_kg: nextValue,
-                          }));
-                        }}
-                      />
-                    </label>
-                    <label>
-                      目標體重 kg
-                      <input
-                        name="goal_weight_kg"
-                        value={profileForm.goal_weight_kg}
-                        inputMode="decimal"
-                        onChange={(event) => {
-                          const nextValue = event.currentTarget.value;
-                          setProfileForm((current) => ({
-                            ...current,
-                            goal_weight_kg: nextValue,
-                          }));
-                        }}
-                      />
-                    </label>
-                  </div>
+                    <div className="field-grid field-grid-wide">
+                      <label>
+                        年齡
+                        <input
+                          name="age"
+                          value={profileForm.age}
+                          inputMode="numeric"
+                          onChange={(event) => {
+                            const nextValue = event.currentTarget.value;
+                            setProfileForm((current) => ({
+                              ...current,
+                              age: nextValue,
+                            }));
+                          }}
+                        />
+                      </label>
+                      <label>
+                        身高 cm
+                        <input
+                          name="height_cm"
+                          value={profileForm.height_cm}
+                          inputMode="numeric"
+                          onChange={(event) => {
+                            const nextValue = event.currentTarget.value;
+                            setProfileForm((current) => ({
+                              ...current,
+                              height_cm: nextValue,
+                            }));
+                          }}
+                        />
+                      </label>
+                      <label>
+                        體重 kg
+                        <input
+                          name="weight_kg"
+                          value={profileForm.weight_kg}
+                          inputMode="decimal"
+                          onChange={(event) => {
+                            const nextValue = event.currentTarget.value;
+                            setProfileForm((current) => ({
+                              ...current,
+                              weight_kg: nextValue,
+                            }));
+                          }}
+                        />
+                      </label>
+                      <label>
+                        目標體重 kg
+                        <input
+                          name="goal_weight_kg"
+                          value={profileForm.goal_weight_kg}
+                          inputMode="decimal"
+                          onChange={(event) => {
+                            const nextValue = event.currentTarget.value;
+                            setProfileForm((current) => ({
+                              ...current,
+                              goal_weight_kg: nextValue,
+                            }));
+                          }}
+                        />
+                      </label>
+                    </div>
 
-                  <div className="choice-grid">
-                    {activityOptions.map((option) => (
+                    <label className="profile-select-row">
+                      運動習慣
+                      <select
+                        name="activity_level"
+                        value={profileForm.activity_level}
+                        onChange={(event) => {
+                          const nextValue = event.currentTarget
+                            .value as ActivityLevel;
+                          setProfileForm((current) => ({
+                            ...current,
+                            activity_level: nextValue,
+                          }));
+                        }}
+                      >
+                        {activityOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label} - {option.hint}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="profile-select-row">
+                      目標
+                      <select
+                        name="goal_type"
+                        value={profileForm.goal_type}
+                        onChange={(event) => {
+                          const nextValue = event.currentTarget
+                            .value as GoalType;
+                          setProfileForm((current) => ({
+                            ...current,
+                            goal_type: nextValue,
+                          }));
+                        }}
+                      >
+                        {goalOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label} - {option.hint}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <div className="footer-actions">
+                      <button
+                        className="primary-button"
+                        type="submit"
+                        disabled={profileSaving}
+                      >
+                        {profileSaving ? "儲存中..." : "儲存設定"}
+                      </button>
+                    </div>
+                  </form>
+
+                  <aside className="panel-card side-summary">
+                    <h3>切換主題</h3>
+                    <div className="choice-grid two-columns theme-picker">
                       <button
                         type="button"
-                        key={option.value}
                         className={
-                          profileForm.activity_level === option.value
-                            ? "choice-card is-active"
-                            : "choice-card"
+                          themeMode === "female_default"
+                            ? "theme-swatch is-active theme-soft"
+                            : "theme-swatch theme-soft"
                         }
-                        onClick={() =>
-                          setProfileForm((current) => ({
-                            ...current,
-                            activity_level: option.value,
-                          }))
-                        }
+                        onClick={() => void handleThemeChange("female_default")}
                       >
-                        <strong>{option.label}</strong>
-                        <span>{option.hint}</span>
+                        <strong>橘色</strong>
                       </button>
-                    ))}
-                  </div>
-
-                  <div className="choice-grid two-columns">
-                    {goalOptions.map((option) => (
                       <button
                         type="button"
-                        key={option.value}
                         className={
-                          profileForm.goal_type === option.value
-                            ? "choice-card is-active"
-                            : "choice-card"
+                          themeMode === "male_default"
+                            ? "theme-swatch is-active theme-sharp"
+                            : "theme-swatch theme-sharp"
                         }
-                        onClick={() =>
-                          setProfileForm((current) => ({
-                            ...current,
-                            goal_type: option.value,
-                          }))
-                        }
+                        onClick={() => void handleThemeChange("male_default")}
                       >
-                        <strong>{option.label}</strong>
-                        <span>{option.hint}</span>
+                        <strong>藍色</strong>
                       </button>
-                    ))}
-                  </div>
-
-                  <div className="footer-actions">
-                    <span className="helper-copy">
-                      {validationMessage ||
-                        "資料完整後，推薦熱量與運動會依這份設定更新。"}
-                    </span>
-                    <button
-                      className="primary-button"
-                      type="submit"
-                      disabled={profileSaving}
-                    >
-                      {profileSaving ? "儲存中..." : "儲存設定"}
-                    </button>
-                  </div>
-                </form>
-
-                <aside className="panel-card side-summary">
-                  <p className="panel-kicker">視覺主題</p>
-                  <h3>切換視覺主題</h3>
-                  <div className="choice-grid two-columns">
-                    <button
-                      type="button"
-                      className={
-                        themeMode === "female_default"
-                          ? "theme-swatch is-active theme-soft"
-                          : "theme-swatch theme-soft"
-                      }
-                      onClick={() => void handleThemeChange("female_default")}
-                    >
-                      <strong>柔和主題</strong>
-                      <span>留白大、節奏慢、顏色柔軟</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={
-                        themeMode === "male_default"
-                          ? "theme-swatch is-active theme-sharp"
-                          : "theme-swatch theme-sharp"
-                      }
-                      onClick={() => void handleThemeChange("male_default")}
-                    >
-                      <strong>俐落主題</strong>
-                      <span>對比高、字重直接、指標明確</span>
-                    </button>
-                  </div>
-                  <div className="summary-card">
-                    <span>目前使用者</span>
-                    <strong>
-                      {profile?.display_name ?? user.display_name}
-                    </strong>
-                    <p>以 LINE 帳號登入</p>
-                  </div>
-                  <div className="summary-card">
-                    <span>{consentUiCopy.profileStatus.label}</span>
-                    <strong>
-                      {user.consent_status.can_start_analysis
-                        ? consentUiCopy.profileStatus.completed
-                        : consentUiCopy.profileStatus.pending}
-                    </strong>
-                    <p>
-                      {user.consent_status.can_start_analysis
-                        ? consentUiCopy.message.profileReady
-                        : consentUiCopy.message.profilePending}
-                    </p>
-                    {!user.consent_status.can_start_analysis ? (
-                      <button
-                        className="secondary-button"
-                        onClick={() => handleMainScreenChange("consent")}
-                      >
-                        {consentUiCopy.action.goToConsent}
-                      </button>
-                    ) : null}
-                  </div>
-                </aside>
-              </div>
+                    </div>
+                  </aside>
+                </div>
+                <LegalFooter onOpenReview={setActiveLegalReview} />
+              </>
             )}
           </section>
-        ) : null}
-        {consentCompleted ? (
-          <LegalFooter onOpenReview={setActiveLegalReview} />
         ) : null}
         {consentCompleted && activeLegalSection ? (
           <LegalReviewDialog
@@ -2310,7 +2232,8 @@ function LandingPage() {
             <p className="spotlight-label">HappyMeal</p>
             <h2>用 LINE 登入，開始你的飲食紀錄</h2>
             <p className="landing-copy">
-              拍下餐點，AI 幫你辨識食材與熱量。每一次分析都會存下來，讓你看清楚自己的飲食習慣。
+              拍下餐點，AI
+              幫你辨識食材與熱量。每一次分析都會存下來，讓你看清楚自己的飲食習慣。
             </p>
             {error === "line_auth_denied" ? (
               <p className="status-banner is-error">
