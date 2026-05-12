@@ -29,6 +29,15 @@ class Settings(BaseSettings):
     line_channel_id: str = Field(default="", alias="LINE_CHANNEL_ID")
     line_channel_secret: str = Field(default="", alias="LINE_CHANNEL_SECRET")
     line_callback_url: str = Field(default="", alias="LINE_CALLBACK_URL")
+    dev_auth_bypass_enabled: bool = Field(default=False, alias="DEV_AUTH_BYPASS_ENABLED")
+    dev_auth_bypass_line_user_id: str = Field(
+        default="dev-local-user",
+        alias="DEV_AUTH_BYPASS_LINE_USER_ID",
+    )
+    dev_auth_bypass_display_name: str = Field(
+        default="HappyMeal Local User",
+        alias="DEV_AUTH_BYPASS_DISPLAY_NAME",
+    )
     session_secret_key: str = Field(default="", alias="SESSION_SECRET_KEY")
     session_cookie_name: str = Field(default="happymeal_session", alias="SESSION_COOKIE_NAME")
     session_cookie_domain: str | None = Field(default=None, alias="SESSION_COOKIE_DOMAIN")
@@ -110,6 +119,10 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.app_env == "production"
+
+    @property
+    def is_dev_auth_bypass_enabled(self) -> bool:
+        return self.dev_auth_bypass_enabled and not self.is_production
 
     @property
     def effective_session_cookie_same_site(self) -> str:

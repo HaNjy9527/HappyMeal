@@ -11,6 +11,21 @@ from app.core.config import get_settings
 logger = logging.getLogger("app.auth")
 
 
+def get_dev_bypass_user(db: Session = Depends(get_db)) -> User:
+    settings = get_settings()
+    user = db.query(User).filter(User.line_user_id == settings.dev_auth_bypass_line_user_id).one_or_none()
+    if user is None:
+        user = User(
+            line_user_id=settings.dev_auth_bypass_line_user_id,
+            display_name=settings.dev_auth_bypass_display_name,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    return user
+
+
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     settings = get_settings()
     cookie_header_present = request.headers.get("cookie") is not None

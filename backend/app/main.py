@@ -7,6 +7,7 @@ from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
+from app.api.dependencies import get_current_user, get_dev_bypass_user
 from app.api.routes.auth import router as auth_router
 from app.api.routes.analyses import router as analysis_router
 from app.api.routes.consents import router as consent_router
@@ -42,6 +43,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+if settings.is_dev_auth_bypass_enabled:
+    app.dependency_overrides[get_current_user] = get_dev_bypass_user
 
 
 @app.middleware("http")
