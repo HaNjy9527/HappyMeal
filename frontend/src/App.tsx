@@ -75,11 +75,29 @@ const candidateUnitOptions = [
   "tbsp",
 ] as const;
 
+const candidateUnitLabels: Record<
+  (typeof candidateUnitOptions)[number],
+  string
+> = {
+  g: "克",
+  bowl: "碗",
+  plate: "盤",
+  cup: "杯",
+  pcs: "個",
+  box: "盒",
+  bag: "袋",
+  tbsp: "湯匙",
+};
+
 let candidateDraftSequence = 0;
 
 function nextCandidateDraftId() {
   candidateDraftSequence += 1;
   return `candidate-${candidateDraftSequence}`;
+}
+
+function formatPortionUnit(unit: string) {
+  return candidateUnitLabels[unit as keyof typeof candidateUnitLabels] ?? unit;
 }
 
 const activityOptions: Array<{
@@ -136,6 +154,38 @@ function buildManualCandidateItem(): CandidateDraftItem {
   };
 }
 
+function buildPreviewCandidateItems(): CandidateDraftItem[] {
+  return [
+    {
+      id: nextCandidateDraftId(),
+      is_manual: false,
+      food_name: "雞胸便當",
+      normalized_food_name: "chicken_bento",
+      portion_value: "1",
+      portion_unit: "box",
+      confidence_score: "0.91",
+    },
+    {
+      id: nextCandidateDraftId(),
+      is_manual: false,
+      food_name: "無糖豆漿",
+      normalized_food_name: "soy_milk_unsweetened",
+      portion_value: "350",
+      portion_unit: "g",
+      confidence_score: "0.54",
+    },
+    {
+      id: nextCandidateDraftId(),
+      is_manual: true,
+      food_name: "水煮蛋",
+      normalized_food_name: "manual_entry",
+      portion_value: "2",
+      portion_unit: "pcs",
+      confidence_score: null,
+    },
+  ];
+}
+
 function validateCandidateItems(items: CandidateDraftItem[]) {
   if (items.length === 0) {
     return "請至少保留 1 個食物，或手動新增後再送出。";
@@ -180,10 +230,6 @@ function InlineDisclaimerNote({ body }: { body: string }) {
   return <p className="inline-disclaimer-note">{body}</p>;
 }
 
-function formatLoadingLabel(value: string) {
-  return value.length > 26 ? `${value.slice(0, 26)}...` : value;
-}
-
 function AnalysisLoadingState({
   phase,
   context,
@@ -201,17 +247,13 @@ function AnalysisLoadingState({
     phase === "preparing"
       ? "先幫你建立這次分析，接著會把圖片送進辨識流程。整段通常只需要幾秒鐘。"
       : "我們正在整理可能的食物候選。完成後會直接帶你進入候選確認，你仍可以手動修正名稱與份量。";
-  const detail =
-    context.source === "upload"
-      ? "原始照片只會暫存處理，不會長期保存。"
-      : "這次使用的是示範圖片，流程與正式分析相同。";
 
   return (
     <div className="analysis-loading-shell" aria-live="polite" aria-busy="true">
       <article className="panel-card analysis-loading-hero">
         <div className="analysis-loading-hero-copy">
           <div className="analysis-loading-hero-top">
-            <p className="panel-kicker">AI Meal Recognition</p>
+            <h3>{heading}</h3>
             <span className="analysis-loading-badge">
               <span
                 className="analysis-loading-status-dot"
@@ -220,7 +262,6 @@ function AnalysisLoadingState({
               {context.source === "upload" ? "照片辨識中" : "示範流程執行中"}
             </span>
           </div>
-          <h3>{heading}</h3>
           <p className="analysis-loading-copy">{body}</p>
         </div>
 
@@ -247,64 +288,6 @@ function AnalysisLoadingState({
           })}
         </div>
       </article>
-
-      <div className="analysis-loading-support-grid">
-        <article className="panel-card analysis-loading-context-card">
-          <p className="panel-kicker">This Round</p>
-          <div className="analysis-loading-context-row">
-            <div>
-              <h3>{formatLoadingLabel(context.label)}</h3>
-              <p className="analysis-loading-detail">{detail}</p>
-            </div>
-            <span className="analysis-loading-context-chip">
-              {phase === "preparing" ? "準備中" : "辨識中"}
-            </span>
-          </div>
-        </article>
-
-        <article className="panel-card analysis-loading-skeleton-panel">
-          <div className="analysis-loading-skeleton-head">
-            <div>
-              <p className="panel-kicker">Coming Next</p>
-              <h3>接下來會先看到候選清單</h3>
-            </div>
-            <p>你可以在下一步確認名稱、份量與單位。</p>
-          </div>
-
-          <div className="candidate-stack candidate-stack-skeleton">
-            {Array.from({ length: 3 }, (_, index) => (
-              <article
-                className="candidate-card candidate-card-skeleton"
-                key={`analysis-loading-card-${index}`}
-                aria-hidden="true"
-              >
-                <div className="candidate-head">
-                  <div className="candidate-skeleton-copy">
-                    <span className="skeleton-block skeleton-pill" />
-                    <span className="skeleton-block skeleton-title" />
-                  </div>
-                  <span className="skeleton-block skeleton-button" />
-                </div>
-
-                <div className="candidate-input-grid candidate-input-grid-skeleton">
-                  <div className="candidate-field candidate-field-skeleton">
-                    <span className="skeleton-block skeleton-label" />
-                    <span className="skeleton-block skeleton-input" />
-                  </div>
-                  <div className="candidate-field candidate-field-skeleton">
-                    <span className="skeleton-block skeleton-label" />
-                    <span className="skeleton-block skeleton-input" />
-                  </div>
-                  <div className="candidate-field candidate-field-skeleton">
-                    <span className="skeleton-block skeleton-label" />
-                    <span className="skeleton-block skeleton-input" />
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </article>
-      </div>
     </div>
   );
 }
@@ -567,6 +550,7 @@ function resolveConsentSection(sectionId: ConsentContentSection["id"] | null) {
 function HomeDashboard({ user }: { user: AuthMeResponse }) {
   const queryClient = useQueryClient();
   const logoutMutation = useLogout();
+  const [searchParams] = useSearchParams();
   const pendingCandidateFocusId = useRef<string | null>(null);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const [screen, setScreen] = useState<MainScreen>(
@@ -635,6 +619,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     ConsentContentSection["id"] | null
   >(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const previewMode = searchParams.get("preview");
 
   const activeLegalSection = resolveConsentSection(activeLegalReview);
 
@@ -659,6 +644,51 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     setAgreePrivacy(user.consent_status.has_privacy_policy);
     setAgreeNonMedical(user.consent_status.has_non_medical_disclosure);
   }, [user]);
+
+  useEffect(() => {
+    if (previewMode === "analysis-loading") {
+      setScreen("analysis");
+      setAnalysisStage("start");
+      setAnalysisLoading(true);
+      setAnalysisLoadingPhase("recognizing");
+      setAnalysisLoadingContext({
+        source: "upload",
+        label: "preview-analysis.jpg",
+      });
+      setAnalysisId(null);
+      setCandidateItems([]);
+      setAnalysisResult(null);
+      setAnalysisError(null);
+      setAnalysisNotice(
+        "預覽模式：固定顯示分析中畫面。移除網址中的 preview 參數即可回到正常流程。",
+      );
+      setReestimateExpanded(false);
+      setReestimateSuggestions([]);
+      setReestimateNote("");
+      return;
+    }
+
+    if (previewMode === "candidate") {
+      setScreen("analysis");
+      setAnalysisStage("confirm");
+      setAnalysisLoading(false);
+      setAnalysisLoadingPhase("idle");
+      setAnalysisLoadingContext({
+        source: "upload",
+        label: "preview-analysis.jpg",
+      });
+      setAnalysisId("preview-analysis");
+      setCandidateItems(buildPreviewCandidateItems());
+      setAnalysisResult(null);
+      setAnalysisError(null);
+      setAnalysisNotice(
+        "預覽模式：固定顯示候選確認頁。移除網址中的 preview 參數即可回到正常流程。",
+      );
+      setReestimateExpanded(false);
+      setReestimateSuggestions([]);
+      setReestimateNote("");
+    }
+  }, [previewMode]);
 
   useEffect(() => {
     if (!pendingCandidateFocusId.current) {
@@ -1238,16 +1268,6 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                       : "分析結果"}
                 </h2>
               </div>
-              {analysisStage !== "start" ? (
-                <button
-                  className="ghost-button"
-                  onClick={() =>
-                    startTransition(() => setAnalysisStage("start"))
-                  }
-                >
-                  重新開始
-                </button>
-              ) : null}
             </div>
 
             {analysisError ? (
@@ -1318,15 +1338,6 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
 
             {analysisStage === "confirm" ? (
               <div className="content-stack">
-                <article className="panel-card">
-                  <p className="panel-kicker">Candidate Confirmation</p>
-                  <h3>調整食物名稱與份量後送出確認</h3>
-                  <p>
-                    單位優先用 g，也可切換常見份量單位；你可以刪除誤判，
-                    或手動新增 AI 漏掉的食物。
-                  </p>
-                </article>
-
                 {candidateItems.length === 0 ? (
                   <article className="panel-card empty-panel-card">
                     <p className="empty-panel">
@@ -1360,10 +1371,7 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                       key={item.id}
                     >
                       <div className="candidate-head">
-                        <div>
-                          <p className="candidate-kind-label">
-                            {item.is_manual ? "手動新增" : "AI 辨識候選"}
-                          </p>
+                        <div className="candidate-title-block">
                           <h3>{item.food_name}</h3>
                         </div>
                         <button
@@ -1375,8 +1383,8 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                         </button>
                       </div>
 
-                      <div className="field-grid candidate-edit-grid">
-                        <label className="candidate-field">
+                      <div className="candidate-edit-grid">
+                        <label className="candidate-field candidate-field-name">
                           <span className="candidate-field-label">
                             食物名稱
                           </span>
@@ -1393,61 +1401,44 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                             }}
                           />
                         </label>
-                        <label className="candidate-field">
-                          <span className="candidate-field-label">份量</span>
-                          <input
-                            name={`candidate-portion-${item.id}`}
-                            inputMode="decimal"
-                            placeholder="100"
-                            value={item.portion_value}
-                            onChange={(event) => {
-                              const nextValue = event.currentTarget.value;
-                              updateCandidateItem(item.id, (currentItem) => ({
-                                ...currentItem,
-                                portion_value: nextValue,
-                              }));
-                            }}
-                          />
-                        </label>
-                        <label className="candidate-field">
-                          <span className="candidate-field-label">單位</span>
-                          <select
-                            name={`candidate-unit-${item.id}`}
-                            value={item.portion_unit}
-                            onChange={(event) => {
-                              const nextValue = event.currentTarget.value;
-                              updateCandidateItem(item.id, (currentItem) => ({
-                                ...currentItem,
-                                portion_unit: nextValue,
-                              }));
-                            }}
-                          >
-                            {candidateUnitOptions.map((unitOption) => (
-                              <option key={unitOption} value={unitOption}>
-                                {unitOption}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                      </div>
-
-                      <div className="candidate-support-row">
-                        <span className="candidate-support-copy">
-                          {item.portion_unit === "g"
-                            ? "系統會直接用克數計算。"
-                            : "系統會盡量把這個單位換算成克。"}
-                        </span>
-                        {item.confidence_score ? (
-                          <span className="candidate-support-copy candidate-support-copy-muted">
-                            {Number(item.confidence_score) < 0.6
-                              ? "AI 對這項食物信心不足，建議確認名稱與份量。"
-                              : "AI 已先給一版候選，你可以直接覆蓋。"}
-                          </span>
-                        ) : (
-                          <span className="candidate-support-copy candidate-support-copy-muted">
-                            手動新增項目會直接以你輸入的名稱與份量送出。
-                          </span>
-                        )}
+                        <div className="candidate-inline-fields">
+                          <label className="candidate-field candidate-field-compact">
+                            <span className="candidate-field-label">份量</span>
+                            <input
+                              name={`candidate-portion-${item.id}`}
+                              inputMode="decimal"
+                              placeholder="100"
+                              value={item.portion_value}
+                              onChange={(event) => {
+                                const nextValue = event.currentTarget.value;
+                                updateCandidateItem(item.id, (currentItem) => ({
+                                  ...currentItem,
+                                  portion_value: nextValue,
+                                }));
+                              }}
+                            />
+                          </label>
+                          <label className="candidate-field candidate-field-compact">
+                            <span className="candidate-field-label">單位</span>
+                            <select
+                              name={`candidate-unit-${item.id}`}
+                              value={item.portion_unit}
+                              onChange={(event) => {
+                                const nextValue = event.currentTarget.value;
+                                updateCandidateItem(item.id, (currentItem) => ({
+                                  ...currentItem,
+                                  portion_unit: nextValue,
+                                }));
+                              }}
+                            >
+                              {candidateUnitOptions.map((unitOption) => (
+                                <option key={unitOption} value={unitOption}>
+                                  {formatPortionUnit(unitOption)}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
                       </div>
                     </article>
                   ))}
@@ -1592,7 +1583,8 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                           >
                             <strong>{item.food_name}</strong>
                             <span>
-                              {item.portion_value} {item.portion_unit}
+                              {item.portion_value}{" "}
+                              {formatPortionUnit(item.portion_unit)}
                             </span>
                           </p>
                         ))}
@@ -1630,6 +1622,41 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                   </article>
                 ) : null}
 
+                {reestimateSuggestions.length === 0 && !reestimateLoading ? (
+                  <div className="candidate-secondary-actions">
+                    <button
+                      className="secondary-button candidate-secondary-action-button"
+                      type="button"
+                      onClick={() =>
+                        startTransition(() => setAnalysisStage("start"))
+                      }
+                    >
+                      換張照片
+                    </button>
+                    <button
+                      className="secondary-button candidate-secondary-action-button"
+                      type="button"
+                      disabled={analysisLoading || candidateItems.length === 0}
+                      onClick={() => {
+                        setReestimateExpanded(true);
+                        setAnalysisError(null);
+                      }}
+                    >
+                      請 AI 重新估算
+                    </button>
+                  </div>
+                ) : null}
+
+                <div className="footer-actions footer-actions-primary-only">
+                  <button
+                    className="primary-button"
+                    disabled={analysisLoading || candidateItems.length === 0}
+                    onClick={() => void handleConfirmAnalysis()}
+                  >
+                    {analysisLoading ? "確認中..." : "完成確認"}
+                  </button>
+                </div>
+
                 {isRecommendationProfileIncomplete ? (
                   <div className="status-banner is-warning">
                     <strong>這次會先產生通用建議</strong>
@@ -1644,40 +1671,6 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                       }
                     >
                       前往填寫 profile
-                    </button>
-                  </div>
-                ) : null}
-
-                <div className="footer-actions">
-                  <button
-                    className="secondary-button"
-                    onClick={() =>
-                      startTransition(() => setAnalysisStage("start"))
-                    }
-                  >
-                    重新分析
-                  </button>
-                  <button
-                    className="primary-button"
-                    disabled={analysisLoading || candidateItems.length === 0}
-                    onClick={() => void handleConfirmAnalysis()}
-                  >
-                    {analysisLoading ? "確認中..." : "完成確認"}
-                  </button>
-                </div>
-
-                {reestimateSuggestions.length === 0 && !reestimateLoading ? (
-                  <div className="reestimate-trigger-row">
-                    <button
-                      className="inline-text-button"
-                      type="button"
-                      disabled={analysisLoading || candidateItems.length === 0}
-                      onClick={() => {
-                        setReestimateExpanded(true);
-                        setAnalysisError(null);
-                      }}
-                    >
-                      想讓 AI 重新估算一次？
                     </button>
                   </div>
                 ) : null}
@@ -1731,7 +1724,8 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                             <div>
                               <strong>{item.food_name}</strong>
                               <p>
-                                {item.portion_value} {item.portion_unit}
+                                {item.portion_value}{" "}
+                                {formatPortionUnit(item.portion_unit)}
                               </p>
                             </div>
                             <span>{item.kcal} kcal</span>
@@ -1938,7 +1932,8 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                           <div>
                             <strong>{item.food_name}</strong>
                             <p>
-                              {item.portion_value} {item.portion_unit}
+                              {item.portion_value}{" "}
+                              {formatPortionUnit(item.portion_unit)}
                             </p>
                           </div>
                           <span>{item.kcal} kcal</span>
