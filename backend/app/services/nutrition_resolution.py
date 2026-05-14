@@ -25,6 +25,7 @@ class NutritionResolutionInput:
     portion_unit: str
     confidence_score: Decimal | None = None
     food_type: str | None = None
+    weight_g: Decimal | None = None
 
 
 @dataclass(frozen=True)
@@ -225,6 +226,7 @@ def resolve_item_nutrition(
         portion_unit=payload.portion_unit,
         portion_value=payload.portion_value,
         preset=source_decision.preset,
+        ai_weight_g=payload.weight_g,
     )
 
     return NutritionResolutionResult(

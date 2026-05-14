@@ -14,6 +14,7 @@ class ProviderCandidate:
     portion_default: Decimal
     portion_unit: str
     food_type: str | None = None
+    weight_g: Decimal | None = None
 
 
 class RecognitionProvider(Protocol):

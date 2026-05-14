@@ -197,6 +197,9 @@ DIRECT_DRINK_NAMES = {
 
 DRINK_KEYWORDS = ("coffee", "tea", "drink", "beverage")
 
+COUNTABLE_UNITS = {"pcs", "piece", "slice", "個", "片"}
+AI_WEIGHT_MAX_G = Decimal("500.00")
+
 
 def quantize_decimal(value: Decimal) -> Decimal:
     return value.quantize(TWOPLACES, rounding=ROUND_HALF_UP)
@@ -249,7 +252,7 @@ def resolve_nutrition_preset(
     )
 
 
-def resolve_portion(*, food_name: str, normalized_food_name: str, portion_unit: str, portion_value: Decimal, preset: NutritionPreset) -> PortionResolution:
+def resolve_portion(*, food_name: str, normalized_food_name: str, portion_unit: str, portion_value: Decimal, preset: NutritionPreset, ai_weight_g: Decimal | None = None) -> PortionResolution:
     source_portion_unit = portion_unit.strip()
     normalized_unit = normalize_portion_unit(source_portion_unit)
     normalized_value = quantize_decimal(portion_value)
@@ -291,6 +294,13 @@ def resolve_portion(*, food_name: str, normalized_food_name: str, portion_unit: 
         multiplier = quantize_decimal(normalized_value * ratio)
         resolved_weight_g = quantize_decimal(preset.portion_weight_g * multiplier)
         return PortionResolution(source_portion_unit, normalized_unit, resolved_weight_g, "common_unit_conversion", multiplier)
+
+    # 步驟 4b：AI 克重提示，僅限可數單位且總重在合理範圍內
+    if normalized_unit in COUNTABLE_UNITS and ai_weight_g is not None:
+        candidate_weight = quantize_decimal(ai_weight_g * normalized_value)
+        if candidate_weight <= AI_WEIGHT_MAX_G:
+            multiplier = quantize_decimal(candidate_weight / preset.portion_weight_g)
+            return PortionResolution(source_portion_unit, normalized_unit, candidate_weight, "ai_weight_hint", multiplier)
 
     resolved_weight_g = quantize_decimal(preset.portion_weight_g * normalized_value)
     return PortionResolution(source_portion_unit, normalized_unit, resolved_weight_g, "assumed_common_serving_weight", normalized_value)

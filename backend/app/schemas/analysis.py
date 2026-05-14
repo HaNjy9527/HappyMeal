@@ -31,6 +31,7 @@ class AnalysisCandidateItem(BaseModel):
     portion_default: Decimal = Field(gt=0)
     portion_unit: str
     food_type: str | None = None
+    weight_g: Decimal | None = None
 
 
 class AnalysisCandidateResponse(BaseModel):
@@ -51,6 +52,7 @@ class AnalysisConfirmItemRequest(BaseModel):
     confidence_score: Decimal | None = Field(default=None, ge=0, le=1)
     is_user_edited: bool = False
     food_type: str | None = None
+    weight_g: Decimal | None = None
 
 
 class AnalysisConfirmRequest(BaseModel):

@@ -77,8 +77,8 @@ DEFAULT_PROVIDER_CANDIDATES = [
     ),
 ]
 
-RECOGNITION_PROMPT_VERSION = "v2"
-REESTIMATE_PROMPT_VERSION = "v2"
+RECOGNITION_PROMPT_VERSION = "v3"
+REESTIMATE_PROMPT_VERSION = "v3"
 
 OPENAI_RECOGNITION_PROMPT = """
 Analyze this single meal photo and identify up to 5 foods or drinks that are clearly visible.
@@ -90,9 +90,10 @@ Return JSON only in this shape:
       "food_name": "正體中文名稱",
       "normalized_food_name": "snake_case_english_name",
       "food_type": "protein",
+      "weight_g": 15,
       "confidence_score": 0.0,
       "portion_default": 1.0,
-      "portion_unit": "bowl"
+      "portion_unit": "pcs"
     }
   ]
 }
@@ -102,6 +103,7 @@ Rules:
 - food_name must be in Traditional Chinese (正體中文).
 - normalized_food_name must be lowercase snake_case English.
 - food_type must be one of: condiment, garnish, protein, vegetable, grain, beverage, mixed_meal, dessert, snack.
+- weight_g: estimated grams per portion_unit (e.g., one shrimp ≈ 15g, one dumpling ≈ 25g). Provide only when confident. Omit or set to null if uncertain.
 - confidence_score must be between 0 and 1.
 - portion_default must be a positive number.
 - portion_unit must be a short unit like bowl, plate, box, cup, pcs, fillet.
@@ -123,9 +125,10 @@ Return JSON only in this shape:
             "food_name": "正體中文名稱",
             "normalized_food_name": "snake_case_english_name",
             "food_type": "protein",
+            "weight_g": 15,
             "confidence_score": 0.0,
             "portion_default": 1.0,
-            "portion_unit": "bowl"
+            "portion_unit": "pcs"
         }
     ]
 }
@@ -137,6 +140,7 @@ Rules:
 - food_name must be in Traditional Chinese (正體中文).
 - normalized_food_name must be lowercase snake_case English.
 - food_type must be one of: condiment, garnish, protein, vegetable, grain, beverage, mixed_meal, dessert, snack.
+- weight_g: estimated grams per portion_unit (e.g., one shrimp ≈ 15g, one dumpling ≈ 25g). Provide only when confident. Omit or set to null if uncertain.
 - Keep the candidate list short and practical.
 - Do not invent extra foods unless the instruction strongly implies them.
 """.strip()
@@ -219,6 +223,10 @@ def parse_openai_candidate(candidate_payload: dict[str, object]) -> ProviderCand
     portion_unit = str(candidate_payload.get("portion_unit", "serving")).strip() or "serving"
     food_type = str(candidate_payload.get("food_type", "")).strip() or None
 
+    raw_weight = candidate_payload.get("weight_g")
+    weight_g = Decimal(str(raw_weight)) if raw_weight is not None else None
+    weight_g = weight_g if (weight_g is not None and weight_g > 0) else None
+
     clamped_confidence = min(max(confidence_score, Decimal("0")), Decimal("1"))
     safe_portion_default = portion_default if portion_default > 0 else Decimal("1")
 
@@ -229,6 +237,7 @@ def parse_openai_candidate(candidate_payload: dict[str, object]) -> ProviderCand
         portion_default=safe_portion_default,
         portion_unit=portion_unit,
         food_type=food_type,
+        weight_g=weight_g,
     )
 
 
