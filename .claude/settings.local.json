@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(python -m pytest tests/test_analysis_metadata.py -v)",
-      "PowerShell(* uv run pytest*)",
-      "PowerShell(cd D:\\\\code\\\\HappyMeal; $env:PYTHONPATH='D:\\\\code\\\\HappyMeal\\\\backend'; uv run pytest -v 2>&1)"
-    ]
-  }
-}
