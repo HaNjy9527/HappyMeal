@@ -1339,6 +1339,12 @@ select {
   font-size: 1.08rem;
 }
 
+.result-summary-panel h3,
+.result-summary-row strong,
+.result-summary-row span {
+  color: var(--text-primary);
+}
+
 .metric-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -1360,9 +1366,7 @@ select {
 
 .metric-card span,
 .summary-card span,
-.target-grid span,
-.result-summary-row span,
-.result-summary-row strong {
+.target-grid span {
   color: var(--text-muted);
   font-size: 0.88rem;
 }

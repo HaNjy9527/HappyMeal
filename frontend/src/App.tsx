@@ -1713,7 +1713,6 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
               analysisResult ? (
                 <div className="content-stack">
                   <article className="panel-card result-summary-panel">
-                    <h3>營養摘要</h3>
                     <div className="result-summary-list">
                       {[
                         {
