@@ -38,6 +38,7 @@ def build_items_payload(payload: AnalysisReestimateRequest) -> list[dict[str, ob
             "portion_unit": item.portion_unit,
             "confidence_score": str(item.confidence_score) if item.confidence_score is not None else None,
             "is_user_edited": item.is_user_edited,
+            "food_type": item.food_type,
         }
         for item in payload.items
     ]
@@ -53,6 +54,7 @@ def build_fallback_candidates(payload: AnalysisReestimateRequest) -> list[Provid
             confidence_score=item.confidence_score or Decimal("0.70"),
             portion_default=item.portion_value * portion_multiplier,
             portion_unit=item.portion_unit,
+            food_type=item.food_type,
         )
         for item in payload.items
     ]

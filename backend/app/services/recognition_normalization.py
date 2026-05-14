@@ -30,6 +30,7 @@ def normalize_provider_candidates(candidates: list[ProviderCandidate]) -> list[A
                 confidence_score=candidate.confidence_score,
                 portion_default=portion_default,
                 portion_unit=portion_unit,
+                food_type=candidate.food_type,
             )
         )
 

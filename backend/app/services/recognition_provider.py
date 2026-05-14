@@ -13,6 +13,7 @@ class ProviderCandidate:
     confidence_score: Decimal
     portion_default: Decimal
     portion_unit: str
+    food_type: str | None = None
 
 
 class RecognitionProvider(Protocol):

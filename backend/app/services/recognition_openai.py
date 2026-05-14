@@ -77,8 +77,8 @@ DEFAULT_PROVIDER_CANDIDATES = [
     ),
 ]
 
-RECOGNITION_PROMPT_VERSION = "v1"
-REESTIMATE_PROMPT_VERSION = "v1"
+RECOGNITION_PROMPT_VERSION = "v2"
+REESTIMATE_PROMPT_VERSION = "v2"
 
 OPENAI_RECOGNITION_PROMPT = """
 Analyze this single meal photo and identify up to 5 foods or drinks that are clearly visible.
@@ -87,8 +87,9 @@ Return JSON only in this shape:
 {
   "candidates": [
     {
-      "food_name": "display name",
+      "food_name": "正體中文名稱",
       "normalized_food_name": "snake_case_english_name",
+      "food_type": "protein",
       "confidence_score": 0.0,
       "portion_default": 1.0,
       "portion_unit": "bowl"
@@ -98,8 +99,9 @@ Return JSON only in this shape:
 
 Rules:
 - Focus on foods and drinks only.
-- Prefer Taiwan everyday meal names when appropriate.
+- food_name must be in Traditional Chinese (正體中文).
 - normalized_food_name must be lowercase snake_case English.
+- food_type must be one of: condiment, garnish, protein, vegetable, grain, beverage, mixed_meal, dessert, snack.
 - confidence_score must be between 0 and 1.
 - portion_default must be a positive number.
 - portion_unit must be a short unit like bowl, plate, box, cup, pcs, fillet.
@@ -118,8 +120,9 @@ Return JSON only in this shape:
 {
     "candidates": [
         {
-            "food_name": "display name",
+            "food_name": "正體中文名稱",
             "normalized_food_name": "snake_case_english_name",
+            "food_type": "protein",
             "confidence_score": 0.0,
             "portion_default": 1.0,
             "portion_unit": "bowl"
@@ -131,6 +134,9 @@ Rules:
 - Treat the user instruction as high-priority correction context.
 - If the user says the label is wrong, prefer the corrected label.
 - If the user says they ate half, adjust the portion accordingly.
+- food_name must be in Traditional Chinese (正體中文).
+- normalized_food_name must be lowercase snake_case English.
+- food_type must be one of: condiment, garnish, protein, vegetable, grain, beverage, mixed_meal, dessert, snack.
 - Keep the candidate list short and practical.
 - Do not invent extra foods unless the instruction strongly implies them.
 """.strip()
@@ -211,6 +217,7 @@ def parse_openai_candidate(candidate_payload: dict[str, object]) -> ProviderCand
     confidence_score = Decimal(str(candidate_payload.get("confidence_score", "0")))
     portion_default = Decimal(str(candidate_payload.get("portion_default", "1")))
     portion_unit = str(candidate_payload.get("portion_unit", "serving")).strip() or "serving"
+    food_type = str(candidate_payload.get("food_type", "")).strip() or None
 
     clamped_confidence = min(max(confidence_score, Decimal("0")), Decimal("1"))
     safe_portion_default = portion_default if portion_default > 0 else Decimal("1")
@@ -221,6 +228,7 @@ def parse_openai_candidate(candidate_payload: dict[str, object]) -> ProviderCand
         confidence_score=clamped_confidence,
         portion_default=safe_portion_default,
         portion_unit=portion_unit,
+        food_type=food_type,
     )
 
 

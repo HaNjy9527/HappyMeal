@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 
-MatchType = Literal["direct", "alias", "keyword", "default_fallback"]
+MatchType = Literal["direct", "alias", "food_type_hint", "keyword", "default_fallback"]
 
 CANONICAL_FOOD_KEYS = frozenset(
     {
@@ -276,11 +276,22 @@ KEYWORD_RULES = [
     ("generic_mixed_meal", ("bento", "meal", "curry", "noodle", "pasta", "便當", "套餐", "燴飯", "麵")),
 ]
 
+FOOD_TYPE_FALLBACK_MAP: dict[str, str] = {
+    "condiment":  "generic_condiment",
+    "garnish":    "generic_garnish",
+    "protein":    "generic_protein",
+    "vegetable":  "generic_vegetables",
+    "grain":      "generic_rice",
+    "beverage":   "generic_unsweetened_drink",
+    "mixed_meal": "generic_mixed_meal",
+}
+
 NUTRITION_SOURCE_BY_MATCH_TYPE: dict[MatchType, str] = {
-    "direct": "preset",
-    "alias": "alias_mapping",
-    "keyword": "keyword_fallback",
-    "default_fallback": "default_fallback",
+    "direct":          "preset",
+    "alias":           "alias_mapping",
+    "food_type_hint":  "food_type_fallback",
+    "keyword":         "keyword_fallback",
+    "default_fallback":"default_fallback",
 }
 
 
@@ -304,7 +315,7 @@ def find_matching_keyword(compact_food_hint: str, keywords: tuple[str, ...]) -> 
     return None
 
 
-def resolve_canonical_food(*, food_name: str, normalized_food_name: str) -> CanonicalFoodMappingResult:
+def resolve_canonical_food(*, food_name: str, normalized_food_name: str, food_type: str | None = None) -> CanonicalFoodMappingResult:
     if normalized_food_name in CANONICAL_FOOD_KEYS:
         return CanonicalFoodMappingResult(
             canonical_food_name=normalized_food_name,
@@ -321,6 +332,17 @@ def resolve_canonical_food(*, food_name: str, normalized_food_name: str) -> Cano
             matched_term=normalized_food_name,
             is_estimated=True,
         )
+
+    # food_type hint（在 keyword 掃描前，優先使用 AI 提供的分類）
+    if food_type is not None:
+        canonical = FOOD_TYPE_FALLBACK_MAP.get(food_type)
+        if canonical is not None:
+            return CanonicalFoodMappingResult(
+                canonical_food_name=canonical,
+                match_type="food_type_hint",
+                matched_term=food_type,
+                is_estimated=True,
+            )
 
     compact_food_hint = normalize_food_hint(food_name, normalized_food_name)
     keyword_map = dict(KEYWORD_RULES)

@@ -79,6 +79,7 @@ def build_analysis_item(
             portion_value=payload.portion_value,
             portion_unit=payload.portion_unit,
             confidence_score=payload.confidence_score,
+            food_type=payload.food_type,
         ),
         db,
     )

@@ -24,6 +24,7 @@ class NutritionResolutionInput:
     portion_value: Decimal
     portion_unit: str
     confidence_score: Decimal | None = None
+    food_type: str | None = None
 
 
 @dataclass(frozen=True)
@@ -101,6 +102,7 @@ def resolve_official_source(
     resolved_food = resolve_canonical_food(
         food_name=payload.food_name,
         normalized_food_name=payload.normalized_food_name,
+        food_type=payload.food_type,
     )
     official_record = lookup_official_nutrition(
         food_name=payload.food_name,
@@ -129,6 +131,7 @@ def resolve_canonical_mapping_source(payload: NutritionResolutionInput) -> Nutri
     resolved_food = resolve_canonical_food(
         food_name=payload.food_name,
         normalized_food_name=payload.normalized_food_name,
+        food_type=payload.food_type,
     )
     nutrition_source = NUTRITION_SOURCE_BY_MATCH_TYPE[resolved_food.match_type]
     preset = NUTRITION_PRESETS.get(resolved_food.canonical_food_name)
