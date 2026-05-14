@@ -1321,33 +1321,48 @@ select {
   );
 }
 
+.result-summary-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.result-summary-list {
+  display: grid;
+}
+
+.result-summary-row {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.result-summary-row strong {
+  font-size: 1.08rem;
+}
+
 .metric-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .metric-card {
   display: grid;
-  gap: 6px;
-  padding: 18px;
-}
-
-.metric-card-inline {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface-soft);
 }
 
 .metric-card-value {
   display: inline-flex;
   align-items: baseline;
   gap: 6px;
-  flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .metric-card span,
 .summary-card span,
-.target-grid span {
+.target-grid span,
+.result-summary-row span,
+.result-summary-row strong {
   color: var(--text-muted);
   font-size: 0.88rem;
 }
@@ -1355,7 +1370,7 @@ select {
 .metric-card strong,
 .summary-card strong,
 .target-grid strong {
-  font-size: 1.35rem;
+  font-size: 1.32rem;
   font-family: var(--font-display);
 }
 
@@ -1557,6 +1572,38 @@ select {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.reestimate-bottom-sheet-header > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.reestimate-bottom-sheet-header h3 {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.reestimate-close-button {
+  width: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: auto;
+  aspect-ratio: 1 / 1;
+}
+
+.reestimate-close-button span {
+  display: inline-block;
+  transform: translateY(-1px);
 }
 
 .reestimate-trigger-card,
@@ -1943,6 +1990,16 @@ select {
   .ghost-button {
     width: 100%;
     justify-content: center;
+  }
+
+  .reestimate-bottom-sheet-header > .reestimate-close-button {
+    width: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    max-width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    aspect-ratio: 1 / 1;
   }
 
   .user-menu,

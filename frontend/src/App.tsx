@@ -669,8 +669,9 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     }
 
     if (previewMode === "candidate") {
+      let isCancelled = false;
+
       setScreen("analysis");
-      setAnalysisStage("confirm");
       setAnalysisLoading(false);
       setAnalysisLoadingPhase("idle");
       setAnalysisLoadingContext({
@@ -679,14 +680,48 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
       });
       setAnalysisId("preview-analysis");
       setCandidateItems(buildPreviewCandidateItems());
-      setAnalysisResult(null);
       setAnalysisError(null);
-      setAnalysisNotice(
-        "預覽模式：固定顯示候選確認頁。移除網址中的 preview 參數即可回到正常流程。",
-      );
       setReestimateExpanded(false);
       setReestimateSuggestions([]);
       setReestimateNote("");
+
+      void (async () => {
+        try {
+          const response = await getAnalysisDetail("preview-analysis");
+          if (isCancelled) {
+            return;
+          }
+
+          if (response.status === "completed") {
+            setAnalysisStage("result");
+            setAnalysisResult(response);
+            setAnalysisNotice(
+              "預覽模式：固定顯示完成後結果頁。移除網址中的 preview 參數即可回到正常流程。",
+            );
+            return;
+          }
+
+          setAnalysisStage("confirm");
+          setAnalysisResult(null);
+          setAnalysisNotice(
+            "預覽模式：固定顯示候選確認頁。移除網址中的 preview 參數即可回到正常流程。",
+          );
+        } catch {
+          if (isCancelled) {
+            return;
+          }
+
+          setAnalysisStage("confirm");
+          setAnalysisResult(null);
+          setAnalysisNotice(
+            "預覽模式：固定顯示候選確認頁。移除網址中的 preview 參數即可回到正常流程。",
+          );
+        }
+      })();
+
+      return () => {
+        isCancelled = true;
+      };
     }
   }, [previewMode]);
 
@@ -1058,9 +1093,6 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
     profile.profile.weight_kg === null ||
     profile.profile.activity_level === null ||
     profile.profile.goal_type === null;
-  const analysisDisclaimerCopy = analysisResult
-    ? resolveDisclaimerCopy(analysisResult.disclaimer)
-    : null;
   const historyDisclaimerCopy = selectedHistory
     ? resolveDisclaimerCopy(selectedHistory.disclaimer)
     : null;
@@ -1680,41 +1712,48 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
             {analysisStage === "result" ? (
               analysisResult ? (
                 <div className="content-stack">
-                  <div className="metric-grid">
-                    <article className="metric-card metric-card-inline">
-                      <span>總熱量</span>
-                      <div className="metric-card-value">
-                        <strong>{analysisResult.total_kcal}</strong>
-                        <small>kcal</small>
-                      </div>
-                    </article>
-                    <article className="metric-card metric-card-inline">
-                      <span>蛋白質</span>
-                      <div className="metric-card-value">
-                        <strong>{analysisResult.total_protein_g}</strong>
-                        <small>g</small>
-                      </div>
-                    </article>
-                    <article className="metric-card metric-card-inline">
-                      <span>脂肪</span>
-                      <div className="metric-card-value">
-                        <strong>{analysisResult.total_fat_g}</strong>
-                        <small>g</small>
-                      </div>
-                    </article>
-                    <article className="metric-card metric-card-inline">
-                      <span>碳水</span>
-                      <div className="metric-card-value">
-                        <strong>{analysisResult.total_carb_g}</strong>
-                        <small>g</small>
-                      </div>
-                    </article>
-                  </div>
+                  <article className="panel-card result-summary-panel">
+                    <h3>營養摘要</h3>
+                    <div className="result-summary-list">
+                      {[
+                        {
+                          label: "總熱量",
+                          value: analysisResult.total_kcal,
+                          unit: "kcal",
+                        },
+                        {
+                          label: "蛋白質",
+                          value: analysisResult.total_protein_g,
+                          unit: "g",
+                        },
+                        {
+                          label: "脂肪",
+                          value: analysisResult.total_fat_g,
+                          unit: "g",
+                        },
+                        {
+                          label: "碳水",
+                          value: analysisResult.total_carb_g,
+                          unit: "g",
+                        },
+                      ].map((metric) => (
+                        <div
+                          className="result-row result-summary-row"
+                          key={metric.label}
+                        >
+                          <div>
+                            <strong>{metric.label}</strong>
+                          </div>
+                          <span>
+                            {metric.value} {metric.unit}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </article>
 
                   <div className="panel-grid">
                     <article className="panel-card">
-                      <p className="panel-kicker">Food Items</p>
-                      <h3>本次食物明細</h3>
                       <div className="result-list">
                         {analysisResult.items.map((item) => (
                           <div
@@ -1731,69 +1770,6 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                             <span>{item.kcal} kcal</span>
                           </div>
                         ))}
-                      </div>
-                    </article>
-
-                    <article className="panel-card recommendation-panel">
-                      <p className="panel-kicker">Recommendation</p>
-                      <h3>每日目標與推薦運動</h3>
-                      {analysisResult.recommendation.source === "generic" ? (
-                        <div className="status-banner is-warning">
-                          <strong>通用建議</strong>
-                          <span>
-                            {analysisResult.recommendation.guidance_note}
-                          </span>
-                        </div>
-                      ) : null}
-                      {analysisDisclaimerCopy ? (
-                        <InlineDisclaimerNote
-                          body={analysisDisclaimerCopy.inlineBody}
-                        />
-                      ) : null}
-                      <div className="target-grid">
-                        <div>
-                          <span>Target kcal</span>
-                          <strong>
-                            {analysisResult.recommendation.target_calories_kcal}
-                          </strong>
-                        </div>
-                        <div>
-                          <span>Target protein</span>
-                          <strong>
-                            {analysisResult.recommendation.target_protein_g} g
-                          </strong>
-                        </div>
-                        <div>
-                          <span>Target fat</span>
-                          <strong>
-                            {analysisResult.recommendation.target_fat_g} g
-                          </strong>
-                        </div>
-                        <div>
-                          <span>Target carb</span>
-                          <strong>
-                            {analysisResult.recommendation.target_carb_g} g
-                          </strong>
-                        </div>
-                      </div>
-                      <div className="result-list">
-                        {analysisResult.recommendation.recommended_exercises.map(
-                          (exercise) => (
-                            <div
-                              key={exercise.exercise_id}
-                              className="result-row"
-                            >
-                              <div>
-                                <strong>{exercise.name}</strong>
-                                <p>
-                                  {exercise.duration_minutes} 分鐘 /{" "}
-                                  {exercise.category}
-                                </p>
-                              </div>
-                              <span>{exercise.burn_estimate_kcal} kcal</span>
-                            </div>
-                          ),
-                        )}
                       </div>
                     </article>
                   </div>
