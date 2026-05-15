@@ -1857,47 +1857,47 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
               <p className="empty-panel">載入中...</p>
             ) : (
               <div className="content-stack">
-                <article className="panel-card">
-                  <p className="panel-kicker">Snapshot</p>
-                  <h3>{selectedHistory.food_summary}</h3>
-                  <p>{formatDateLabel(selectedHistory.analyzed_at)}</p>
+                <article className="panel-card result-summary-panel">
+                  <div className="result-summary-list">
+                    {[
+                      {
+                        label: "總熱量",
+                        value: selectedHistory.total_kcal,
+                        unit: "kcal",
+                      },
+                      {
+                        label: "蛋白質",
+                        value: selectedHistory.total_protein_g,
+                        unit: "g",
+                      },
+                      {
+                        label: "脂肪",
+                        value: selectedHistory.total_fat_g,
+                        unit: "g",
+                      },
+                      {
+                        label: "碳水",
+                        value: selectedHistory.total_carb_g,
+                        unit: "g",
+                      },
+                    ].map((metric) => (
+                      <div
+                        className="result-row result-summary-row"
+                        key={metric.label}
+                      >
+                        <div>
+                          <strong>{metric.label}</strong>
+                        </div>
+                        <span>
+                          {metric.value} {metric.unit}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </article>
-
-                <div className="metric-grid">
-                  <article className="metric-card metric-card-inline">
-                    <span>總熱量</span>
-                    <div className="metric-card-value">
-                      <strong>{selectedHistory.total_kcal}</strong>
-                      <small>kcal</small>
-                    </div>
-                  </article>
-                  <article className="metric-card metric-card-inline">
-                    <span>蛋白質</span>
-                    <div className="metric-card-value">
-                      <strong>{selectedHistory.total_protein_g}</strong>
-                      <small>g</small>
-                    </div>
-                  </article>
-                  <article className="metric-card metric-card-inline">
-                    <span>脂肪</span>
-                    <div className="metric-card-value">
-                      <strong>{selectedHistory.total_fat_g}</strong>
-                      <small>g</small>
-                    </div>
-                  </article>
-                  <article className="metric-card metric-card-inline">
-                    <span>碳水</span>
-                    <div className="metric-card-value">
-                      <strong>{selectedHistory.total_carb_g}</strong>
-                      <small>g</small>
-                    </div>
-                  </article>
-                </div>
 
                 <div className="panel-grid">
                   <article className="panel-card">
-                    <p className="panel-kicker">Food Detail</p>
-                    <h3>當次食物明細</h3>
                     <div className="result-list">
                       {selectedHistory.items.map((item) => (
                         <div
@@ -1914,43 +1914,6 @@ function HomeDashboard({ user }: { user: AuthMeResponse }) {
                           <span>{item.kcal} kcal</span>
                         </div>
                       ))}
-                    </div>
-                  </article>
-
-                  <article className="panel-card recommendation-panel">
-                    <p className="panel-kicker">Recommendation Snapshot</p>
-                    <h3>當次建議快照</h3>
-                    {selectedHistory.recommendation.source === "generic" ? (
-                      <div className="status-banner is-warning">
-                        <strong>通用建議</strong>
-                        <span>
-                          {selectedHistory.recommendation.guidance_note}
-                        </span>
-                      </div>
-                    ) : null}
-                    {historyDisclaimerCopy ? (
-                      <InlineDisclaimerNote
-                        body={historyDisclaimerCopy.inlineBody}
-                      />
-                    ) : null}
-                    <div className="result-list">
-                      {selectedHistory.recommendation.recommended_exercises.map(
-                        (exercise) => (
-                          <div
-                            key={exercise.exercise_id}
-                            className="result-row"
-                          >
-                            <div>
-                              <strong>{exercise.name}</strong>
-                              <p>
-                                {exercise.duration_minutes} 分鐘 /{" "}
-                                {exercise.category}
-                              </p>
-                            </div>
-                            <span>{exercise.burn_estimate_kcal} kcal</span>
-                          </div>
-                        ),
-                      )}
                     </div>
                   </article>
                 </div>
