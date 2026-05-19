@@ -103,7 +103,8 @@ jobs:
                   \"SESSION_SECRET_KEY\": \"${{ secrets.SESSION_SECRET_KEY }}\",
                   \"FRONTEND_URL\": \"${{ secrets.FRONTEND_URL }}\",
                   \"AI_API_KEY\": \"${{ secrets.AI_API_KEY }}\",
-                  \"NUTRITION_DATA_SOURCE\": \"${{ secrets.NUTRITION_DATA_SOURCE }}\"
+                  \"NUTRITION_DATA_SOURCE\": \"${{ secrets.NUTRITION_DATA_SOURCE }}\",
+                  \"REDIS_URL\": \"${{ secrets.REDIS_URL }}\"
                 },
                 \"ports\": { \"8000\": \"HTTP\" }
               }
