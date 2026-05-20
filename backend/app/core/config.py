@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     nutrition_data_source: str = Field(default="", alias="NUTRITION_DATA_SOURCE")
     image_preprocess_enabled: bool = Field(default=True, alias="IMAGE_PREPROCESS_ENABLED")
     image_preprocess_max_px: int = Field(default=1024, alias="IMAGE_PREPROCESS_MAX_PX")
+    redis_url: str = Field(default="", alias="REDIS_URL")
 
     model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")
 
