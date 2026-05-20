@@ -119,9 +119,10 @@ def lookup_rag_food(
             return None
 
         if row.distance is None or row.distance >= threshold:
-            logger.debug(
-                "rag_lookup miss: food=%r distance=%.4f threshold=%.4f",
+            logger.info(
+                "rag_lookup miss: food=%r best_match=%r distance=%.4f threshold=%.4f",
                 food_name,
+                row.display_name_zh,
                 row.distance if row.distance is not None else float("nan"),
                 threshold,
             )
@@ -168,5 +169,5 @@ def lookup_rag_food(
         return match
 
     except Exception as exc:  # noqa: BLE001
-        logger.debug("rag_lookup skipped (exception): %s: %s", type(exc).__name__, exc)
+        logger.info("rag_lookup skipped (exception): %s: %s", type(exc).__name__, exc)
         return None
